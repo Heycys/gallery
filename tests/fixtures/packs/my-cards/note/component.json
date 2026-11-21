@@ -1,0 +1,13 @@
+{
+  "id": "my-cards/note",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "便签", "en": "Note" },
+  "description": { "zh": "一张写着字的便签", "en": "A note with words on it" },
+  "words": "bianqian note",
+  "parts": {
+    "text": { "at": ":scope > p", "edit": "text" }
+  },
+  "places": ["document", "page"],
+  "card": { "w": 4, "h": 2 }
+}

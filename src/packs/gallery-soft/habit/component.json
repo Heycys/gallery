@@ -1,0 +1,14 @@
+{
+  "id": "gallery-soft/habit",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "习惯打卡", "en": "Habit tracker" },
+  "description": { "zh": "每天打一次卡，显示连续了几天和最近一周，大卡片还有最近四周；名字在卡片上直接改", "en": "A check-in a day, the streak and the last seven days, the last four weeks on a large card; the habit's name is edited on the card" },
+  "words": "xiguandaka xiguan daka habit streak checkin tracker 习惯 打卡 连续 坚持",
+  "parts": {
+    "habit": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-soft-habit-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[4, 2], [2, 2], [4, 4]], "resize": true }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "gallery/note",
+  "apiVersion": 1,
+  "version": "2.0.0",
+  "name": { "zh": "便签", "en": "Note" },
+  "description": { "zh": "几行随手记，在卡片上直接写，存在页面里", "en": "A few lines jotted down, typed on the card and kept in the page" },
+  "words": "bianqian note memo sticky 便签 笔记 随手记 记事",
+  "parts": {
+    "note": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-note-head", ":scope > .gallery-note-field", ":scope > .gallery-note-foot"] },
+  "places": ["page"],
+  "card": { "sizes": [[4, 2], [2, 2], [4, 4]], "min": { "w": 2, "h": 2 }, "max": { "w": 4, "h": 8 }, "resize": true }
+}

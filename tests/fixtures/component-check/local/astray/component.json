@@ -1,0 +1,12 @@
+{
+  "id": "local/astray",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "写歪了", "en": "Astray" },
+  "description": { "zh": "写回文件的路走错了", "en": "Wrong on its way back to the file" },
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "rows": { "at": ":scope > ul", "edit": "data" }
+  },
+  "runtime": { "generated": [".astray-drawn"] }
+}

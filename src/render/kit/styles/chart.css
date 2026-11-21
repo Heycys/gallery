@@ -1,0 +1,39 @@
+/* A chart host (charts.js): room before its type draws, the line a chart drawn from a table says when
+   it draws nothing, its svg, and the axis look a report's own chart takes by class (a group of class
+   "axis", as d3.axisBottom draws). */
+
+.doc-chart {
+  position: relative;
+  min-width: 0;
+  margin-top: 12px;
+}
+
+/* Room for a chart not drawn yet (nothing in its host but its data); drawn, it is as tall as what
+   its type drew (a card follows its chart's height, also one set shorter or scaled down in a narrow
+   card), an svg of it or the HTML of a part (its own buttons beside its svg). */
+.doc-chart:not(:has(> :not(script))) { min-height: 280px; }
+
+/* A chart drawn from a table with nothing to draw (charts/from-table.js): a muted line saying why,
+   in place of the plot. */
+.doc-chart-message {
+  padding: 28px 0;
+  color: var(--doc-muted);
+  font-size: var(--doc-small-font-size);
+  line-height: var(--doc-small-line-height);
+  text-align: center;
+}
+
+.doc-chart > svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.doc-chart .axis text {
+  fill: var(--doc-muted);
+  font-family: var(--doc-font);
+  font-size: var(--doc-chart-axis-font-size);
+}
+.doc-chart .axis path,
+.doc-chart .axis line { stroke: var(--doc-border); }

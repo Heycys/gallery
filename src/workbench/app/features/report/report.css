@@ -1,0 +1,50 @@
+/* 报告区：iframe 撑满主区剩余空间 */
+.report-view { flex: 1; min-height: 0; position: relative; }
+.report-frame { display: block; width: 100%; height: 100%; border: 0; background: var(--pageBac); }
+/* 拖拽侧栏条目、调侧栏宽度时，鼠标事件不要被 iframe 吃掉 */
+body.dragging iframe, body.resizing iframe { pointer-events: none; }
+
+.report-state { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 24px; text-align: center; }
+.report-state h2 { margin: 0; font-size: 20px; font-weight: 600; }
+.report-state p { margin: 0; max-width: 460px; color: var(--texSec); font-size: 14px; line-height: 1.6; }
+.report-state .muted { color: var(--texTer); }
+.report-state-actions { display: flex; gap: 8px; margin-top: 10px; }
+/* 空页、出错页的唯一一个动作（新建文档、重试、在浏览器中打开）是主按钮：淡蓝底，图标在字前 */
+.report-state .dialog-btn { display: inline-flex; align-items: center; gap: 6px; }
+.report-state .dialog-btn svg { width: 16px; height: 16px; }
+/* 空工作区（ReportView.tsx EmptyWorkspace）：空白的自定义页那一个框（editor/page/board/hint.mjs .ge-page-blank）的样子和数值：
+   离顶上约 18% 窗口高（至少 48px）、左对齐、520 宽、四周留 20/20/18、圆角 10、淡灰（--noteBg）；标题 16px 粗一点，正文 14px/1.6，
+   「跟 Agent 说」灰一档；那句话放在页面底色的一条里，右边是「复制」（平时没有底，指针移上 5% 灰）；最后是淡蓝的「新建文档」 */
+.report-state.report-empty { justify-content: flex-start; padding-top: max(48px, 18vh); }
+.report-blank { box-sizing: border-box; width: min(520px, 100%); padding: 20px 20px 18px; border-radius: 10px; background: var(--noteBg); text-align: left; font-size: 14px; line-height: 1.6; color: var(--texPri); }
+.report-state .report-blank p { max-width: none; color: inherit; }
+.report-blank p + p { margin-top: 4px; }
+.report-state .report-blank .report-blank-title { font-size: 16px; font-weight: 600; }
+.report-state .report-blank .report-blank-ask { margin-top: 10px; color: var(--texSec); }
+.report-blank-say { display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 6px 6px 6px 12px; border-radius: var(--r-ctl); background: var(--bacPri); }
+.report-blank-say span { flex: 1; min-width: 0; user-select: text; }
+.report-blank-copy { flex: none; height: 28px; padding: 0 10px; border-radius: var(--r-ctl); font-size: 13px; color: var(--texSec); }
+.report-blank-copy:hover { background: var(--fillQuiet); color: var(--texPri); }
+body:not(.dragging) .report-blank-copy:active { background: var(--fillStrong); }
+.report-blank-copy:focus-visible { background: var(--bacTerTra); color: var(--texPri); }
+.report-blank .report-state-actions { margin-top: 12px; }
+/* 后台载入的页面（ReportView.tsx：重新显示的同一份、切换到的另一份）：叠在原位置、一样大，换上之前看不见 */
+.report-frame[data-pending] { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+/* 等它的时候报告区顶上的细线（写作偏好的 .pref-loading：0.3 秒后才淡出来，来回走；减少动态效果时不动），在两个页面上面 */
+.report-loading { z-index: 2; pointer-events: none; }
+
+/* 报告页里开着详情卡片时盖在工作台上的背景（cards.ts）：铺满整个窗口，不挖洞；报告区抬到它上面，那里是卡片自己的背景，
+   两层不在同一条边上拼接（挖洞时洞的边缘在缩放屏上落在半个像素上，侧栏边上漏出一条亮线）。
+   侧栏、顶栏的悬停和按下都落在它上面；颜色和设置里的弹窗遮罩（.pref-overlay 的 --overlay）、卡片自己的背景相同
+   （套件的 styles/dialog.css：浅色 60%、深色 80%），淡入也相同（180ms）；关上时它自己淡出（cards.ts，140ms），
+   淡完之前 body.card-open 还在，报告区一直在它上面 */
+.card-underlay { position: fixed; inset: 0; z-index: 900; background: var(--overlay); animation: card-underlay-fade 0.18s cubic-bezier(.23, 1, .32, 1); }
+/* iframe 自己的底色（页面没画出来之前垫着的白底）这时去掉：缩放屏上 iframe 的边落在半个像素上，那一列里它的底色
+   没有哪一层盖着，看着就是侧栏边上的一条亮线；去掉后那里是下面的 underlay */
+body.card-open .report-view { z-index: 901; }
+body.card-open .report-frame { background: transparent; }
+/* 伸进报告区的侧栏拉宽条、收起时左边的浮出条：卡片开着时那里是卡片的背景 */
+body.card-open .sb-resizer, body.card-open .sb-edge { pointer-events: none; }
+@keyframes card-underlay-fade { from { opacity: 0; } }
+/* 打开的是网页链接时（ReportView.tsx）：文档的那一块不占地方，网页在 .link-view 里 */
+.report-view.off { display: none; }

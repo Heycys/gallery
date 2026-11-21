@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>块的写法</title>
+  <style>
+    /* An annotated timeline, drawn in its card: one column on a phone, three in a row from 560px. */
+    .timeline { display: grid; gap: 16px; }
+    .timeline-item { position: relative; padding-left: 22px; }
+    .timeline-item p { margin: 0; }
+    .timeline-item::before { content: ""; position: absolute; left: 0; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--doc-border); }
+    .timeline-item::after { content: ""; position: absolute; left: 4px; top: 21px; bottom: -12px; border-left: 2px solid var(--doc-border); }
+    .timeline-item:last-child::after { display: none; }
+    .timeline-item-marked::before { background: var(--doc-accent); }
+    .timeline-date { color: var(--doc-muted); font-size: var(--doc-small-font-size); }
+    .timeline-note { color: var(--doc-accent); font-size: var(--doc-small-font-size); }
+    @media (min-width: 560px) {
+      .timeline { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .timeline-item { padding: 22px 12px 0 0; }
+      .timeline-item::before { top: 0; }
+      .timeline-item::after { left: 14px; right: 0; top: 4px; bottom: auto; border-left: 0; border-top: 2px solid var(--doc-border); }
+    }
+    /* Boxes and arrows in HTML and CSS: each box but the last draws its line (::after) and its
+       arrowhead (::before) in the gap after it; one under another, arrows down, on a phone; in a
+       row, arrows right, from 560px. */
+    .box-path { display: grid; gap: 28px; }
+    .box-path-node { position: relative; display: grid; align-content: center; padding: 8px 12px; border: 1px solid var(--doc-border); border-radius: 8px; text-align: center; }
+    .box-path-node p { margin: 0; }
+    .box-path-node:not(:last-child)::after { content: ""; position: absolute; top: 100%; left: calc(50% - 1px); height: 20px; border-left: 2px solid var(--doc-muted); }
+    .box-path-node:not(:last-child)::before { content: ""; position: absolute; top: calc(100% + 20px); left: calc(50% - 5px); border: 5px solid transparent; border-top: 7px solid var(--doc-muted); border-bottom: 0; }
+    .box-path-node-marked { border-color: var(--doc-accent); color: var(--doc-accent); font-weight: 600; }
+    .box-path-note { color: var(--doc-muted); font-size: var(--doc-small-font-size); font-weight: 400; }
+    @media (min-width: 560px) {
+      .box-path { grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 32px; }
+      .box-path-node:not(:last-child)::after { top: calc(50% - 1px); left: 100%; width: 24px; height: 0; border-left: 0; border-top: 2px solid var(--doc-muted); }
+      .box-path-node:not(:last-child)::before { top: calc(50% - 5px); left: calc(100% + 24px); border: 5px solid transparent; border-left: 7px solid var(--doc-muted); border-right: 0; }
+    }
+    /* A branch in inline SVG: a viewBox sized for a phone (its 14-unit text reads at 13px there), so
+       a max-width keeps the text from growing with a wide page; colors are the kit's variables. */
+    .branch { display: block; width: 100%; max-width: 360px; margin: 0 auto; }
+    .branch-box { fill: none; stroke: var(--doc-border); stroke-width: 1.5; }
+    .branch-box-marked { stroke: var(--doc-accent); }
+    .branch-line { fill: none; stroke: var(--doc-muted); stroke-width: 2; }
+    .branch-arrow-head { fill: var(--doc-muted); }
+    .branch-text { fill: var(--doc-text); font-size: 14px; text-anchor: middle; dominant-baseline: central; }
+    /* A strip of metrics: a layout of the page's own that is no figure (a whole block). One column
+       on a phone: two would leave the third metric alone on a row. */
+    .metric-strip { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 24px; }
+    .metric { border-top: 2px solid var(--doc-border); padding-top: 8px; }
+    .metric p { margin: 0; }
+    .metric-value { font-size: 28px; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .metric-label { color: var(--doc-muted); font-size: var(--doc-small-font-size); }
+    @media (max-width: 420px) { .metric-strip { grid-template-columns: minmax(0, 1fr); } }
+  </style>
+</head>
+<body>
+  <!-- A catalogue of the blocks, not a document: its words say what each block is, its numbers are placeholders. -->
+  <main class="doc-page" data-doc-id="example-report">
+    <header class="doc-header">
+      <div class="doc-icon">🧱</div>
+      <h1 class="doc-title">块的写法</h1>
+      <p class="doc-note">来源：块的目录，不是文档；数值都是占位</p>
+    </header>
+
+    <section class="doc-summary" aria-label="概括">
+      <p><strong>小标题 A</strong></p>
+      <p>开头概括：小标题是粗体的段落。</p>
+      <p><strong>小标题 B</strong></p>
+      <ul>
+        <li><strong>列表标题：</strong>内容</li>
+      </ul>
+      <p><strong>小标题 C</strong></p>
+      <p>每个小标题后面一段或一个列表。</p>
+    </section>
+
+    <section class="doc-section">
+      <h2>文字</h2>
+      <p>段落：正文的一段，行内可以有<strong>粗体</strong>、<code>行内代码</code>、<a href="https://example.com/">链接</a>、<mark>高亮</mark>和<a href="#detail-card">详情卡片</a>的链接。</p>
+      <dialog id="detail-card">
+        <h3>详情卡片</h3>
+        <p>点开链接才看到的内容。</p>
+      </dialog>
+      <p>行内公式写在句中：\(r = a / b\)。</p>
+
+      <h3>列表</h3>
+      <ul>
+        <li>符号列表：没有先后的几项</li>
+        <li class="doc-highlight-yellow">带颜色的一项：颜色是块上的类</li>
+      </ul>
+      <ol>
+        <li>编号列表：有先后的步骤
+          <ol>
+            <li>下一层</li>
+          </ol>
+        </li>
+        <li>第二步</li>
+      </ol>
+      <h4>待办事项</h4>
+      <ul>
+        <li><input type="checkbox" checked> 做完的一项</li>
+        <li><input type="checkbox"> 没做完的一项</li>
+      </ul>
+
+      <h3>引用、提示、高亮与折叠</h3>
+      <blockquote><p>引用块：照录的原话。</p></blockquote>
+      <div class="doc-callout"><p><strong>提示块：</strong>和正文分开的一段话。</p></div>
+      <aside>
+        <div class="doc-icon">💡</div>
+        <p>高亮块：浅色底上的一组块。</p>
+      </aside>
+      <details>
+        <summary>折叠块</summary>
+        <p>读者点开才看到的内容。</p>
+      </details>
+    </section>
+
+    <section class="doc-section">
+      <hr>
+      <h2>表格与图</h2>
+      <p class="doc-note">范围：类别 A–C<span class="doc-tab">单位：个</span></p>
+      <table data-doc-chart="lollipop">
+        <caption>从表格画的图：卡片在表格后面，改表格里的数，图跟着重画</caption>
+        <thead><tr><th>类别</th><th>数值</th></tr></thead>
+        <tbody>
+          <tr><td>A</td><td>12</td></tr>
+          <tr><td>B</td><td>18</td></tr>
+          <tr><td>C</td><td>9</td></tr>
+        </tbody>
+      </table>
+
+      <figure class="doc-figure">
+        <h3>自己的图表：类型由页面的脚本定义</h3>
+        <p class="doc-figure-caption">斜率图 · 单位：个</p>
+        <div data-doc-chart="slope">
+          <script type="application/json">
+            [{ "label": "类别 A", "from": 12, "to": 15 }, { "label": "类别 B", "from": 18, "to": 14 }, { "label": "类别 C", "from": 9, "to": 11 }]
+          </script>
+        </div>
+      </figure>
+      <details>
+        <summary>斜率图的数</summary>
+        <table>
+          <caption>表格：收在折叠块里</caption>
+          <thead><tr><th>类别</th><th>之前</th><th>之后</th></tr></thead>
+          <tbody>
+            <tr><td>类别 A</td><td>12</td><td>15</td></tr>
+            <tr><td>类别 B</td><td>18</td><td>14</td></tr>
+            <tr><td>类别 C</td><td>9</td><td>11</td></tr>
+          </tbody>
+        </table>
+      </details>
+
+      <figure class="doc-figure">
+        <h3>带注释的时间线：自己画的图</h3>
+        <p class="doc-figure-caption">页面自己的 HTML 和 CSS，放在卡片里</p>
+        <div class="timeline">
+          <div class="timeline-item"><p class="timeline-date">第 1 周</p><p>事件 A</p></div>
+          <div class="timeline-item timeline-item-marked"><p class="timeline-date">第 3 周</p><p>事件 B</p><p class="timeline-note">注释：这一步为什么要紧</p></div>
+          <div class="timeline-item"><p class="timeline-date">第 6 周</p><p>事件 C</p></div>
+        </div>
+      </figure>
+
+      <figure class="doc-figure">
+        <h3>方框和箭头：自己的 HTML 和 CSS</h3>
+        <p class="doc-figure-caption">手机上竖排、箭头朝下，宽处横排、箭头朝右；卡片画边框，图里不再画外框</p>
+        <div class="box-path">
+          <div class="box-path-node"><p>部件 A</p></div>
+          <div class="box-path-node box-path-node-marked"><p>部件 B</p><p class="box-path-note">注释：它读 A 的输出</p></div>
+          <div class="box-path-node"><p>部件 C</p></div>
+        </div>
+      </figure>
+
+      <figure class="doc-figure">
+        <h3>分支：内联 SVG</h3>
+        <p class="doc-figure-caption">一个分成两个；箭头是 marker，颜色用 kit 的变量，限宽免得宽页面上字变大</p>
+        <svg class="branch" viewBox="0 0 320 136" role="img" aria-label="分支：一步分成两步">
+          <defs>
+            <marker id="fig-branch-arrow" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="8" markerHeight="8" markerUnits="userSpaceOnUse" orient="auto">
+              <path class="branch-arrow-head" d="M0 0 L8 4 L0 8 Z"></path>
+            </marker>
+          </defs>
+          <rect class="branch-box branch-box-marked" x="4" y="50" width="96" height="36" rx="6"></rect>
+          <text class="branch-text" x="52" y="68">一步</text>
+          <rect class="branch-box" x="220" y="6" width="96" height="36" rx="6"></rect>
+          <text class="branch-text" x="268" y="24">分支 A</text>
+          <rect class="branch-box" x="220" y="94" width="96" height="36" rx="6"></rect>
+          <text class="branch-text" x="268" y="112">分支 B</text>
+          <path class="branch-line" d="M100 68 H160 V24 H214" marker-end="url(#fig-branch-arrow)"></path>
+          <path class="branch-line" d="M160 68 V112 H214" marker-end="url(#fig-branch-arrow)"></path>
+        </svg>
+      </figure>
+
+      <h3>整体块</h3>
+      <p>不是图的版式：类名和样式是页面自己的，整块移动，文字就地修改。</p>
+      <div class="metric-strip">
+        <div class="metric"><p class="metric-value">12</p><p class="metric-label">指标 A</p></div>
+        <div class="metric"><p class="metric-value">18</p><p class="metric-label">指标 B</p></div>
+        <div class="metric"><p class="metric-value">9</p><p class="metric-label">指标 C</p></div>
+      </div>
+    </section>
+
+    <section class="doc-section">
+      <hr>
+      <h2>图片与流程图</h2>
+      <figure>
+        <img src="assets/picture.png" alt="一张示意图">
+        <figcaption>图片：图注写在 figcaption 里</figcaption>
+      </figure>
+      <ol class="doc-flow">
+        <li>
+          <p><strong>步骤流程图</strong></p>
+          <p>一步一个节点，标题是粗体的一段。</p>
+        </li>
+        <li>
+          <div class="doc-icon">🔧</div>
+          <p><strong>带图标的一步</strong></p>
+          <p>图标画在序号的位置。</p>
+        </li>
+        <li><p><strong>最后一步</strong></p></li>
+      </ol>
+    </section>
+
+    <section class="doc-section">
+      <hr>
+      <h2>选项卡与分栏</h2>
+      <section data-doc-sheets="pages">
+        <section>
+          <h3>第一页</h3>
+          <p>选项卡：把一部分分成几页，每页放任意的块。</p>
+        </section>
+        <section>
+          <h3>第二页</h3>
+          <p>第二页的块。</p>
+        </section>
+      </section>
+      <div class="doc-columns">
+        <div class="doc-column"><p><strong>分栏：</strong>二到五栏并排。</p></div>
+        <div class="doc-column"><p><strong>另一栏：</strong>屏幕窄时各栏上下排列。</p></div>
+      </div>
+    </section>
+
+    <section class="doc-section">
+      <hr>
+      <h2>代码与公式</h2>
+      <p>\[ r = \frac{a}{b} \]</p>
+      <pre data-title="代码块：标题写文件名或用途"><code class="language-python">values = {"A": 12, "B": 18, "C": 9}
+print(sum(values.values()))</code></pre>
+    </section>
+
+    <section class="doc-section">
+      <hr>
+      <h2>文件、书签与嵌入</h2>
+      <figure class="doc-file">
+        <a class="doc-file-link" href="assets/data.csv" download="数据.csv"><span class="doc-file-name">数据.csv</span><span class="doc-file-size">0.1 KiB</span></a>
+        <figcaption>文件：读者保存的一个文件</figcaption>
+      </figure>
+      <p><a class="doc-bookmark" href="https://example.com/" title="一个网页做成的卡片：标题、说明和地址。">网页书签</a></p>
+      <figure class="doc-embed doc-embed--file" style="--doc-embed-height: 240px">
+        <iframe class="doc-embed-frame" src="assets/embed.html" sandbox="allow-scripts" loading="lazy"></iframe>
+        <figcaption>嵌入：随文档附带的 HTML 或 PDF 页面</figcaption>
+      </figure>
+    </section>
+  </main>
+  <script>
+    // Each chart type is defined once; the kit calls it, the host emptied, for every chart declared
+    // with it, and again whenever the width, the theme or the card's height change.
+
+    // A text drawn in the host, measured and taken out: label columns as wide as their longest label.
+    /** @param {HTMLElement} host @param {string[]} texts */
+    function widest(host, texts) {
+      const probe = d3.select(host).append("svg").append("text");
+      const width = d3.max(texts, (text) => probe.text(text).node()?.getComputedTextLength() ?? 0) ?? 0;
+      probe.node()?.ownerSVGElement?.remove();
+      return Math.ceil(width);
+    }
+
+    // data: the card's JSON, a value before and after for each category.
+    DocCharts.define("slope", ({ host, data, tokens, width, height }) => {
+      /** @type {Array<{ label: string, from: number, to: number }>} */
+      const rows = data;
+      const tall = height ?? 240; // height: the card's when the reader set one, else null
+      // Each end's labels ("类别 A 12") beside its axis, the room for them measured.
+      const side = Math.min(widest(host, rows.map((row) => `${row.label} ${Math.max(row.from, row.to)}`)) + 16, width * 0.36);
+      const [left, right] = [side, width - side];
+      const values = rows.flatMap((row) => [row.from, row.to]);
+      const y = d3.scaleLinear([d3.min(values) ?? 0, d3.max(values) ?? 1], [tall - 16, 44]).nice();
+      // Labels at least a line apart, pushed down in their order when two values are close.
+      /** @param {number[]} at */
+      const apart = (at) => {
+        const order = at.map((_, index) => index).sort((a, b) => at[a] - at[b]);
+        const placed = [...at];
+        order.forEach((index, rank) => { if (rank > 0) placed[index] = Math.max(placed[index], placed[order[rank - 1]] + 20); });
+        return placed;
+      };
+      const starts = apart(rows.map((row) => y(row.from)));
+      const ends = apart(rows.map((row) => y(row.to)));
+      // Into the host, an SVG named for screen readers; its text is the document's (16px), colors from tokens.
+      const svg = d3.select(host).append("svg").attr("width", width).attr("height", tall)
+        .attr("role", "img").attr("aria-label", "斜率图：各类别之前与之后的数值");
+      [["之前", left], ["之后", right]].forEach(([label, at]) => {
+        svg.append("line").attr("x1", at).attr("x2", at).attr("y1", 32).attr("y2", tall - 8).attr("stroke", tokens.border);
+        svg.append("text").attr("x", at).attr("y", 16).attr("text-anchor", "middle").attr("fill", tokens.muted).style("font-size", "13px").text(label);
+      });
+      // A rise in the first series color, a fall muted.
+      const line = svg.append("g").selectAll("g").data(rows).join("g").attr("fill", (row) => (row.to >= row.from ? tokens.series[0] : tokens.muted));
+      line.append("line").attr("x1", left).attr("x2", right).attr("y1", (row) => y(row.from)).attr("y2", (row) => y(row.to))
+        .attr("stroke", (row) => (row.to >= row.from ? tokens.series[0] : tokens.muted)).attr("stroke-width", 2);
+      line.append("circle").attr("cx", left).attr("cy", (row) => y(row.from)).attr("r", 4);
+      line.append("circle").attr("cx", right).attr("cy", (row) => y(row.to)).attr("r", 4);
+      line.append("text").attr("x", left - 8).attr("y", (_, index) => starts[index]).attr("dy", "0.35em").attr("text-anchor", "end")
+        .attr("fill", tokens.text).text((row) => `${row.label} ${row.from}`);
+      line.append("text").attr("x", right + 8).attr("y", (_, index) => ends[index]).attr("dy", "0.35em")
+        .attr("fill", tokens.text).text((row) => `${row.to} ${row.label}`);
+    });
+
+    // data: the table's rows, each keyed by its header's words; data.columns the header's words in
+    // order. The kit draws it again when the table changes, and the user may add, rename or delete
+    // any row: so everything here comes from the rows (the domain, the ticks, the labels), nothing
+    // from today's names or numbers.
+    DocCharts.define("lollipop", ({ host, data, tokens, width, height }) => {
+      /** @type {DocTableRows} */
+      const rows = data;
+      const [name, value] = rows.columns;
+      /** @type {Array<{ label: string, value: number }>} */
+      const points = rows.flatMap((row) => {
+        const number = row[value];
+        return typeof number === "number" ? [{ label: String(row[name] ?? ""), value: number }] : [];
+      });
+      // Labels wider than 40% of the card (long ones, or a phone's width) go above their rows instead.
+      const labelWidth = widest(host, points.map((point) => point.label));
+      const above = labelWidth + 24 > width * 0.4;
+      const left = above ? 16 : labelWidth + 24;
+      const tall = height ?? (above ? 56 : 40) * points.length + 40;
+      const x = d3.scaleLinear([0, d3.max(points, (point) => point.value) ?? 1], [left, width - 24]).nice();
+      const y = d3.scaleBand(points.map((point) => point.label), [above ? 24 : 8, tall - 28]);
+      const svg = d3.select(host).append("svg").attr("width", width).attr("height", tall)
+        .attr("role", "img").attr("aria-label", `${value}，按${name}`);
+      // class "axis": the kit's axis look (13px, muted). Narrow, three ticks: the domain's ends and
+      // middle, as tickValues; ticks(3) is only a hint, which d3 may exceed (on 0–8,000 it draws five).
+      const [low, high] = x.domain();
+      svg.append("g").attr("class", "axis").attr("transform", `translate(0,${tall - 28})`)
+        .call(d3.axisBottom(x).tickValues(width < 520 ? [low, (low + high) / 2, high] : x.ticks(6)));
+      const row = svg.append("g").selectAll("g").data(points).join("g")
+        .attr("transform", (point) => `translate(0,${(y(point.label) ?? 0) + y.bandwidth() / 2})`);
+      // A label above its row stands 18px over its stem, its letters ending 4px or more above a dot (r 5)
+      // under them: a larger dot or a smaller offset puts the mark on the words.
+      row.append("text").attr("x", above ? left : left - 8).attr("y", above ? -18 : 0).attr("dy", "0.35em")
+        .attr("text-anchor", above ? "start" : "end").attr("fill", tokens.text).text((point) => point.label);
+      // The stem is a length from zero, so the domain starts at 0: never at a number picked to fit.
+      row.append("line").attr("x1", x(0)).attr("x2", (point) => x(point.value)).attr("stroke", tokens.border).attr("stroke-width", 2);
+      row.append("circle").attr("cx", (point) => x(point.value)).attr("r", 5).attr("fill", tokens.series[0]);
+    });
+  </script>
+</body>
+</html>

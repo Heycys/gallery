@@ -1,0 +1,1 @@
+A table whose rows a reader puts in another order. Write its rows in the table's `<tbody>`, one thing a row: the first cell is what the list shows. The count in its script of data starts at `{"moves":0}`.

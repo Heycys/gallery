@@ -1,0 +1,48 @@
+/* 历史版本（HistoryDialog.tsx）：外壳同组件列表（preferences.css 的 pref-*），宽一些；下面左右两栏：左边是选中那一版排好的页面，
+   右边 280px 是版本的列表和「恢复」。扁平：没有框线的按钮，一行一版，指针移上去灰底，选中的深一点；分栏只有一条细线。
+   对话框最宽 1180px，左边就有 900px：页面的正文是它在编辑区的宽度（712px，两边留白） */
+.hist-dialog { width: min(1180px, 100%); height: min(88vh, 900px); }
+.hist-body { flex: 1; min-height: 0; display: flex; }
+/* 放页面的地方：页面自己滚动；新选的那一版在原位置看不见地载入（data-pending：叠在上面、一样大、透明、点不到，和写作偏好、报告区换页一样），
+   画好了才换上；载入时顶上一条细细的进度（preferences.css 的 pref-loading） */
+.hist-view { position: relative; flex: 1; min-width: 0; overflow: hidden; background: var(--pageBac); }
+.hist-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--pageBac); }
+.hist-frame[data-pending] { opacity: 0; pointer-events: none; }
+.hist-side { flex: none; display: flex; flex-direction: column; width: 280px; border-left: 1px solid var(--borSec); background: var(--bacPri); }
+.hist-list { flex: 1; min-height: 0; overflow-y: auto; padding: 6px; display: flex; flex-direction: column; gap: 1px; scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent; }
+.hist-foot { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--borSec); }
+/* 「显示改动」：字和开关一个按钮，没有边线，悬停灰底（同写作偏好的「启用」）；关了页面就是这一版本来的样子 */
+.hist-marks { flex: none; display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 6px 0 8px; margin-left: -4px; border-radius: var(--r-ctl); color: var(--texSec); font: inherit; font-size: 13px; background: none; cursor: pointer; }
+.hist-marks:hover { background: var(--bacIntTra); }
+.hist-marks:active { background: var(--bacPre); }
+.hist-marks .mi-switch { margin: 0; }
+.hist-foot .dialog-btn { height: 28px; padding: 0 8px; }
+.hist-empty { padding: 12px 8px; font-size: 13px; line-height: 1.5; color: var(--texSec); }
+.hist-view > .hist-empty { padding: 24px 40px; }
+
+/* 一版：一个整行的按钮，没有边线；第一行时间、「当前」、谁，下面一行怎么来的和改了多少（右边），再下面最多三块 */
+.hist-item {
+  display: flex; flex: none; flex-direction: column; align-items: stretch; gap: 2px; width: 100%; padding: 7px 10px; border-radius: var(--r-ctl);
+  text-align: left; font: inherit; color: inherit; background: none; cursor: pointer;
+}
+.hist-item:hover { background: var(--bacIntTra); }
+.hist-item:active { background: var(--bacPre); }
+.hist-item[aria-selected="true"] { background: var(--bacTerTra); }
+/* 键盘走到的一行填它的悬停底色；选中的那一行已经填着，焦点画环（styles/base.css），两个不混 */
+.hist-item:focus-visible:not([aria-selected="true"]) { background: var(--bacIntTra); }
+.hist-line { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.hist-time { font-size: 14px; font-weight: 500; line-height: 20px; color: var(--texPri); white-space: nowrap; }
+.hist-tag { flex: none; padding: 0 5px; border-radius: 4px; font-size: 12px; line-height: 18px; color: var(--btnPriTex); background: var(--btnPriBg); }
+.hist-who { margin-left: auto; font-size: 12px; line-height: 20px; color: var(--texSec); white-space: nowrap; }
+.hist-sum { min-width: 0; font-size: 12px; line-height: 18px; color: var(--texSec); overflow-wrap: anywhere; }
+/* 改了多少：+ 加的和改的块、− 删的和改的块，Agent 修改条上那两个数的绿和红（changes/bar.mjs 的 --ge-diff-add-chip、--ge-diff-del-chip），等宽数字 */
+.hist-counts { flex: none; display: flex; gap: 6px; margin-left: auto; font-size: 12px; line-height: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.hist-plus { color: light-dark(#2f6f4e, #6fc596); }
+.hist-minus { color: light-dark(#b93a36, #ff8f85); }
+.hist-block { padding-left: 8px; font-size: 12px; line-height: 18px; color: var(--texSec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 640px) {
+  .hist-body { flex-direction: column-reverse; }
+  .hist-side { width: auto; max-height: 50%; border-left: 0; border-bottom: 1px solid var(--borSec); }
+  .hist-view > .hist-empty { padding: 16px; }
+}

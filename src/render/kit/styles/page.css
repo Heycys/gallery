@@ -1,0 +1,104 @@
+/* The page: the reading column (or full width) and the report's header (kicker, title, a
+   line under the title). */
+
+.doc-page {
+  container-type: inline-size;
+  width: min(
+    var(--doc-content-max-width),
+    calc(100% - (2 * var(--doc-page-gutter)))
+  );
+  margin: 0 auto;
+  /* Top room for the shared controls is fixed, so the page never moves when they appear. Below the
+     last block, room to scroll it up toward the middle of the window (30vh), 64px at least. */
+  padding: 52px 0 max(64px, 30vh);
+  /* A run with no place to break (a long path or URL in prose, a callout or inline code) breaks
+     where it would leave its line, as a cell's, a caption's and a code block's already do: unbroken,
+     it widened the page past a 360px window. break-word, not anywhere: a word still counts whole
+     for min-content. The page's words are whole at a line's end (word-break: normal), in a Chinese
+     page as in an English one; a long run (more than 20 characters with no place to break inside it,
+     src/shared/long-runs.mjs) breaks where its line ends instead of going whole to the next one: the
+     kit holds it in a span that breaks anywhere (.doc-long-run, base.css; runtime/spacing.js), the
+     page editor marks a block holding one (page/long-runs.mjs). */
+  overflow-wrap: break-word;
+}
+
+:root[data-doc-width="full"] .doc-page {
+  width: calc(100% - (2 * var(--doc-wide-gutter)));
+  max-width: none;
+}
+
+/* The page's area at full width, whatever its width now: its gutters at either side as the rule above gives
+   them, the room a table wider than the text may take past it (宽表格, tables/across.js). Registered
+   lengths, so that a script reads them in px from the root's computed style; the page editor's room gives its
+   own (src/editor/page/margin.mjs: beside the outline and the cards of 批注). */
+@property --doc-area-start { syntax: "<length>"; inherits: true; initial-value: 0px; }
+@property --doc-area-end { syntax: "<length>"; inherits: true; initial-value: 0px; }
+:root { --doc-area-start: var(--doc-wide-gutter); --doc-area-end: var(--doc-wide-gutter); }
+
+/* The page's icon: above the title, left-aligned with its text, 56px, twice the title's
+   size. An emoji, an icon of the MingCute or Tabler set in a color
+   (data-icon) or an image of the report's folder; the preview, a build and an export show each as a
+   picture inside (render/emoji.mjs): an emoji's Twemoji image, the icon's SVG in the color below
+   (ten, light and dark), the image covering its box, 4 round. Written as the emoji itself, the
+   system's font shows it. */
+.doc-icon {
+  width: max-content;
+  margin: 0 0 12px;
+  font-size: 56px;
+  line-height: 1;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+}
+.doc-icon > img,
+.doc-icon > svg { display: block; width: 56px; height: 56px; }
+.doc-icon > img:not([alt]),
+.doc-icon > img[alt=""] { object-fit: cover; border-radius: 4px; }
+.doc-icon[data-icon]:empty { width: 56px; height: 56px; }
+/* The ten colors: shared/emoji/icon-value.mjs ICON_COLOR_VALUES, which tests/unit/icons.mjs holds these rules to. */
+.doc-icon[data-icon$="_gray.svg"] { color: light-dark(#55534E, #D3D3D3); }
+.doc-icon[data-icon$="_lightgray.svg"] { color: light-dark(#A6A299, #7F7F7F); }
+.doc-icon[data-icon$="_brown.svg"] { color: light-dark(#9F6B53, #AA755F); }
+.doc-icon[data-icon$="_yellow.svg"] { color: light-dark(#CB912F, #CA8E1B); }
+.doc-icon[data-icon$="_orange.svg"] { color: light-dark(#D9730D, #D87620); }
+.doc-icon[data-icon$="_green.svg"] { color: light-dark(#448361, #2D9964); }
+.doc-icon[data-icon$="_blue.svg"] { color: light-dark(#337EA9, #2E7CD1); }
+.doc-icon[data-icon$="_purple.svg"] { color: light-dark(#9065B0, #8D5BC1); }
+.doc-icon[data-icon$="_pink.svg"] { color: light-dark(#C14C8A, #C94079); }
+.doc-icon[data-icon$="_red.svg"] { color: light-dark(#D44C47, #CD4945); }
+
+.doc-kicker {
+  margin: 0 0 8px;
+  color: var(--doc-muted);
+  font-size: var(--doc-small-font-size);
+  font-weight: 600;
+  line-height: var(--doc-small-line-height);
+}
+
+/* The title keeps one gap below it, whatever comes next, in the header or after it (a line under it,
+   body text, a card, a section): its margin collapses with the next block's, through the header. Bold as
+   the headings (flow.css), its tracking its size's. */
+.doc-title {
+  margin: 0 0 calc(32px * var(--doc-space, 1));
+  font-size: var(--doc-title-font-size);
+  font-weight: 700;
+  line-height: var(--doc-title-line-height);
+  letter-spacing: -.02em;
+}
+
+/* A line under the title (any brief note) is a paragraph like
+   any in the body (small text: .doc-note), with the same gaps: the header adds none. */
+.doc-header > .doc-title ~ p { margin: 0 0 var(--doc-paragraph-gap); }
+
+@media (max-width: 760px) {
+  .doc-page { padding-top: 60px; }
+}
+
+@media print {
+  .doc-page,
+  :root[data-doc-width="full"] .doc-page { width: 100%; padding-top: 0; padding-bottom: 64px; }
+  /* Where a sheet of paper ends: never right after a heading or the title (it goes over with what it heads), never
+     through a card, a callout, a highlight panel or the opening summary, or a table's row, where the page has room
+     for it whole (one taller than a sheet still breaks). Pictures, bookmarks, embeds and a flowchart's steps say so
+     in their own files. */
+  .doc-title, .doc-page :is(h1, h2, h3, h4) { break-after: avoid; }
+  .doc-figure, .doc-callout, :is(.doc-summary, .doc-panel), .doc-table tr { break-inside: avoid; }
+}

@@ -1,0 +1,118 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens: the head (the chip, an
+   hourglass, and the day's name, one line cut with an ellipsis, its end clear of the card's grip); at the
+   bottom the count's label (还有, 已经过去) over the count, the card's hero (44px, 48px on a wide card) and
+   its unit, and the date under them, faint; on the day, 就是今天 in the accent's ink where the count stands.
+   A wide card (data-layout "wide", four cells) sets the month of the date at its right, 126px, seven
+   columns Monday first, the weekend fainter, the day itself the one solid square of the accent (a month of
+   six weeks a little closer, so that it fits the card). No date: the cards' empty face under the head.
+   Light and dark. */
+[data-doc-component="gallery/countdown"] {
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-countdown-face { display: flex; gap: 16px; box-sizing: border-box; min-height: 0; }
+  > .gallery-countdown-face > .gallery-countdown-main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 20px;
+    min-width: 0;
+    margin: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+  }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-head > .gallery-countdown-chip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-fill);
+    color: var(--gallery-muted);
+  }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-head > .gallery-countdown-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-head > .gallery-countdown-name {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: var(--gallery-title-size);
+    line-height: var(--gallery-title-line);
+    font-weight: 600;
+    color: var(--gallery-text);
+  }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core { margin-top: auto; }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > p { margin: 0; }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-label { font-size: 12px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-label:empty { display: none; }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-count { display: flex; align-items: baseline; margin: 3px 0 7px; }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-count > .gallery-countdown-number {
+    font-size: var(--gallery-hero-size);
+    line-height: 1;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: var(--gallery-numeral-tracking);
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-count > .gallery-countdown-unit { margin-left: var(--gallery-unit-gap); font-size: var(--gallery-unit); font-weight: 500; color: var(--gallery-muted); }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-words {
+    display: block;
+    margin: 2px 0 6px;
+    font-size: 24px;
+    line-height: 30px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--gallery-accent-ink);
+  }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-foot { font-size: 11.5px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-empty { display: none; }
+  > .gallery-countdown-face[data-layout="wide"] > .gallery-countdown-main > .gallery-countdown-core > .gallery-countdown-count > .gallery-countdown-number { font-size: 48px; }
+
+  /* No date: the cards' empty face, under the head. Under its head row in a short card (4 × 2, 2 × 2): two lines at the left with no chip, there being no room for one (the pack's other empty faces, with no head row, centre theirs over a 28px chip). */
+  > .gallery-countdown-face[data-kind="none"] > .gallery-countdown-main > .gallery-countdown-core,
+  > .gallery-countdown-face[data-kind="none"] > .gallery-countdown-month,
+  > .gallery-countdown-face[data-layout="wide"][data-kind="none"] > .gallery-countdown-month { display: none; }
+  > .gallery-countdown-face[data-kind="none"] > .gallery-countdown-main > .gallery-countdown-empty {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-height: 0;
+  }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-empty > p { margin: 0; }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-empty > .gallery-countdown-empty-title { font-size: 13.5px; line-height: 20px; font-weight: 600; color: var(--gallery-text); }
+  > .gallery-countdown-face > .gallery-countdown-main > .gallery-countdown-empty > .gallery-countdown-empty-where { font-size: 12px; line-height: 18px; color: var(--gallery-muted); text-wrap: pretty; }
+
+  /* The month, at a wide card's right. */
+  > .gallery-countdown-face > .gallery-countdown-month { display: none; }
+  > .gallery-countdown-face[data-layout="wide"] > .gallery-countdown-month {
+    display: grid;
+    flex: none;
+    align-self: flex-end;
+    grid-template-columns: repeat(7, 18px);
+    row-gap: 2px;
+    width: 126px;
+    font-variant-numeric: tabular-nums;
+  }
+  > .gallery-countdown-face > .gallery-countdown-month > span {
+    display: grid;
+    place-items: center;
+    height: 16px;
+    border-radius: 5px;
+    font-size: 10.5px;
+    line-height: 1;
+    color: var(--gallery-muted);
+  }
+  > .gallery-countdown-face > .gallery-countdown-month > .gallery-countdown-initial { font-size: 10px; color: var(--gallery-faint); }
+  > .gallery-countdown-face > .gallery-countdown-month > .gallery-countdown-weekend { color: var(--gallery-faint); }
+  > .gallery-countdown-face > .gallery-countdown-month > .gallery-countdown-on { background: var(--gallery-accent-fill); color: #fff; font-weight: 600; }
+  > .gallery-countdown-face > .gallery-countdown-month[data-weeks="6"] { row-gap: 1px; }
+  > .gallery-countdown-face > .gallery-countdown-month[data-weeks="6"] > span { height: 14px; }
+}
+/* On a custom page the face fills the card the board frames. */
+.gallery-card > [data-doc-component="gallery/countdown"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/countdown"] > .gallery-countdown-face { height: 100%; }

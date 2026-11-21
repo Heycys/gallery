@@ -1,0 +1,119 @@
+/* 写作偏好的对话框：居中，宽 880、高到视口的 86%；上面一行（名字、一句说明、「保存」和关闭），下面整页编辑器（iframe） */
+.pref-overlay { position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--overlay); }
+.pref-dialog {
+  display: flex; flex-direction: column; width: min(880px, 100%); height: min(86vh, 900px); overflow: hidden;
+  background: var(--bacPri); box-shadow: var(--shaOutScr); /* 圆角 16、淡入淡出：styles/base.css */
+}
+/* 里面没有页面的两个对话框（组件列表、拓展列表）和别的对话框一样站在 --bacEle 上（深色里比页面亮一档）；写作偏好、历史版本里是页面，头部跟着页面 */
+.pref-dialog:is(.comp-dialog, .ext-dialog) { background: var(--bacEle); --ringBase: var(--bacEle); }
+.pref-head { flex: none; display: flex; align-items: center; gap: 10px; height: 48px; padding: 0 12px 0 20px; border-bottom: 1px solid var(--borSec); }
+.pref-title { flex: none; font-size: 16px; font-weight: 600; color: var(--texPri); }
+.pref-sub { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; color: var(--texSec); }
+.pref-actions { flex: none; display: flex; align-items: center; gap: 4px; }
+/* 「保存」：主按钮，淡蓝底、蓝字常显（components.css .dialog-btn.primary 一样，2026-11-09 起；原来是不带强调色的文字按钮）；没有要存的修改时淡一些，指针在上面也不变 */
+.pref-save { flex: none; height: 28px; padding: 0 8px; border-radius: var(--r-ctl); font-size: 14px; font-weight: 500; color: var(--btnPriTex); background: var(--btnPriBg); white-space: nowrap; }
+.pref-save:hover:not(:disabled), .pref-save:focus-visible { outline: none; background: var(--btnPriBgHi); }
+.pref-save:active:not(:disabled) { background: var(--btnPriBgPre); }
+.pref-save:disabled { opacity: var(--off); cursor: default; }
+/* 文件里有页面显示不了的内容时，标题行下面一行灰字说明 */
+.pref-note { flex: none; padding: 8px 20px; border-bottom: 1px solid var(--borSec); background: var(--bacSec); font-size: 13px; line-height: 1.5; color: var(--texSec); overflow-wrap: anywhere; }
+/* 放页面的地方：页面在里面看不见地载入（data-pending：叠在原位置、一样大、透明、点不到，和报告区换页一样），
+   画好了才一下子换上。等的时候只是页面的底色；0.3 秒还没好，顶上淡淡地出一条细线来回走（不用强调色、不转圈），
+   减少动态效果时只是一条不动的淡线 */
+.pref-body { position: relative; flex: 1; min-height: 0; background: var(--bacPri); }
+.pref-frame { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--pageBac); }
+.pref-frame[data-pending] { opacity: 0; pointer-events: none; }
+.pref-loading { position: absolute; top: 0; left: 0; right: 0; height: 2px; overflow: hidden; opacity: 0; animation: wait-in .2s ease-out .3s forwards; }
+.pref-loading::before { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 24%; border-radius: 1px; background: var(--borStrTra); animation: pref-loading-pass 1.6s ease-in-out infinite; }
+@keyframes pref-loading-pass { from { transform: translateX(-100%); } to { transform: translateX(417%); } }
+@media (prefers-reduced-motion: reduce) {
+  .pref-loading::before { width: 100%; animation: none; }
+}
+
+/* 组件列表（设置里）：外壳同写作偏好，窄一些；里面是两组一行一行的，扁平：分组的字、细线，没有底色。
+   自定义块先是一排块包的卡片（圆角矩形，淡灰底，没有边线；指针移上去深一点），最后一张同样大小的「+ 导入」；进到包里是原来的一行一行 */
+.comp-dialog { width: min(640px, 100%); height: min(86vh, 720px); }
+.comp-body { flex: 1; min-height: 0; overflow-y: auto; padding: 4px 20px 20px; scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent; }
+.comp-group { margin: 16px 0 4px; font-size: 14px; font-weight: 600; color: var(--texPri); }
+.comp-lead, .comp-empty { padding: 4px 0 8px; font-size: 13px; line-height: 1.5; color: var(--texSec); }
+.comp-problem { margin-top: 12px; font-size: 13px; line-height: 1.5; color: var(--texPri); }
+.comp-row { display: flex; align-items: center; gap: 16px; padding: 8px 0; border-top: 1px solid var(--borSec); }
+.comp-row.comp-block { gap: 8px; padding: 6px 0; }
+/* 图标（内置块、自定义块的行都用）：编辑器 "/" 菜单那一行的同一张图，同样 20px、1.25 的线（editor/page/menu.mjs .ge-pop-icon），颜色同工作台标签旁的图标 */
+.comp-icon { flex: none; display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; color: var(--icoPri); }
+.comp-icon svg { width: 20px; height: 20px; stroke-width: 1.25; }
+.comp-name { flex: 1; min-width: 0; font-size: 14px; line-height: 20px; color: var(--texPri); overflow-wrap: anywhere; }
+/* 自定义块的一行：和内置块一样，图标、名字，右边一个总开关；左边的按钮（图标、名字、一个小箭头）点了展开，再点收起，
+   光标移入整行灰色填充，没有框线。展开的：id 和版本、说明、几行灰字、各开关一行 */
+.comp-row.comp-pkg { display: block; padding: 0; }
+.comp-line { display: flex; align-items: center; gap: 8px; margin: 0 -8px; padding: 2px 8px; border-radius: var(--r-ctl); }
+.comp-line:hover { background: var(--bacIntTra); }
+.comp-line:has(.comp-head:active) { background: var(--bacPre); }
+.comp-head { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 0; text-align: left; font: inherit; color: inherit; background: none; cursor: pointer; }
+.comp-head .comp-name { flex: 0 1 auto; }
+.comp-chev { flex: none; width: 14px; height: 14px; color: var(--texTer); }
+.comp-chev svg { stroke-width: 1.6; transition: transform .2s ease-out; }
+.comp-row[data-open] .comp-chev svg { transform: rotate(90deg); }
+/* 没有加载、停用了的块：行尾的灰字，收起时也看得出 */
+.comp-tag { flex: none; margin-left: auto; padding-left: 8px; font-size: 12px; color: var(--texTer); }
+.comp-detail { display: flex; flex-direction: column; gap: 2px; padding: 0 0 10px 28px; }
+/* 整个换行：窄的时候 id 和版本不从中间断开，太长才在里面折 */
+.comp-meta { display: block; max-width: 100%; font-size: 12px; line-height: 18px; color: var(--texSec); overflow-wrap: anywhere; }
+.comp-note { font-size: 13px; line-height: 18px; color: var(--texSec); overflow-wrap: anywhere; }
+.comp-state { color: var(--texTer); }
+/* 展开后的开关：每个一行，左边名字和一句说明，右边开关（和总开关在一条竖线上），光标移入灰色填充 */
+.comp-opts { display: flex; flex-direction: column; margin-top: 6px; }
+.comp-opt { display: flex; align-items: center; gap: 16px; margin: 0 -8px 0 -8px; padding: 6px 8px; border-radius: var(--r-ctl); text-align: left; font: inherit; color: inherit; background: none; cursor: pointer; }
+.comp-opt:hover { background: var(--bacIntTra); }
+.comp-opt:active:not([aria-disabled="true"]) { background: var(--bacPre); }
+.comp-opt-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.comp-opt .comp-toggle-name { font-size: 14px; line-height: 20px; color: var(--texPri); }
+.comp-opt-hint { font-size: 13px; line-height: 18px; color: var(--texSec); overflow-wrap: anywhere; }
+.comp-opt .mi-switch { margin: 0; }
+.comp-opt[aria-disabled="true"] { cursor: default; opacity: var(--off); }
+.comp-opt[aria-disabled="true"]:hover { background: none; }
+/* 开关：设置菜单里那个（.mi-switch）；按不动的淡一些 */
+.comp-packs { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; margin: 4px 0 8px; }
+.comp-pack { position: relative; display: flex; align-items: center; gap: 8px; min-height: 64px; padding: 0 12px 0 0; border-radius: 10px; background: var(--bacIntTra); }
+.comp-pack:hover { background: var(--bacTerTra); }
+.comp-pack:has(.comp-pack-open:active), .comp-pack-add:active { background: var(--bacPre); }
+.comp-pack-open { flex: 1; min-width: 0; align-self: stretch; display: flex; align-items: center; gap: 10px; padding: 10px 0 10px 12px; border-radius: 10px 0 0 10px; text-align: left; font: inherit; color: inherit; background: none; cursor: pointer; }
+.comp-pack-icon { flex: none; display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: var(--bacPri); font-size: 18px; line-height: 1; color: var(--icoPri); }
+.comp-pack-icon svg { width: 18px; height: 18px; stroke-width: 1.25; }
+.comp-pack-words { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.comp-pack-name { font-size: 14px; line-height: 20px; font-weight: 500; color: var(--texPri); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.comp-pack-meta { display: flex; gap: 8px; min-width: 0; font-size: 12px; line-height: 16px; color: var(--texSec); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.comp-pack-author { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.comp-pack[data-off] .comp-pack-name { color: var(--texSec); }
+.comp-pack-add { justify-content: center; padding: 0 12px; font: inherit; color: var(--texSec); cursor: pointer; }
+.comp-pack-add .comp-pack-icon { width: 20px; height: 20px; background: none; color: var(--texSec); }
+.comp-pack-add .comp-pack-icon svg { width: 16px; height: 16px; stroke-width: 1.6; }
+.comp-pack-add .comp-pack-name { flex: none; font-weight: 400; color: var(--texSec); }
+.comp-pack-add[aria-expanded="true"] { background: var(--bacTerTra); }
+.comp-import { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin: 0 0 8px; }
+.comp-import-row { display: flex; align-items: center; gap: 8px; width: 100%; }
+.comp-import-row .pop-input { flex: 1; min-width: 0; }
+.comp-import-row .dialog-btn { flex: none; height: 28px; padding: 0 8px; }
+.comp-import-pick { height: 24px; margin: 0 -6px; padding: 0 6px; border-radius: var(--r-ctl); font: inherit; font-size: 13px; color: var(--texSec); background: none; cursor: pointer; }
+.comp-import-pick:hover:not(:disabled) { background: var(--bacIntTra); }
+.comp-import-pick:active:not(:disabled) { background: var(--bacPre); }
+.comp-import-error { font-size: 13px; line-height: 1.5; color: var(--btnDanTex); overflow-wrap: anywhere; }
+.comp-back { display: inline-flex; align-items: center; gap: 4px; height: 26px; margin: 0 0 6px -6px; padding: 0 8px 0 6px; border-radius: var(--r-ctl); font: inherit; font-size: 13px; color: var(--texSec); background: none; cursor: pointer; }
+.comp-back:hover { background: var(--bacIntTra); }
+.comp-back:active { background: var(--bacPre); }
+.comp-back-icon { flex: none; display: flex; width: 14px; height: 14px; }
+.comp-back-icon svg { transform: rotate(180deg); stroke-width: 1.6; }
+.comp-pack-head { display: flex; align-items: center; gap: 10px; padding: 2px 0 6px; }
+.comp-pack-view > .comp-note { margin-bottom: 6px; }
+.comp-pack-view .comp-lead { padding-top: 6px; }
+.comp-toggle { flex: none; display: flex; align-items: center; height: 24px; padding: 0; background: none; cursor: pointer; }
+.comp-toggle .mi-switch { margin: 0; }
+.comp-toggle[aria-disabled="true"] { cursor: default; opacity: var(--off); }
+
+.gallery-extension-anchor:empty,
+.gallery-extension-anchor:has(> .gallery-extension-slot:empty) { display: none; }
+.gallery-extension-slot.topbar-end { display: flex; align-items: center; gap: 6px; }
+.gallery-extension-slot.sidebar-footer { display: flex; flex-direction: column; }
+.extension-setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 0; }
+.extension-setting p { margin: 6px 0; }
+.extension-setting small { overflow-wrap: anywhere; opacity: .65; }

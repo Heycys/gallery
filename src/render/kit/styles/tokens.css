@@ -1,0 +1,337 @@
+/* The kit's values: colors (light and dark, through light-dark()), the chart series, fonts, the
+   type scale, widths and gaps, and each component's own colors. Read by every other file, and by
+   tokens.js (DocTokens) for scripts: there is no second palette. */
+
+/* Segoe UI as the system has it, its line placed on its glyphs (Windows): the same faces, nothing to
+   download, their ascent and descent rewritten so a line's ink sits in the middle of its line box, as
+   Tahoma's metrics place it; Segoe UI's own leaves room above its letters, and the
+   Chinese text, on the same baseline, sat a pixel low in a selected block's fill and a colored one's
+   background. PingFang SC stands before it in --doc-font: where the system has PingFang SC (macOS,
+   iOS, a Windows it was installed on) the whole text is set in it and this alias is not reached.
+   Where Segoe UI is absent (macOS, Linux) the stack goes on to the next family. */
+@font-face { font-family: "Doc Segoe"; src: local("Segoe UI"), local("SegoeUI"); font-weight: 400; ascent-override: 100%; descent-override: 25%; line-gap-override: 0%; }
+@font-face { font-family: "Doc Segoe"; src: local("Segoe UI Italic"), local("SegoeUI-Italic"); font-weight: 400; font-style: italic; ascent-override: 100%; descent-override: 25%; line-gap-override: 0%; }
+@font-face { font-family: "Doc Segoe"; src: local("Segoe UI Semibold"), local("SegoeUI-Semibold"); font-weight: 600; ascent-override: 100%; descent-override: 25%; line-gap-override: 0%; }
+@font-face { font-family: "Doc Segoe"; src: local("Segoe UI Semibold Italic"), local("SegoeUI-SemiboldItalic"); font-weight: 600; font-style: italic; ascent-override: 100%; descent-override: 25%; line-gap-override: 0%; }
+@font-face { font-family: "Doc Segoe"; src: local("Segoe UI Bold"), local("SegoeUI-Bold"); font-weight: 700; ascent-override: 100%; descent-override: 25%; line-gap-override: 0%; }
+@font-face { font-family: "Doc Segoe"; src: local("Segoe UI Bold Italic"), local("SegoeUI-BoldItalic"); font-weight: 700; font-style: italic; ascent-override: 100%; descent-override: 25%; line-gap-override: 0%; }
+
+:root {
+  color-scheme: light dark;
+  /* A native checkbox, radio, range or progress bar in the document's accent, not the browser's blue (an embedded
+     page is its own; a document that sets its own accent-color keeps it). */
+  accent-color: var(--doc-accent);
+  /* The page: #2d2d2d on white in light, #262626 where the platform is Apple's (below), its own pair in dark; the lines below are the text at a strength. */
+  --doc-bg: light-dark(#ffffff, #181818);
+  --doc-surface: light-dark(#ffffff, #202020);
+  /* What a card (figure.css) is filled with: the page's color where it stands, a detail card's surface in one (dialog.css). */
+  --doc-figure-ground: var(--doc-bg);
+  --doc-text: light-dark(#2d2d2d, #f3f3f3); /* the text: #2d2d2d, and #262626 on an Apple platform (the user's of 2026-11-08, below) */
+  --doc-muted: light-dark(#716e69, #a5a29c); /* small text, a quote: the family's warm grey (5.08:1 on white, 6.97:1 on #181818), a step darker than a caption */
+  /* A menu row's icon (the display menu's): the app's menus' (the workbench's --icoPri, the editor's --ge-ico), a shade darker
+     than --doc-muted, so that a menu of a page and one of the app read as one hand (2026-11-17). */
+  --doc-menu-icon: light-dark(#5c5a55, #a9a69e);
+  --doc-border: light-dark(rgb(44 44 43 / 12%), rgb(243 243 243 / 13%));
+  --doc-grid: light-dark(rgb(44 44 43 / 8%), rgb(243 243 243 / 8%));
+  --doc-accent: light-dark(#2678d8, #72adf0);
+  --doc-accent-soft: light-dark(#eaf3fd, #172a3d);
+  /* List numbers and bullets: a blue of their own (the user's #2e7cd1 of 2026-11-07, a purer blue than the palette's
+     #387dc9 that links take; in dark the same hue at the dark palette's lightness, where the palette's #5e87c9 leans
+     gray), a quiet blue beside the text. */
+  --doc-list-marker: light-dark(#2e7cd1, #5492d4);
+  --doc-success: var(--doc-series-3);
+  --doc-warning: var(--doc-series-2);
+  /* Danger takes the series' red (the fifth). */
+  --doc-danger: var(--doc-series-5);
+  --doc-info: var(--doc-series-1);
+  --doc-neutral: var(--doc-muted);
+  --doc-series-1: light-dark(#3c9bc9, #73bde0);
+  --doc-series-2: light-dark(#ed8d5a, #f2aa82);
+  --doc-series-3: light-dark(#6e9f69, #8bbd86);
+  --doc-series-4: light-dark(#927ab8, #b4a0d2);
+  --doc-series-5: light-dark(#c04848, #fc6b83);
+  --doc-series-6: light-dark(#65bdba, #89d1ce);
+  /* PingFang SC first (the user's feedback of 2026-11-06): where the system has it
+     (macOS, iOS) the whole text, Chinese, Latin and figures, is set in it, whatever the page's lang;
+     elsewhere the system's UI fonts as before: Apple's, then Segoe UI with its line on its glyphs on
+     Windows (Doc Segoe, above), then Microsoft YaHei for Chinese. */
+  --doc-font: "PingFang SC", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Doc Segoe", "Segoe UI Variable Text", "Segoe UI", "Helvetica Neue", "Microsoft YaHei", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  --doc-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "PT Mono", "Liberation Mono", monospace;
+  /* Links in the text: the palette's blue (colors.mjs, .doc-text-blue: the format bar's 蓝色) in every block, with
+     no line but under the pointer, a thin one of the same blue there (the user's of 2026-11-07). A link
+     shown with its icon and a page block (mention.css) are quieter: the muted gray on a thin gray line,
+     always shown. */
+  --doc-link: light-dark(#387dc9, #5e87c9);
+  --doc-link-line: currentColor;
+  --doc-mention: var(--doc-muted);
+  --doc-mention-line: light-dark(rgb(55 53 47 / 40%), rgb(255 255 255 / 28.2%));
+  /* Inline code: red text on a faint fill. */
+  --doc-code-inline: light-dark(#cf5148, #e8776d);
+  --doc-code-inline-fill: var(--doc-hover);
+  /* 712px: 44 characters of body text (16px) to a line of Chinese. */
+  --doc-content-max-width: 712px;
+  --doc-compact-figure-max-width: 520px;
+  --doc-page-gutter: 20px;
+  --doc-wide-gutter: clamp(12px, 2.5vw, 40px);
+  /* A detail card (dialog.css), a little smaller than the workbench's settings dialogs (写作偏好's
+     880 by 86% of the window, at most 900): its width, its height (80% of the window, at most 760px;
+     the window is the page's own, or in a workbench the workbench's, whose height the editor's
+     session gives as --doc-dialog-window-height: src/editor/page/session.mjs), the least room between
+     it and the window's sides, where a press closes it, the least room on each side of its text (the
+     reading column, centred where the card is wider), and its scrollbar's width. */
+  --doc-dialog-width: 760px;
+  --doc-dialog-height: min(calc(0.8 * var(--doc-dialog-window-height, 100dvh)), 760px);
+  --doc-dialog-margin: 24px;
+  --doc-dialog-pad: 48px;
+  --doc-dialog-scrollbar: 10px;
+  /* The gap above and below a block, one name per distinct gap (docs/render.md says which block
+     takes which). A component (a card, a table, a callout, a row of columns, a widget) and a divider
+     stand 20px from the text around them. */
+  --doc-component-gap: 20px;
+  /* A block set apart (a highlight panel and the opening summary, a code block, a Sheet frame, a quote,
+     the end of a list): 16px. */
+  --doc-block-gap: 16px;
+  /* Media blocks (an image, a bookmark, an embed) stand as far from the text around them as a line
+     of text from the next: 14px and the text's own half-leading. */
+  --doc-media-gap: 14px;
+  --doc-column-gap: 20px;
+  --doc-body-font-size: 16px;
+  --doc-body-line-height: 26px;
+  --doc-paragraph-gap: 12px; /* between two paragraphs */
+  /* Blocks that come several together stand closer, a group rather than loose panels: disclosures,
+     code blocks and formula blocks, 8px apart. */
+  --doc-group-gap: 8px;
+  /* Between the items of a list, from an item to the list it holds, from a list to one right after it. */
+  --doc-list-gap: 5px;
+  --doc-small-font-size: 13px;
+  --doc-small-line-height: 18px;
+  --doc-note-font-size: 14px;
+  --doc-note-line-height: 20px;
+  /* The report's title, above the scale of the headings in its text. */
+  --doc-title-font-size: 28px;
+  --doc-title-line-height: 36px;
+  /* Four heading levels; the fourth is body-sized, set apart by its weight. */
+  --doc-h1-font-size: 26px;
+  --doc-h1-line-height: 36px;
+  --doc-h2-font-size: 22px;
+  --doc-h2-line-height: 31px;
+  --doc-h3-font-size: 20px;
+  --doc-h3-line-height: 28px;
+  --doc-h4-font-size: 16px;
+  --doc-h4-line-height: 24px;
+  /* A card's title: 16px on 22, bold as every heading (figure.css), a step under the h3 it is written as. */
+  --doc-card-title-font-size: 16px;
+  --doc-card-title-line-height: 22px;
+  --doc-table-font-size: 15px;
+  --doc-table-line-height: 20px;
+  --doc-table-radius: 8px;
+  /* A sortable header's arrow (table.css): light where the pointer shows it, darker on the sorted column. */
+  --doc-table-sort-arrow: light-dark(rgb(55 53 47 / 28%), rgb(255 255 255 / 28%));
+  --doc-table-sort-arrow-active: light-dark(rgb(55 53 47 / 72%), rgb(255 255 255 / 72%));
+  /* The neutral fills, three steps of one warm gray, written once: under the pointer (a plain button, the
+     display button's menu while open), a row under the pointer or the keys inside a menu card (and what is
+     chosen), and pressed; and the hairline (a table's lines, a Sheet's frame, an embed's). The dark hairline
+     is a light veil, 10% (2026-11-17, the dark document at the light one's strength: 13.9% before,
+     #383836 on the page) on the page's background: on the palette's gray (#2c2c2b: a table's header cells, a
+     gray highlight block around it) or any other fill it is that much lighter, so it never vanishes into one. */
+  --doc-hover: light-dark(rgb(33 27 23 / 5%), rgb(255 255 255 / 5.5%));
+  --doc-hover-row: light-dark(rgb(42 28 0 / 7%), rgb(255 255 243 / 8.2%));
+  --doc-press: light-dark(rgb(33 27 23 / 10%), rgb(255 255 255 / 11%));
+  --doc-hairline: light-dark(#e6e5e3, rgb(255 255 240 / 10%));
+  /* A table's frame in a block with a fill of its own (table.css): the hairline as it lies on the
+     palette's gray, opaque. The frame lies over the table's body, whose fill is the page's, where the
+     veil comes out the gray of a block around it. */
+  --doc-table-frame-filled: light-dark(#e6e5e3, #41413f);
+  /* The hairline as it lies on the page, opaque: the right edge of a frame that scrolls sideways (table.css), under which the columns past it must not show through the dark veil. */
+  --doc-hairline-solid: light-dark(#e6e5e3, #2f2f2e);
+  /* The kit's controls and what floats (a design review, 2026-11-17; the workbench's and the editor's numbers):
+     a control's corners (a button, a select, a field) 8; a menu card's 14, 5 inside it, its rows' 9; a
+     detail card's shell 16. A card's shadow: its 1px outline at today's strength (never half a pixel: it
+     smears at 125%), a close shadow and a soft deep one; dark the outline and the deep one. */
+  --doc-radius-control: 8px;
+  --doc-radius-card: 14px;
+  --doc-radius-row: 9px;
+  --doc-radius-shell: 16px;
+  --doc-card-pad: 5px;
+  --doc-float-outline: light-dark(rgb(42 28 0 / 7%), #383836);
+  --doc-float-fill: light-dark(#ffffff, #252525);
+  --doc-shadow-card: 0 0 0 1px var(--doc-float-outline), 0 2px 8px light-dark(rgb(0 0 0 / 6%), transparent), 0 14px 40px light-dark(rgb(0 0 0 / 16%), rgb(0 0 0 / 50%));
+  /* Motion: a menu grows out of the corner by its trigger on this curve (it moves at once and settles), a
+     switch's knob and track on the other; a fill under the pointer comes at once and goes over 100ms. */
+  --doc-ease-out: cubic-bezier(.23, 1, .32, 1);
+  --doc-ease-sheet: cubic-bezier(.32, .72, 0, 1);
+  /* The calm blue of a control that is on (a switch, a checked box: the workbench's and the editor's too),
+     less vivid than the accent; a switch's track when off; a box's gray line, deeper under the pointer. */
+  --doc-control-blue: light-dark(#4a81d4, #4f7fcb);
+  --doc-switch-track: light-dark(rgb(0 0 0 / 16%), rgb(255 255 255 / 20%));
+  --doc-check-line: light-dark(#8e8b86, #ada9a3);
+  --doc-check-line-hover: light-dark(#5c5a55, #d3d1cb);
+  /* A flowchart's arrows and the circle behind a step's number (flowchart.css): neutral greys. */
+  --doc-flow-line: light-dark(rgb(55 53 47 / 38%), rgb(255 255 255 / 34%));
+  --doc-flow-badge: light-dark(rgb(55 53 47 / 8%), rgb(255 255 255 / 10%));
+  /* The thin scrollbars the kit draws over a table's frame (tables.js). */
+  --doc-scrollbar-thumb: light-dark(rgb(44 44 43 / 24%), rgb(243 243 243 / 26%));
+  --doc-scrollbar-thumb-active: light-dark(rgb(44 44 43 / 42%), rgb(243 243 243 / 44%));
+  /* Code blocks: their panel, monospace, toolbar and token colors (Prism's default theme's), independent of
+     chart categories. The room above and below the words of a code block's title and a disclosure's
+     (their header row: code.css, details.css), one design for the two. */
+  --doc-block-title-padding: 5px;
+  --doc-code-font: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace;
+  --doc-code-foreground: light-dark(#2c2c2b, #f0efed);
+  --doc-code-background: light-dark(rgb(66 35 3 / 3%), rgb(252 252 252 / 3%));
+  --doc-caption: light-dark(#7d7a75, #ada9a3); /* a picture's caption */
+  --doc-code-chrome: #8e8b86;
+  --doc-code-pressed: light-dark(rgb(31 35 41 / 12%), rgb(255 255 255 / 12%));
+  --doc-code-toolbar-shadow: 0 8px 12px rgb(25 25 25 / 2.7%), 0 2px 6px rgb(25 25 25 / 2.7%), 0 0 0 1px light-dark(rgb(42 28 0 / 7%), #383836);
+  --doc-code-separator: light-dark(#f0efed, #2c2c2b);
+  --doc-code-line-number: light-dark(rgb(55 53 47 / 35%), rgb(255 255 255 / 28%));
+  --doc-code-line-fold: light-dark(rgb(55 53 47 / 30%), rgb(255 255 255 / 24%)); /* fainter than the block's own arrow (chrome) */
+  --doc-code-fold-more: light-dark(rgb(55 53 47 / 8%), rgb(255 255 255 / 9%));
+  --doc-code-fold-more-hover: light-dark(rgb(55 53 47 / 14%), rgb(255 255 255 / 15%));
+  --doc-code-scrollbar: light-dark(#d3d1cb, rgb(255 255 255 / 20%));
+  /* The colors Shiki's CSS-variables theme reads (code.js; the 12 of them it has rules for). */
+  --doc-code-token-comment: light-dark(#708090, #998066);
+  --doc-code-token-string: light-dark(#669900, #bde052);
+  --doc-code-token-string-expression: var(--doc-code-token-string);
+  --doc-code-token-keyword: light-dark(#0077aa, #66a2cc);
+  --doc-code-token-function: light-dark(#dd4a68, #ecec93);
+  --doc-code-token-constant: light-dark(#990055, #d1949e);
+  --doc-code-token-parameter: var(--doc-code-foreground);
+  --doc-code-token-punctuation: light-dark(#999999, rgb(240 239 237 / 70%));
+  --doc-code-token-link: light-dark(#9a6e3a, #f5b83d);
+  --doc-code-token-inserted: var(--doc-diff-added);
+  --doc-code-token-deleted: var(--doc-diff-removed);
+  --doc-code-token-changed: var(--doc-code-token-function);
+  --doc-diff-added: light-dark(#1a7f37, #3fb950);
+  --doc-diff-removed: light-dark(#cf222e, #f85149);
+  --doc-diff-added-fill: light-dark(rgb(46 160 67 / 10%), rgb(46 160 67 / 15%));
+  --doc-diff-removed-fill: light-dark(rgb(248 81 73 / 10%), rgb(248 81 73 / 15%));
+  --doc-diff-added-strip: light-dark(rgb(46 160 67 / 55%), rgb(63 185 80 / 55%));
+  --doc-diff-removed-strip: light-dark(rgb(248 81 73 / 55%), rgb(248 81 73 / 55%));
+  --doc-chart-axis-font-size: 13px;
+  --doc-table-fill: var(--doc-bg);
+  /* The kit's tooltip (controls.css .doc-tip, runtime/tip.js), the page editor's colors: the same dark bubble in
+     both themes, its words and a dimmer second line. A card's own bubble (a heatmap's day) may take them too. */
+  --doc-tip-bg: #2c2c2b;
+  --doc-tip-text: #f0efed;
+  --doc-tip-sub: #ada9a3;
+  /* Cards (docs/render.md, Design defaults, "Cards"): a custom page's ground and the board's frame around each card
+     (board.css), and the language Gallery's own blocks draw their faces in (the pack 「Gallery 风格」, since
+     2026-11-09), which an Agent's block uses too
+     (references/pages-and-data.md). A quiet, type-led look: each card one hero (a big number, a field of
+     squares, a list), its head saying only whose it is, the rest small and gray. One accent, a calm blue,
+     on the data and on today alone; a warm orange for the sun and a flame; green only for a thing done.
+     White cards on the page's own white, set off by a hairline ring and a soft shadow; dark its own pair of
+     surfaces (a card a step lighter than the ground), never the light one inverted. */
+  --gallery-page-fill: light-dark(#ffffff, #191919);
+  --gallery-card-fill: light-dark(#ffffff, #202020);
+  --gallery-card-line: light-dark(rgb(15 15 15 / 7%), rgb(255 255 255 / 7.5%));
+  --gallery-card-radius: 12px;
+  --gallery-card-pad: 16px;
+  /* The ring (the card's line, drawn outside it so that it takes nothing of its cells), a close shadow and a soft
+     one under it, deeper in dark: each a color of light-dark(), as a shadow's offsets cannot be. */
+  --gallery-card-shadow: 0 0 0 1px var(--gallery-card-line), 0 1px 2px light-dark(rgb(15 15 15 / 3.5%), rgb(0 0 0 / 25%)), 0 4px 14px -6px light-dark(rgb(15 15 15 / 7%), transparent), 0 6px 16px -8px light-dark(transparent, rgb(0 0 0 / 50%));
+  /* Its ink, five steps: the big numbers and a greeting (strong), the words (text), a label or a unit
+     (muted), a caption or a head's quiet meta (faint), and the faintest, a separator or a day to come. */
+  --gallery-text-strong: light-dark(#1d1d1b, #f3f3f1);
+  --gallery-text: light-dark(#37352f, rgb(255 255 255 / 86%));
+  --gallery-muted: light-dark(#7a7975, rgb(255 255 255 / 55%));
+  --gallery-faint: light-dark(#a6a5a1, rgb(255 255 255 / 36%));
+  --gallery-faintest: light-dark(#d4d3cf, rgb(255 255 255 / 17%));
+  /* A line between rows, a soft gray fill (a chip, an empty day), the track a bar or a ring stands on,
+     and a row under the pointer. */
+  --gallery-hair: light-dark(rgb(55 53 47 / 9%), rgb(255 255 255 / 8%));
+  --gallery-fill: light-dark(rgb(55 53 47 / 5.5%), rgb(255 255 255 / 6%));
+  --gallery-track: light-dark(rgb(55 53 47 / 10%), rgb(255 255 255 / 10%));
+  --gallery-hover: light-dark(rgb(55 53 47 / 6%), rgb(255 255 255 / 5.5%));
+  --gallery-neutral-soft: var(--gallery-fill);
+  /* The accent: its fill (today, a bar, a day done), its ink (words in it), a pale fill behind a primary
+     button's words, a middle shade (the days before today's in a week's bars, the Agent's share) and a wash
+     (a field's focus). */
+  --gallery-accent: light-dark(#4084cf, #508fd6);
+  --gallery-accent-ink: light-dark(#336db0, #8bb8e9);
+  /* The accent as a fill under white words (today's cell, a day done, the countdown's day): the light one is the accent
+     itself (white on it 3.87:1), the dark one deeper, as --gallery-accent is the lighter
+     of the two there, tuned as an ink (white on it 3.4:1, on this 4.9:1). */
+  --gallery-accent-fill: light-dark(#4084cf, #3973b8);
+  --gallery-accent-soft: light-dark(#ebf2fa, rgb(80 143 214 / 17%));
+  --gallery-accent-mid: light-dark(#b0cbeb, #395f8d);
+  --gallery-accent-wash: light-dark(rgb(64 132 207 / 11%), rgb(80 143 214 / 18%));
+  --gallery-good: light-dark(#2f9e68, #3db37a);
+  --gallery-good-ink: light-dark(#217a4e, #74d4a3);
+  --gallery-good-soft: light-dark(#e6f4ec, rgb(61 179 122 / 16%));
+  --gallery-bad: light-dark(#c8473d, #f07d72);
+  --gallery-bad-soft: light-dark(rgb(200 71 61 / 9%), rgb(240 125 114 / 14%));
+  /* The warm one: the sun's chip by day, a streak's flame, a stale weather's sign. */
+  --gallery-warm: light-dark(#e08a12, #f2ae45);
+  --gallery-warm-soft: light-dark(#fdf1dd, rgb(242 174 69 / 15%));
+  /* A card's head: its icon in a small gray rounded square (the chip; warm or blue for the sun, a flame, the
+     moon), its title, a quiet meta text; 8px apart, the row 20px high. */
+  /* The cards' own type: Segoe UI on Windows, PingFang SC on a Mac, Microsoft YaHei for the Chinese Segoe UI
+     has not; as the system draws them (not the document's metrics-tuned alias, --doc-font's Doc Segoe). */
+  --gallery-font: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji";
+  --gallery-chip-size: 20px;
+  --gallery-chip-radius: 6px;
+  --gallery-chip-icon: 13px;
+  --gallery-title-size: 13px;
+  --gallery-title-line: 20px;
+  --gallery-meta-size: 12px;
+  /* The rows of a card's face stand this far apart: the vocabulary a block of an Agent's takes (references/pages-and-data.md);
+     Gallery's own cards set their own rows, a list 8px under its head among them. */
+  --gallery-face-gap: 8px;
+  /* The pale button inside a card (打卡, the card's own actions): its height and corners. */
+  --gallery-button-height: 30px;
+  --gallery-button-radius: 8px;
+  /* A big number: its weight and tracking, figures of one height; its unit a 13px muted word 3px after it (6px in
+     English, where the unit is a word: 6 days, not 6天; --gallery-unit-size, a share of the number, is what a
+     document's metric takes). Two sizes: the hero, a card's one main number, and the figure, a number among others. */
+  --gallery-numeral-weight: 600;
+  --gallery-numeral-tracking: -.025em;
+  --gallery-unit-size: .4em;
+  --gallery-unit-gap: 3px;
+  --gallery-unit: 13px;
+  --gallery-hero-size: 44px;
+  --gallery-figure-size: 28px;
+}
+
+/* An English unit is a word and stands further from its number, as the cards' own words do (the page's language: the UI's
+   where Gallery says it, else the page's lang). */
+:root[data-ge-language="en"],
+:root:not([data-ge-language])[lang|="en" i] { --gallery-unit-gap: 6px; }
+
+:root[data-doc-theme="light"] { color-scheme: light; }
+:root[data-doc-theme="dark"] { color-scheme: dark; }
+/* Paper is light: a reader who chose 深色 (the display menu's data-doc-theme="dark") prints dark text on white
+   all the same, as Gallery's own PDF does (src/transfer/browser.mjs). */
+@media print {
+  :root, :root[data-doc-theme] { color-scheme: light; }
+}
+
+/* The document's look (字体与布局: its doc.json's look, which the render puts on <html> as
+   data-doc-font, data-doc-size, data-doc-spacing and data-doc-measure; src/shared/document-look.mjs),
+   written here by kit-build.mjs from the values above (src/render/look-css.mjs): a rule of those
+   attributes giving the tokens their values for the serif or the mixed font (--doc-font the serif,
+   --doc-sans-font what it was; --doc-heading-font the serif), a size, a spacing and a width, in pixels,
+   and --doc-space, the factor the gaps are taken at, for a margin a stylesheet writes
+   in pixels of its own (calc(26px * var(--doc-space, 1)): a heading's, the title's). With none of
+   them, as a document without a look is, nothing here applies. */
+@kit-look;
+
+/* The text on an Apple platform (macOS, iOS, iPadOS: runtime/index.js sets data-doc-platform when the page opens, so an exported file
+   judges on its reader's machine): a shade darker, as its type is drawn thinner there; base.css smooths it. Dark is the same. */
+:root[data-doc-platform="mac"] { --doc-text: light-dark(#262626, #f3f3f3); }
+/* 衬线体: the kit's own controls (the display menu, a code block's language, a diff's counts) keep the
+   sans, --doc-font itself given it back on them, for what in them names --doc-font again (the display
+   menu's card, controls.css) takes it there. 混合体: the title and every heading in the serif, of no
+   weight (:where), so a document's own rule for its headings wins as the text's font they inherit does not. */
+:root[data-doc-font="serif"] :is(.doc-display, .doc-code-language, .doc-diff-stats) { --doc-font: var(--doc-sans-font); font-family: var(--doc-font); }
+:where(:root[data-doc-font="mixed"] :is(.doc-title, h1, h2, h3, h4)) { font-family: var(--doc-heading-font); }
+
+/* The kit's words a stylesheet shows (--doc-word-<key>: an empty code block's title), written here
+   from its table (src/render/kit/words.js, STYLE_WORDS) by kit-build.mjs: Chinese, and English where
+   Gallery says its UI is (data-ge-language="en") or, in a file of its own, the page's lang is en. */
+@kit-words;
+
+@media (max-width: 640px) {
+  :root { --doc-page-gutter: 16px; --doc-dialog-margin: 12px; --doc-dialog-pad: 16px; }
+}

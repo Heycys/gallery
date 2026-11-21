@@ -1,0 +1,97 @@
+/* 卡片块: a card holding a figure (a chart, chart.css, or a drawing of the report's own), its title
+   and caption, framed once: a 1px line, 12px corners and the ground it stands on (the page's color:
+   --doc-figure-ground, the page's background, a detail card's surface in one, dialog.css), inset at its
+   sides (data-surface="bounded", which older files write, says the same). Inside it the surface
+   (--doc-surface, which a chart's tokens and a drawing's own fills read) is that ground, as it was the
+   card's own color before 2026-11-17, so what a document draws in a card is drawn as it was. Its width and
+   plot height are sizes (sizes.css); .doc-figure--compact centers it; .doc-figure--plain takes its frame and
+   the room inside it away (the end of this file). A picture block is no card (figure.doc-image, image.css):
+   it has no frame.
+
+   Its title on top, what it holds under it, its caption under that (the user's of 2026-11-17: the caption
+   under the picture): a grid of one column laid out in that order whatever the file's (which writes the
+   caption right under the title, as files did), so no file changes. A grid's items keep their margins
+   (none collapse), so the card sets the room between its parts itself: 10px under the title, 6px over the
+   caption; the first of what it holds takes no margin above it and the last none below it (a drawing's own
+   margin there, which collapsed with the title's 12px before, would add to it now); between two of them,
+   their own. */
+
+.doc-figure {
+  --doc-surface: var(--doc-figure-ground);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  width: var(--doc-span-width, auto);
+  min-width: 0;
+  max-width: 100%;
+  margin: var(--doc-component-gap) 0;
+  padding: 14px 18px 12px;
+  border: 1px solid var(--doc-border);
+  border-radius: 12px;
+  background: var(--doc-surface);
+}
+
+.doc-figure--compact {
+  width: var(--doc-span-width, min(100%, var(--doc-compact-figure-max-width)));
+  margin-inline: auto;
+}
+
+/* A card's title (its own heading, straight in it): bold as every heading, an h2 at the h2's size and
+   tracking, an h3 (the title a card is written with) at the card title's (16px on 22, no tracking: tokens.css);
+   the headings of a drawing inside it are the drawing's. First, wherever the file has it. */
+.doc-figure > :where(h2, h3) { order: -1; margin: 0; font-weight: 700; }
+
+.doc-figure > h2 {
+  font-size: var(--doc-h2-font-size);
+  line-height: var(--doc-h2-line-height);
+  letter-spacing: -.015em;
+}
+
+.doc-figure > h3 {
+  font-size: var(--doc-card-title-font-size);
+  line-height: var(--doc-card-title-line-height);
+  letter-spacing: 0;
+}
+
+/* A card's caption: the kit's p.doc-figure-caption, or a <figcaption> of the report's own figure,
+   which the intake makes a card as it stands (natural.mjs), read the same: last, under the picture. */
+.doc-figure-caption,
+.doc-figure > :where(figcaption) {
+  order: 1;
+  margin: 6px 0 0;
+  color: var(--doc-muted);
+  font-size: var(--doc-small-font-size);
+  line-height: var(--doc-small-line-height);
+}
+
+/* The room between the parts: 10px under the title, whatever follows; a caption alone under a title 4px
+   from it. The first and the last of what the card holds (any child but its title, its caption and what
+   draws nothing) keep no margin at the card's side; weighted, as a drawing's own class may give one. */
+.doc-figure > :where(h2, h3) { margin-bottom: 10px; }
+.doc-figure > :where(h2, h3):only-child,
+.doc-figure > :where(h2, h3):has(+ :is(.doc-figure-caption, figcaption):last-child) { margin-bottom: 0; }
+.doc-figure > :where(h2, h3) + :where(.doc-figure-caption, figcaption):last-child { margin-top: 4px; }
+.doc-figure > :not(h2, h3, .doc-figure-caption, figcaption, script, style, template):not(:not(h2, h3, .doc-figure-caption, figcaption, script, style, template) ~ *) { margin-top: 0; }
+.doc-figure > :not(h2, h3, .doc-figure-caption, figcaption, script, style, template):not(:has(~ :not(h2, h3, .doc-figure-caption, figcaption, script, style, template))) { margin-bottom: 0; }
+
+@media (max-width: 760px) {
+  /* A card at the reading width. */
+  .doc-figure { width: auto; }
+}
+
+@media (max-width: 420px) {
+  .doc-figure { padding: 12px 14px 10px; }
+}
+
+/* 显示边框 off (.doc-figure--plain, the page editor's block menu, as a Sheet area's, sheets.css): no
+   frame, and the room it made inside goes with it: no line, no corners, no ground, no padding (at the
+   narrow widths too: this comes after them). Its title, what it holds and its caption stand at the
+   edges of its width, as a paragraph and a picture do; its width (the reading width, --doc-span,
+   .doc-figure--compact centering it) is as it was. The surface inside it (--doc-surface, which a chart's
+   tokens and a drawing's fills read) stays the ground it stands on, which is where it is drawn. */
+.doc-figure--plain {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}

@@ -1,0 +1,14 @@
+{
+  "id": "local/span",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "可调卡片", "en": "Resizable card" },
+  "description": { "zh": "在 2×2 到 6×4 之间按整格调大小", "en": "Resized by whole cells, from 2×2 to 6×4" },
+  "words": "ketiao span resize",
+  "parts": {
+    "body": { "at": ":scope > p", "edit": "none" }
+  },
+  "runtime": { "attrs": { ":scope": ["data-size", "data-layouts"] } },
+  "places": ["page"],
+  "card": { "w": 3, "h": 2, "min": { "w": 2, "h": 2 }, "max": { "w": 6, "h": 4 }, "resize": true }
+}

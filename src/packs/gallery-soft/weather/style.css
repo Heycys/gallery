@@ -1,0 +1,198 @@
+/* 柔光风格's weather. Every selector starts at the instance and goes down from it, so that nothing
+   here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark(): the
+   page's color scheme, which follows its theme), the sky's own colors among them (the sun, its core, a
+   cloud and its shade, rain), then the face: a faint wash of the accent from the card's top over the soft
+   card's fill; a head of a cloud's chip and the city, when at its end (fading while the grip shows); the sky's
+   picture and the temperature large, the sky's words and the range beside them; how it feels, the humidity
+   and the wind under them, each after a small picture; on a tall card the days ahead under a hairline, a
+   row each (the day, its sky, its lowest, a bar from the lowest to the highest of the five, warm toward the
+   top, today's now a ring on it, its highest); on a 2 × 2 card the temperature beside the picture over the
+   sky's words. Nothing to show: the cards' empty face. On a custom page the face is the card's whole room,
+   taken out over the card's padding and given the soft frame's (data-pad), the board's line around it;
+   where no card is (a document, as gallery block check shows it) the face frames itself at a 4 × 2 card's size. */
+[data-doc-component="gallery-soft/weather"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-accent-mid: light-dark(#afcaea, #4a6f9b);
+  --soft-track: light-dark(rgb(28 28 32 / 7%), rgb(255 255 255 / 8%));
+  --soft-cloud: light-dark(#e4e9f0, #6d7787);
+  --soft-cloud-shade: light-dark(#ccd5e0, #555e6c);
+  --soft-sun: light-dark(#f6b23c, #f2b046);
+  --soft-sun-core: light-dark(#fbc960, #f7c868);
+  --soft-rain: light-dark(#5b91d2, #7eade2);
+  --soft-range: linear-gradient(90deg, light-dark(#98c2e8, #5e8fc6), light-dark(#f5b75a, #e3a24a));
+  --soft-grip-room: 0px;
+  > .gallery-soft-weather-face {
+    --soft-pad: 20px;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 304px;
+    max-width: 100%;
+    height: 144px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-wash), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-weather-face[data-pad="s"] { --soft-pad: 18px; }
+  > .gallery-soft-weather-face[data-pad="l"] { --soft-pad: 24px; }
+  > .gallery-soft-weather-face[data-pad="xs"] { padding: 0 calc(16px - var(--soft-edge, 0px)); justify-content: center; }
+  /* The head: the cloud's chip, the city, when at its end. */
+  > .gallery-soft-weather-face > .gallery-soft-weather-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    height: 28px;
+    min-width: 0;
+    padding-inline-end: var(--soft-grip-room);
+  }
+  > .gallery-soft-weather-face > .gallery-soft-weather-head > .gallery-soft-weather-chip {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--soft-accent-soft);
+    color: var(--soft-accent);
+  }
+  > .gallery-soft-weather-face > .gallery-soft-weather-head > .gallery-soft-weather-chip > svg { display: block; width: 16px; height: 16px; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-head > .gallery-soft-weather-city { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 600; color: var(--soft-strong); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-head > .gallery-soft-weather-at {
+    flex: none;
+    margin-left: auto;
+    margin-inline-end: calc(-1 * var(--soft-grip-room));
+    font-size: 12px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+    opacity: calc(1 - var(--gallery-grip-shown, 0));
+    transition: opacity .12s ease-out;
+  }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-head { gap: 8px; height: 24px; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-head > .gallery-soft-weather-chip { width: 24px; height: 24px; border-radius: 7px; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-head > .gallery-soft-weather-chip > svg { width: 14px; height: 14px; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-head > .gallery-soft-weather-city { font-size: 13px; }
+  /* The sky's pictures, in their own colors. */
+  .gallery-soft-weather-picture { display: block; flex: none; }
+  .gallery-soft-weather-rays { stroke: var(--soft-sun); }
+  .gallery-soft-weather-sun { fill: var(--soft-sun); }
+  .gallery-soft-weather-core { fill: var(--soft-sun-core); }
+  .gallery-soft-weather-moon { fill: var(--soft-sun-core); }
+  .gallery-soft-weather-cloud { fill: var(--soft-cloud); }
+  .gallery-soft-weather-shade { fill: var(--soft-cloud-shade); }
+  .gallery-soft-weather-rain { stroke: var(--soft-rain); }
+  .gallery-soft-weather-mist { stroke: var(--soft-cloud-shade); }
+  .gallery-soft-weather-snow { fill: var(--soft-accent-mid); }
+  .gallery-soft-weather-bolt { fill: var(--soft-sun); }
+  .gallery-soft-weather-track { fill: var(--soft-track); }
+  /* Now: the picture, the temperature, the sky's words and the range. */
+  > .gallery-soft-weather-face > .gallery-soft-weather-now { display: flex; align-items: center; gap: 14px; margin-top: auto; min-width: 0; }
+  > .gallery-soft-weather-face[data-pad="l"] > .gallery-soft-weather-now { margin-top: 10px; }
+  > .gallery-soft-weather-face .gallery-soft-weather-temperature {
+    position: relative;
+    flex: none;
+    font: 700 44px/1 var(--soft-num);
+    letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--soft-strong);
+    white-space: nowrap;
+  }
+  > .gallery-soft-weather-face .gallery-soft-weather-temperature > .gallery-soft-weather-degree {
+    position: relative;
+    top: 2px;
+    margin-left: 1px;
+    font-size: 22px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0;
+    vertical-align: top;
+  }
+  > .gallery-soft-weather-face > .gallery-soft-weather-now > .gallery-soft-weather-words { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-now > .gallery-soft-weather-words > .gallery-soft-weather-sky { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 600; color: var(--soft-strong); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-now > .gallery-soft-weather-words > .gallery-soft-weather-range { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 12px/1.5 var(--soft-num); color: var(--soft-muted); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-more { display: flex; align-items: center; gap: 12px; margin: 10px 0 0; overflow: hidden; font-size: 12px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-weather-face[data-pad="l"] > .gallery-soft-weather-more { margin-top: 8px; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-more > .gallery-soft-weather-piece { display: inline-flex; align-items: center; gap: 4px; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-more > .gallery-soft-weather-piece > .gallery-soft-weather-icon { display: block; width: 13px; height: 13px; opacity: .85; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-more > .gallery-soft-weather-piece > .gallery-soft-weather-icon > svg { display: block; width: 100%; height: 100%; }
+  /* The days ahead (a tall card's). */
+  > .gallery-soft-weather-face > .gallery-soft-weather-days { display: flex; flex-direction: column; margin: auto 0 0; padding: 6px 0 0; list-style: none; box-shadow: inset 0 1px 0 var(--soft-track); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day { display: grid; grid-template-columns: 38px 22px 30px minmax(0, 1fr) 30px; align-items: center; gap: 8px; height: 24px; font-size: 12.5px; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day > .gallery-soft-weather-picture { width: 24px; height: 24px; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day > .gallery-soft-weather-weekday { color: var(--soft-text); white-space: nowrap; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day > .gallery-soft-weather-low { font-family: var(--soft-num); text-align: right; color: var(--soft-muted); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day > .gallery-soft-weather-high { font-family: var(--soft-num); font-weight: 600; color: var(--soft-strong); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day > .gallery-soft-weather-bar { position: relative; height: 5px; border-radius: 3px; background: var(--soft-track); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day > .gallery-soft-weather-bar > .gallery-soft-weather-fill { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--soft-range); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-days > .gallery-soft-weather-day > .gallery-soft-weather-bar > .gallery-soft-weather-mark { position: absolute; top: -2px; width: 9px; height: 9px; margin-left: -4.5px; border-radius: 50%; background: var(--soft-card); box-shadow: 0 0 0 2px var(--soft-strong); }
+  /* A 2 × 2 card: the temperature beside the picture, the sky's words under them. */
+  > .gallery-soft-weather-face > .gallery-soft-weather-row { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-line { margin: 8px 0 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 12px; color: var(--soft-text); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-line > .gallery-soft-weather-range { font-family: var(--soft-num); color: var(--soft-muted); }
+  /* Nothing to show: the cards' empty face. */
+  > .gallery-soft-weather-face > .gallery-soft-weather-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; flex: 1; min-height: 0; text-align: center; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-empty > .gallery-soft-weather-disc { display: grid; place-items: center; flex: none; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 50%; background: var(--soft-track); color: var(--soft-muted); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-empty > .gallery-soft-weather-disc > svg { display: block; width: 20px; height: 20px; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-empty > .gallery-soft-weather-disc > .gallery-soft-weather-picture { width: 28px; height: 28px; }
+  > .gallery-soft-weather-face > .gallery-soft-weather-empty > .gallery-soft-weather-note { margin: 0; font-size: 13px; color: var(--soft-text); }
+  > .gallery-soft-weather-face > .gallery-soft-weather-empty > .gallery-soft-weather-how { margin: 0; font-size: 12px; color: var(--soft-muted); text-wrap: pretty; }
+  /* A 2 × 2 card: a smaller disc, a line each, so that the three stand clear of the head. */
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-empty { gap: 0; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-empty > .gallery-soft-weather-disc { width: 30px; height: 30px; margin-bottom: 4px; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-empty > .gallery-soft-weather-disc > svg { width: 15px; height: 15px; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-empty > .gallery-soft-weather-disc > .gallery-soft-weather-picture { width: 22px; height: 22px; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-empty > :is(.gallery-soft-weather-note, .gallery-soft-weather-how) { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-empty > .gallery-soft-weather-note { font-size: 12.5px; line-height: 18px; }
+  > .gallery-soft-weather-face[data-pad="s"] > .gallery-soft-weather-empty > .gallery-soft-weather-how { line-height: 16px; }
+  /* A card 2 cells high and wider: the disc beside its line and what to do, which under the head have no room for a column. */
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty { display: grid; grid-template-columns: auto minmax(0, max-content); column-gap: 12px; row-gap: 2px; align-content: center; justify-content: center; text-align: left; }
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty > .gallery-soft-weather-disc { grid-row: 1 / span 2; width: 36px; height: 36px; margin: 0; }
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty > .gallery-soft-weather-disc > svg { width: 17px; height: 17px; }
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty > .gallery-soft-weather-disc > .gallery-soft-weather-picture { width: 24px; height: 24px; }
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty > :is(.gallery-soft-weather-note, .gallery-soft-weather-how) { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty > .gallery-soft-weather-note { align-self: end; }
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty > .gallery-soft-weather-how { align-self: start; }
+  > .gallery-soft-weather-face[data-pad="m"] > .gallery-soft-weather-empty > .gallery-soft-weather-note:last-child { grid-row: 1 / span 2; align-self: center; }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it; the head's end kept clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/weather"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/weather"] > .gallery-soft-weather-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}
+/* The kit's 允许访问 bar over the card (when the weather has no consent yet): below the head row of this face's padding
+   (20px and a 28px chip; 18px and 24px on a 2 × 2 card, 24px and 28px on a tall one, none of either on a card one
+   cell high) and on the face's own fill, the card's wash carried on over it (the face's wash fades from its top over
+   52% of 144px, a card's height at two cells: 2.2% of it is left 48px down, gone 27px below), so that no edge
+   shows where the wash ends. The kit's net.js carries these three onto the bar. */
+[data-doc-component="gallery-soft/weather"] {
+  --gallery-consent-top: 48px;
+  --gallery-consent-pad: 20px;
+  --gallery-consent-fill: linear-gradient(180deg, light-dark(rgb(62 122 198 / 2.2%), rgb(126 173 226 / 2.5%)), transparent 27px), var(--soft-card);
+}
+[data-doc-component="gallery-soft/weather"]:has(> .gallery-soft-weather-face[data-pad="s"]) { --gallery-consent-top: 46px; --gallery-consent-pad: 18px; }
+[data-doc-component="gallery-soft/weather"]:has(> .gallery-soft-weather-face[data-pad="l"]) { --gallery-consent-top: 52px; --gallery-consent-pad: 24px; }
+[data-doc-component="gallery-soft/weather"]:has(> .gallery-soft-weather-face[data-pad="xs"]) { --gallery-consent-top: 0px; --gallery-consent-pad: 16px; --gallery-consent-fill: var(--soft-card); }

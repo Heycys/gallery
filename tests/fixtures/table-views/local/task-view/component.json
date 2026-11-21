@@ -1,0 +1,15 @@
+{
+  "id": "local/task-view",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "任务视图", "en": "Task view" },
+  "description": { "zh": "按一列分组显示表格的行，按钮改表格", "en": "A table's rows grouped by a column, its buttons changing the table" },
+  "words": "renwushitu view board 视图 任务",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" }
+  },
+  "runtime": { "generated": [".tv-board"] },
+  "places": ["document"],
+  "needs": ["tables"],
+  "markdown": "parts"
+}

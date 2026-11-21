@@ -1,0 +1,14 @@
+{
+  "id": "local/leaky",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "漏的记账", "en": "Leaky ledger form" },
+  "description": { "zh": "记一笔的表单，导出里也显示着", "en": "A form that adds an entry, still shown where nothing is written" },
+  "words": "loudejizhang leaky",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "entries": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [".ledger-drawn"] },
+  "markdown": "parts"
+}

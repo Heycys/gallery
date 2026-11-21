@@ -1,0 +1,13 @@
+{
+  "id": "local/hello",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "问候", "en": "Hello" },
+  "description": { "zh": "一行问候，没有外框", "en": "A line of greeting, with no frame" },
+  "words": "wenhou hello",
+  "parts": {
+    "text": { "at": ":scope > p", "edit": "none" }
+  },
+  "places": ["page"],
+  "card": { "w": 6, "h": 1, "bare": true }
+}

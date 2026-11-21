@@ -1,0 +1,182 @@
+/* 柔光风格's editing heatmap. Every selector starts at the instance and goes down from it, so that nothing
+   here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark(): the page's
+   color scheme, which follows its theme), the squares' five shades of the accent among them, then the face:
+   a faint wash of the accent from the card's top over the soft card's fill; a head of a chip of nine squares and
+   编辑热力图, its quiet meta at the end (less to more, or the count and the weeks; fading while the grip
+   shows); the squares the hero, rounded, placed by the script (left, top and size), the months' names over
+   them and the weekdays' initials beside them muted; a day before the record began a faint dot, today ringed
+   in the accent, the square under the pointer ringed in the text's color with a dark tip over it saying its
+   day. On a card wider than 6 cells a column of figures beside the squares: what they count, its total large,
+   four small figures under it, and the reader's and the Agent's shares as a bar of two at its bottom (three
+   cells high, 8 × 3: the total and the first two figures alone); on a
+   narrower one less to more under the squares at their right. Nothing read: the cards' empty face. On a custom
+   page the face is the card's whole room, taken out over the card's padding and given the soft frame's (24px),
+   the board's line around it; where no card is (a document, as gallery block check shows it) the face frames
+   itself at an 8 × 4 card's size. */
+[data-doc-component="gallery-soft/heatmap"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-track: light-dark(rgb(28 28 32 / 7%), rgb(255 255 255 / 8%));
+  --soft-slot: light-dark(rgb(28 28 32 / 8.5%), rgb(255 255 255 / 9%));
+  --soft-h0: light-dark(rgb(28 28 32 / 6%), rgb(255 255 255 / 7%));
+  --soft-h1: light-dark(#d6e4f4, #253a55);
+  --soft-h2: light-dark(#a6c4e8, #3a5d88);
+  --soft-h3: light-dark(#6b9bd4, #5a8bc7);
+  --soft-h4: light-dark(#3e7ac6, #96bfea);
+  --soft-agent: light-dark(#a3c2e6, #4a6f9b);
+  --soft-grip-room: 0px;
+  > .gallery-soft-heatmap-face {
+    --soft-pad: 24px;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 624px;
+    max-width: 100%;
+    height: 304px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-wash), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-heatmap-face[data-pad="m"] { --soft-pad: 20px; }
+  > .gallery-soft-heatmap-face[data-pad="s"] { --soft-pad: 18px; }
+  /* The head: the chip of nine squares, 编辑热力图, its meta at the end. */
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-head { display: flex; align-items: center; gap: 10px; flex: none; height: 28px; min-width: 0; padding-inline-end: var(--soft-grip-room); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-head > .gallery-soft-heatmap-chip { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--soft-accent-soft); color: var(--soft-accent); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-head > .gallery-soft-heatmap-chip > svg { display: block; width: 16px; height: 16px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-head > .gallery-soft-heatmap-title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 600; color: var(--soft-strong); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-head > .gallery-soft-heatmap-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    margin-left: auto;
+    margin-inline-end: calc(-1 * var(--soft-grip-room));
+    font-size: 12px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+    opacity: calc(1 - var(--gallery-grip-shown, 0));
+    transition: opacity .12s ease-out;
+  }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-head > .gallery-soft-heatmap-meta > .gallery-soft-heatmap-count { font: 600 12px var(--soft-num); color: var(--soft-text); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-head > .gallery-soft-heatmap-meta > .gallery-soft-heatmap-dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .7; }
+  /* Less to more: five squares between its words. */
+  .gallery-soft-heatmap-legend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--soft-muted); }
+  .gallery-soft-heatmap-legend > .gallery-soft-heatmap-key { width: 11px; height: 11px; border-radius: 3px; background: var(--soft-h0); }
+  /* The figures beside the squares and the squares' room. */
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body { display: flex; gap: 28px; flex: 1; min-height: 0; margin-top: 16px; }
+  > .gallery-soft-heatmap-face[data-narrow] > .gallery-soft-heatmap-body { margin-top: 14px; }
+  > .gallery-soft-heatmap-face[data-unread] > .gallery-soft-heatmap-body { display: none; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside { display: flex; flex-direction: column; flex: none; width: 150px; min-width: 0; }
+  > .gallery-soft-heatmap-face[data-w="12"] > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside { width: 176px; }
+  > .gallery-soft-heatmap-face[data-narrow] > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside { display: none; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside .gallery-soft-heatmap-label { font-size: 12px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-note { margin: 10px 0 0; font-size: 12.5px; line-height: 1.7; color: var(--soft-text); text-wrap: pretty; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-total {
+    margin: 6px 0 0;
+    white-space: nowrap;
+    font: 700 36px/1 var(--soft-num);
+    letter-spacing: -.025em;
+    font-variant-numeric: tabular-nums;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-total > .gallery-soft-heatmap-unit { margin-left: 4px; font: 500 13px var(--soft-font); letter-spacing: 0; color: var(--soft-muted); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-figures { display: grid; grid-template-columns: auto auto; column-gap: 22px; row-gap: 3px; margin-top: 18px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-figures > .gallery-soft-heatmap-label { font-size: 11.5px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-figures > .gallery-soft-heatmap-label:nth-child(n + 5):nth-child(-n + 6) { margin-top: 10px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-figures > .gallery-soft-heatmap-value { font: 600 17px/1.2 var(--soft-num); letter-spacing: -.01em; color: var(--soft-strong); white-space: nowrap; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-figures > .gallery-soft-heatmap-value > .gallery-soft-heatmap-small { margin-left: 2px; font: 500 11.5px var(--soft-font); letter-spacing: 0; color: var(--soft-muted); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split { margin-top: auto; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-bar { display: flex; gap: 2px; height: 6px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-bar > i { border-radius: 3px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-bar > .gallery-soft-heatmap-you { background: var(--soft-accent); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-bar > .gallery-soft-heatmap-agent { flex: 1; background: var(--soft-agent); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-key-line { display: flex; justify-content: space-between; margin-top: 7px; font-size: 11.5px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-key-line > span { display: inline-flex; align-items: center; gap: 5px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-key-line > span > .gallery-soft-heatmap-swatch { width: 7px; height: 7px; border-radius: 2px; background: var(--soft-accent); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-key-line > .gallery-soft-heatmap-agent-key > .gallery-soft-heatmap-swatch { background: var(--soft-agent); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split > .gallery-soft-heatmap-key-line > span > .gallery-soft-heatmap-share { font: 600 11.5px var(--soft-num); color: var(--soft-text); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-room { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-room > .gallery-soft-heatmap-legend { align-self: flex-end; margin-top: auto; }
+  /* Three cells high (8 × 3, the user's word of 2026-11-09): the figures beside the squares the total and the
+     first two under it (the days with any, today's), no average, most or shares' bar, which the height has no room for. */
+  > .gallery-soft-heatmap-face[data-h="3"] > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-figures > :nth-child(n + 5) { display: none; }
+  > .gallery-soft-heatmap-face[data-h="3"] > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside > .gallery-soft-heatmap-split { display: none; }
+  /* Two cells high (8 × 2): the squares alone, no head, figures or legend; the months' row the first, kept out of
+     the grip's corner by the script (the probe: as wide as that corner). */
+  > .gallery-soft-heatmap-face[data-alone] > .gallery-soft-heatmap-head { display: none; }
+  > .gallery-soft-heatmap-face[data-alone] > .gallery-soft-heatmap-body { margin-top: 0; }
+  > .gallery-soft-heatmap-face[data-alone] > .gallery-soft-heatmap-body > .gallery-soft-heatmap-aside { display: none; }
+  > .gallery-soft-heatmap-face[data-alone] > .gallery-soft-heatmap-body > .gallery-soft-heatmap-room > .gallery-soft-heatmap-legend { display: none; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-grip-room { position: absolute; width: var(--soft-grip-room, 0px); height: 0; visibility: hidden; pointer-events: none; }
+  /* The squares, the months and the weekdays, placed by the script. */
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-body > .gallery-soft-heatmap-room > .gallery-soft-heatmap-grid { position: relative; flex: 1; min-height: 0; }
+  .gallery-soft-heatmap-day { position: absolute; border-radius: 5px; background: var(--soft-h0); }
+  :is(.gallery-soft-heatmap-day, .gallery-soft-heatmap-key)[data-level="1"] { background: var(--soft-h1); }
+  :is(.gallery-soft-heatmap-day, .gallery-soft-heatmap-key)[data-level="2"] { background: var(--soft-h2); }
+  :is(.gallery-soft-heatmap-day, .gallery-soft-heatmap-key)[data-level="3"] { background: var(--soft-h3); }
+  :is(.gallery-soft-heatmap-day, .gallery-soft-heatmap-key)[data-level="4"] { background: var(--soft-h4); }
+  .gallery-soft-heatmap-day.gallery-soft-heatmap-before { background: radial-gradient(circle, var(--soft-slot) 0 2px, transparent 2.5px); }
+  .gallery-soft-heatmap-day.gallery-soft-heatmap-today { box-shadow: 0 0 0 2px var(--soft-card), 0 0 0 3.5px var(--soft-accent); }
+  .gallery-soft-heatmap-day.gallery-soft-heatmap-pointed { box-shadow: 0 0 0 2px var(--soft-card), 0 0 0 3.5px var(--soft-strong); }
+  :is(.gallery-soft-heatmap-month, .gallery-soft-heatmap-row) { position: absolute; font-size: 11px; line-height: 14px; color: var(--soft-muted); white-space: nowrap; }
+  .gallery-soft-heatmap-month { top: 0; }
+  .gallery-soft-heatmap-row { left: 0; }
+  /* The tip: over the card in the top layer (a popover, else fixed), placed in the window by the script; the kit's tooltip's
+     look (controls.css .doc-tip: dark in both themes, 5px 8px, radius 6, 12px on 1.4, no arrow). */
+  .gallery-soft-heatmap-tip {
+    position: fixed;
+    inset: auto;
+    z-index: 10; /* the top layer needs none: this is where no popover is */
+    box-sizing: border-box;
+    margin: 0;
+    border: 0;
+    overflow: visible;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--doc-tip-bg);
+    color: var(--doc-tip-text);
+    font-size: 12px;
+    line-height: 1.4;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 8%), inset 0 0 0 1px rgb(255 255 255 / 5%);
+    pointer-events: none;
+  }
+  .gallery-soft-heatmap-tip[hidden] { display: none; }
+  .gallery-soft-heatmap-tip > .gallery-soft-heatmap-tip-count { font-family: var(--soft-num); font-weight: 600; }
+  .gallery-soft-heatmap-tip > :is(.gallery-soft-heatmap-tip-day, .gallery-soft-heatmap-tip-who) { color: var(--doc-tip-sub); }
+  /* Nothing read: the cards' empty face. */
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-empty { display: none; }
+  > .gallery-soft-heatmap-face[data-unread] > .gallery-soft-heatmap-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; flex: 1; min-height: 0; text-align: center; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-empty > .gallery-soft-heatmap-disc { display: grid; place-items: center; flex: none; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 50%; background: var(--soft-track); color: var(--soft-muted); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-empty > .gallery-soft-heatmap-disc > svg { display: block; width: 20px; height: 20px; }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-empty > .gallery-soft-heatmap-line { margin: 0; font-size: 13px; color: var(--soft-text); }
+  > .gallery-soft-heatmap-face > .gallery-soft-heatmap-empty > .gallery-soft-heatmap-how { margin: 0; font-size: 12px; color: var(--soft-muted); text-wrap: pretty; }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it; the head's end kept clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/heatmap"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/heatmap"] > .gallery-soft-heatmap-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}

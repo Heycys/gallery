@@ -1,0 +1,36 @@
+/* 待办事项 (a to-do list): ul.doc-todo, a list whose items each have a box where a bullet would
+   be, 16px square with 5px corners, a 1.25px gray line (--doc-check-line, the product's one checkbox of
+   2026-11-17: the workbench's and the home page's to-do card's too), its middle on the first line's, its
+   right edge 6px left of the text (as the numbers'). The page editor darkens the line under the pointer
+   (--doc-check-line-hover: src/editor/components/list/page.mjs). A checked item (li[data-checked]) has
+   it filled with the calm control blue (--doc-control-blue, a switch's when on) and a white check, and its
+   own text struck through, the line half the text's color, the text at 65%; the lists it holds keep their
+   look. The list's spacing is any list's (flow.css). The page editor checks an item with a click on its box
+   (or Ctrl+Enter); a report read elsewhere shows it as it is. */
+ul.doc-todo { list-style: none; }
+ul.doc-todo > li { position: relative; }
+ul.doc-todo > li::before {
+  content: "";
+  content: "" / var(--doc-word-todo-open);
+  position: absolute;
+  right: 100%;
+  top: calc(.5lh - 8px);
+  box-sizing: border-box;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  border: 1.25px solid var(--doc-check-line);
+  border-radius: 5px;
+}
+ul.doc-todo > li[data-checked]::before {
+  content: "" / var(--doc-word-todo-done);
+  border-color: var(--doc-control-blue);
+  background: var(--doc-control-blue) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='m3.25 8.4 3.2 3.2 6.3-7.2'/%3E%3C/svg%3E") center / 12px no-repeat;
+}
+ul.doc-todo > li[data-checked] {
+  color: color-mix(in srgb, currentColor 65%, transparent);
+  text-decoration: line-through color-mix(in srgb, currentColor 50%, transparent);
+}
+/* The lists a checked item holds: as they are (a decoration reaches every block inside its
+   element, but not an inline block). */
+ul.doc-todo > li[data-checked] > :is(ul, ol) { display: inline-block; width: 100%; vertical-align: top; color: var(--doc-text); }

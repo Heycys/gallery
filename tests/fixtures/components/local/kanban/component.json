@@ -1,0 +1,14 @@
+{
+  "id": "local/kanban",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "任务看板", "en": "Task board" },
+  "description": { "zh": "按状态分列的任务卡片，拖动卡片就改了它的状态和顺序", "en": "Task cards in columns by status: a card dragged changes both" },
+  "words": "renwukanban kanban board 看板 任务",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "tasks": { "at": ":scope > table", "edit": "data" }
+  },
+  "runtime": { "generated": [".kanban-board"], "attrs": { ":scope > table": ["hidden"] } },
+  "markdown": "parts"
+}

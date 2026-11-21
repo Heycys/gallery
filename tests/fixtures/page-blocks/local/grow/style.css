@@ -1,0 +1,3 @@
+.grow-list { margin: 0; padding: 0; list-style: none; }
+.grow-list li { box-sizing: border-box; height: 40px; line-height: 40px; }
+.grow-add { height: 28px; }

@@ -1,0 +1,20 @@
+/* 分栏: blocks side by side in columns. A .doc-columns holds 2 to 5 .doc-column, each
+   a flow of blocks like a section's. A column's width is its share of the row less the gaps
+   (--doc-column-ratio, the shares of a row adding up to 1); none written, the columns are
+   equal. Blocks in a column keep no outer margin at its top or bottom. On a narrow screen the
+   columns stack, each the row's width. */
+.doc-columns {
+  display: flex;
+  gap: var(--doc-column-gap);
+  margin-block: var(--doc-component-gap);
+}
+
+.doc-column {
+  flex: calc(100 * var(--doc-column-ratio, 1)) 1 0%;
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .doc-columns { flex-direction: column; }
+  .doc-column { flex: none; }
+}

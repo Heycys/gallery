@@ -1,0 +1,24 @@
+/* Sizes a card, table, code block or column may carry, as custom properties in its style attribute
+   (the reader sets them in the preview; an author may for a deliberate layout):
+     --doc-span          its width as a share of the width it stands in: the reading width, or
+                            its column's (.5 is half, 1 all of it; past 1 a table is that much
+                            wider and scrolls sideways in its wrapper); a picture's as a share of
+                            the reading width wherever it stands, at most the width it stands in
+                            (1: all of that), as a width in pixels would be:
+                            moved into a column it keeps its size, never wider than the column
+     --doc-chart-height  a chart card's plot height, in px
+     --doc-table-height  how tall a table's scroll area grows, in px (or none: all rows); unset,
+                            a long table of data at most 72vh or 720px, a short one or one mostly
+                            of words whole (table.css)
+     --doc-code-height   a code block's frame height, in px (on the pre or its code card):
+                            longer code scrolls inside it
+     --doc-column-ratio  a column's share of its row, less the gaps (columns.css)
+   Unset, the kit's defaults apply. A width is the block's own, never inherited by blocks inside it. */
+@property --doc-span { syntax: "*"; inherits: false; }
+@property --doc-column-ratio { syntax: "*"; inherits: false; }
+:where(.doc-figure, .doc-table-wrap, .doc-image, .doc-embed) {
+  /* Only valid while --doc-span is set, so var() fallbacks below give the defaults. */
+  --doc-span-width: calc(var(--doc-span) * 100%);
+}
+/* The reading width is the page's (100cqw: .doc-page is the one container of the kit, page.css). */
+:where(.doc-image) { --doc-span-width: min(100%, calc(var(--doc-span) * 100cqw)); }

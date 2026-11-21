@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gallery 组件目录</title>
+  <style>
+    /* 分层结构：三层，上下排列 */
+    .layers { display: grid; gap: 6px; margin-top: 12px; }
+    .layers-row { display: flex; align-items: baseline; gap: 12px; padding: 10px 14px; border-radius: 8px; background: var(--doc-accent-soft); }
+    .layers-row p { margin: 0; }
+    .layers-name { min-width: 5em; font-weight: 600; }
+    .layers-note { color: var(--doc-muted); font-size: var(--doc-small-font-size); }
+    /* 流程箭头：页面自己的 SVG */
+    .flow-arrows { display: block; width: 100%; height: auto; margin-top: 12px; }
+    .flow-arrows rect { fill: var(--doc-surface); stroke: var(--doc-border); }
+    .flow-arrows line { stroke: var(--doc-muted); stroke-width: 1.5; }
+    .flow-arrows marker path { fill: var(--doc-muted); }
+    .flow-arrows text { fill: var(--doc-text); font-family: var(--doc-font); font-size: 15px; text-anchor: middle; }
+    /* 交互图表里的按钮 */
+    .toggle-row { display: flex; gap: 8px; margin-top: 8px; }
+    .toggle-button { padding: 2px 10px; border: 1px solid var(--doc-border); border-radius: 999px; color: var(--doc-muted); background: transparent; font: inherit; font-size: var(--doc-small-font-size); }
+    .toggle-button[aria-pressed="true"] { color: var(--doc-text); border-color: var(--doc-text); }
+  </style>
+</head>
+<body>
+  <main class="doc-page" data-doc-id="component-catalog">
+    <header class="doc-header">
+      <div class="doc-icon">🧩</div>
+      <h1 class="doc-title">组件目录</h1>
+    </header>
+
+    <section class="doc-summary" aria-label="概括">
+      <p><strong>🧭 用途</strong></p>
+      <p>这份页面是 Gallery 的组件目录。每个示例都是能直接运行的真实标记：导出后文件里的样子，用来看每个组件长什么样、能做什么。</p>
+
+      <p><strong>🧩 内容分区</strong></p>
+      <ul>
+        <li><strong>正文：</strong>页面结构、标题段落与列表、行内颜色、公式、代码、提示框、高亮块、分栏、折叠块和详情卡片。</li>
+        <li><strong>图像：</strong>页面自己定义的图表类型、从表格画的图、交互的图表和示意图，以及卡片的宽度与配色。</li>
+        <li><strong>表格：</strong>自动列宽、数值对齐、固定首列的宽表和可排序的数据表。</li>
+        <li><strong>状态：</strong>保存在浏览器里的备忘录、标注和筛选，筛选、表格与从表格画的图的联动，以及分页本身。</li>
+      </ul>
+
+      <p><strong>📐 写法说明</strong></p>
+      <ul>
+        <li><strong>标记：</strong>不用照抄这里的标记。写报告时按 references/writing-html.md 写普通 HTML，导出会把它写成这样的标记；各组件的选项见组件卡片。</li>
+        <li><strong>数据：</strong>示例里的数值、名称和路径都是虚构的，只用来演示组件。</li>
+        <li><strong>结构：</strong>这里按组件分区；报告按读者的阅读任务组织，只用需要的组件。</li>
+      </ul>
+    </section>
+
+    <section class="doc-sheet-shell doc-sheet-shell--plain" data-doc-sheets="gallery" aria-label="组件分类">
+      <div class="doc-sheet-tabs" aria-label="组件分类">
+        <button class="doc-sheet-tab" type="button" data-sheet-tab="text">正文</button>
+        <button class="doc-sheet-tab" type="button" data-sheet-tab="charts">图像</button>
+        <button class="doc-sheet-tab" type="button" data-sheet-tab="tables">表格</button>
+        <button class="doc-sheet-tab" type="button" data-sheet-tab="interaction">状态</button>
+      </div>
+
+      <div data-doc-sheet="text">
+        <section class="doc-section">
+          <h2 id="text-structure">页面结构</h2>
+          <p>一份报告只有一个 <code>main.doc-page</code>：先是页眉（标题，标题上方可以放一个表情作页面图标 <code>.doc-icon</code>，标题下面最多一行小字，例如来源），然后是开头概括块，再往下是正文。正文、图表和表格共用同一个 712px 的阅读宽度，读者可以在右上角切换成全宽。</p>
+          <p>正文可以分成分区：一个分区是一个 <code>section.doc-section</code>，里面都是普通的块。标题和分割线也只是普通的块，按需要加：这一页的各节都以一个二级标题开头，除了每页的第一节，标题上方还有一条分割线（<code>&lt;hr&gt;</code>）。短报告或特殊版式也可以不分区，把正文直接写在页面或分页里。只写一个标题不会让它变成分区。</p>
+          <p>开头概括块是放在最前面的高亮块，在正文和结论定下来之后再写。它用三个以上的短名词标题分段，每段是一小段话，或几条“<strong>标题：</strong>内容”形式的列表。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-prose">标题、段落与列表</h2>
+          <p>正文用普通的语义标签，不需要额外的 class。强调用<strong>加粗</strong>；文件名、字段和短命令用行内代码，例如 <code>report.html</code>；页内链接可以指向别的章节，例如<a href="#text-math">公式</a>。</p>
+          <h3>三级标题</h3>
+          <p>章节里的小节用三级标题，再往下用四级标题。</p>
+          <h4>四级标题</h4>
+          <ul>
+            <li>保留材料里的单位、时间和比较范围。</li>
+            <li>结论之后给出可以核对的证据。
+              <ul><li>必要时写明文件名、任务 ID 或检查点。</li></ul>
+            </li>
+          </ul>
+          <ol>
+            <li>读取原始材料。</li>
+            <li>确认口径与分母。</li>
+            <li>生成并检查独立 HTML。</li>
+          </ol>
+          <p>列表的符号和编号统一画成蓝色，层级越深依次换成空心圆、方块和 a.、i.。编号列表可以用 <code>start</code> 从别的数字开始；被段落隔开后要接着编号，就写 <code>data-continue</code>。编辑时点一下编号，可以选择继续之前的编号、开始新列表或修改编号值。</p>
+          <blockquote><p>引用块保留来源的原话或定义，不当作提示框用。</p></blockquote>
+          <p>文字可以标颜色：<span class="doc-text-red">红色</span>、<span class="doc-text-green">绿色</span>、<span class="doc-text-blue">蓝色</span>，也可以加底色：<span class="doc-highlight-yellow">黄色</span>、<span class="doc-highlight-blue">蓝色</span>。颜色跟随浅色和深色主题；预览编辑器的格式条写的就是这些 class。</p>
+          <p class="doc-note">这一行是 <code>.doc-note</code>：用于简短的标注，例如单位、范围或来源，不写成解释性的段落。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-math">公式</h2>
+          <p>公式写成 LaTeX，由内置的 KaTeX 渲染。行内公式嵌在句子里，例如 <span class="doc-math-inline">\(\Delta = S_e - S_b\)</span>；行间公式单独成块，窄屏时在自己的区域里横向滚动。</p>
+          <div class="doc-math-block">
+            \[\bar{x}=\frac{\sum_{i=1}^{n} w_i x_i}{\sum_{i=1}^{n} w_i}\]
+          </div>
+          <p>单个美元符号默认不是公式分隔符，因为报告里常有 $1.84 这样的金额。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-code">代码</h2>
+          <p>代码块上方是它的标题；不写 <code>data-language</code> 时自动识别语言：标题写文件名时按扩展名，否则按代码本身判断。代码离线高亮，保留原始缩进，长行自动换行（写了 <code>doc-code--nowrap</code> 的在框内滚动）。标题栏右侧显示语言（编辑时点它可以改选），可以切换自动换行、复制代码，左侧的箭头把代码块折叠成只剩标题栏；写了 <code>doc-code--folded</code> 的代码块默认折叠。行号左侧的三角（和标题栏的折叠三角同一列）折叠一段结构（大括号里的内容、Python 的函数体、HTML 元素等），<code>data-folded-lines</code> 写上行号的那几行默认折叠。</p>
+          <div class="doc-code"><div class="doc-code-title">src/score.ts</div><pre><code>export function score(values: number[]): number {
+  // 用平均值汇总本次结果
+  if (values.length === 0) return 0;
+  return values.reduce((sum, value) =&gt; sum + value, 0) / values.length;
+}</code></pre></div>
+          <p>展示一次修改时用代码对比 <code>.doc-diff</code>：标题写文件名，改动的行以 JSON 写在里面，每行是新增、删除或不变，可以带原来的行号；标题栏自动显示增减了几行。</p>
+          <div class="doc-diff" aria-label="score.ts 代码变更">
+            <div class="doc-code-title">src/score.ts</div>
+            <script type="application/json">
+              {
+                "path": "src/score.ts",
+                "lines": [
+                  { "type": "unchanged", "content": "export function score(values: number[]): number {", "lineNumber": 1 },
+                  { "type": "removed", "content": "  return values.reduce((sum, value) => sum + value, 0);", "lineNumber": 2 },
+                  { "type": "added", "content": "  if (values.length === 0) return 0;", "lineNumber": 2 },
+                  { "type": "added", "content": "  return values.reduce((sum, value) => sum + value, 0) / values.length;", "lineNumber": 3 },
+                  { "type": "unchanged", "content": "}", "lineNumber": 4 }
+                ]
+              }
+            </script>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-callout">提示框与高亮块</h2>
+          <p>提示框只用于会改变理解的风险、状态或关键口径，一份报告里很少出现。</p>
+          <div class="doc-callout"><p><strong>口径提醒：</strong>第 3 周起每周样本从 1,280 条增加到 1,536 条，前后两段的平均值不能直接比较。</p></div>
+          <p>高亮块用底色把一组相关内容和正文分开，里面的写法和正文一样，同样少用。</p>
+          <div class="doc-panel">
+            <p><strong>本次评测范围</strong></p>
+            <ul>
+              <li>三个候选实验和一个共同基线，都取最新检查点。</li>
+              <li>每个实验 1,280 道题，题目和评分脚本相同。</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-columns">分栏</h2>
+          <p>分栏把几块内容左右并排：<code>.doc-columns</code> 里放两到五个 <code>.doc-column</code>，每一栏里的写法和正文一样，段落、列表、图表卡片和表格都可以放。各栏默认等宽；要不等宽时每一栏都写 <code>--doc-column-ratio</code>（这一栏占整行的比例，合起来是 1）。窄屏时各栏上下排列。</p>
+          <div class="doc-columns">
+            <div class="doc-column">
+              <h3>改动前</h3>
+              <ul>
+                <li>检索结果按时间排序，近期材料容易被旧材料淹没。</li>
+                <li>每次评测都要手工合并三份日志。</li>
+              </ul>
+            </div>
+            <div class="doc-column">
+              <h3>改动后</h3>
+              <ul>
+                <li>检索结果先按相关度排序，同分时再看时间。</li>
+                <li>评测脚本直接读三份日志，输出一张汇总表。</li>
+              </ul>
+            </div>
+          </div>
+          <p>在预览里，把一块拖到另一块的右侧或左边沿，两块就并排分栏；拖到某一栏的边上，就在那里加一栏。块菜单“分区与分栏”里的“分两栏”“分三栏”“分四栏”把这一块放进第一栏，旁边是新的空栏。一栏的内容全部移走后这一栏自动去掉，只剩一栏时恢复成普通正文。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-image">图片</h2>
+          <p>图片放在报告自己的文件夹里（<code>assets/</code>），写成 <code>figure.doc-image</code>：里面一张图片和一行说明（<code>&lt;figcaption&gt;</code>，没有说明时留空）。图片默认按自己的宽度居中，最宽和正文一样宽；要固定宽度时写 <code>--doc-span</code>（占正文宽度的比例），靠左或靠右加 <code>doc-image--left</code> 或 <code>doc-image--right</code>。导出的单个 HTML 文件里，图片直接嵌在文件中。</p>
+          <figure class="doc-image" style="--doc-span: 0.8">
+            <img src="assets/image-gallery-pipeline.svg" alt="报告从材料到单文件 HTML 的四个步骤">
+            <figcaption>示意图：从材料到单文件 HTML</figcaption>
+          </figure>
+          <p>在预览里，用“/”菜单里的“图片”插入：上传本地图片，或粘贴图片链接（链接里的图片会下载到报告文件夹）。鼠标移到图片上，右上角是对齐、标题、全屏和更多操作，两侧的把手拖动改宽度；截图可以直接粘贴成一张图片。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-file">文件</h2>
+          <p>原始数据、完整日志这类给读者另存的材料写成文件块：文件放在报告文件夹的 <code>assets/</code> 里，<code>figure.doc-file</code> 里一个链接（<code>download</code> 写另存时的文件名，里面是文件名和大小）和一行说明。点一下就把文件存到本地；导出的单个 HTML 文件里，文件也直接嵌在文件中。</p>
+          <figure class="doc-file">
+            <a class="doc-file-link" href="assets/file-gallery-results.csv" download="评测结果.csv"><span class="doc-file-name">评测结果.csv</span><span class="doc-file-size">89 B</span></a>
+            <figcaption>三个数据集的题数与准确率</figcaption>
+          </figure>
+          <p>在预览里，用“/”菜单里的“文件”插入：选择本地文件（最多 20 MB），或粘贴文件链接（文件会下载到报告文件夹）。直接粘贴一个不是图片的文件，也会变成文件块。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-bookmark">网页书签</h2>
+          <p>要读者去看的网页写成网页书签：一张卡片，左边是网页的标题、描述和网址，右边是网页的封面图，点开在新标签页打开。网页的图标和封面图存在报告文件夹里，导出时嵌入文件；网页本身还在网上。</p>
+          <figure class="doc-bookmark">
+            <a class="doc-bookmark-card" href="https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/figure" target="_blank" rel="noopener noreferrer"><span class="doc-bookmark-text"><span class="doc-bookmark-title">&lt;figure&gt;：可附标题内容元素 - HTML | MDN</span><span class="doc-bookmark-description">HTML &lt;figure&gt; 元素代表一段独立的内容，可能包含 &lt;figcaption&gt; 元素定义的标题。</span><span class="doc-bookmark-url"><img class="doc-bookmark-icon" src="assets/bookmark-icon-gallery.svg" alt=""><span class="doc-bookmark-href">https://developer.mozilla.org/zh-CN/docs/Web/HTML/Element/figure</span></span></span><span class="doc-bookmark-cover"><img src="assets/bookmark-cover-gallery.svg" alt=""></span></a>
+            <figcaption></figcaption>
+          </figure>
+          <p class="doc-note">图片、文件和网页书签都写成 figure。</p>
+          <p>在预览里，用“/”菜单里的“网页书签”插入：粘贴网址，点“创建书签”，预览会去读那个网页，取回标题、描述、图标和封面图。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-embed">嵌入</h2>
+          <p>要读者在报告里直接操作的网页或小工具写成嵌入：一个框里显示网页（只能是 https 网页，导出后要联网才能看到），或者报告文件夹里的 HTML、PDF 文件（导出时嵌进文件，离线也能看）。HTML 文件在隔离的框里运行，碰不到报告本身。框的高度用 <code>--doc-embed-height</code> 设定。</p>
+          <figure class="doc-embed doc-embed--file" style="--doc-embed-height: 240px">
+            <iframe class="doc-embed-frame" src="assets/embed-gallery-demo.html" sandbox="allow-scripts allow-popups allow-forms allow-modals" loading="lazy"></iframe>
+            <figcaption></figcaption>
+          </figure>
+          <p class="doc-note">上面是一个嵌入的小工具：拖动滑块，样本量跟着变。</p>
+          <p>在预览里，用“/”菜单里的“嵌入”插入：粘贴网页链接（不允许被嵌入的网页会改成网页书签），或上传 HTML、PDF 文件。拖动框底部的把手改高度。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="text-details">折叠块与详情卡片</h2>
+          <p>长 Case、完整的问答记录和代码放进折叠块。它默认收起，内容必须完整；摘要写清楚里面是什么，不写“更多”。</p>
+          <details class="doc-details">
+            <summary><span class="doc-details-summary-label">查看完整示例 Case</span></summary>
+            <div class="doc-details-content">
+              <h4>问题</h4>
+              <p>某实验得分为 51.60，共同基线为 49.80。实验相对基线提升多少分？</p>
+              <h4>标准答案</h4>
+              <p>提升 1.80 分，计算为 51.60 − 49.80 = 1.80。</p>
+              <h4>系统回答 A</h4>
+              <p>实验相对基线提升 1.80 分。</p>
+              <h4>系统回答 B</h4>
+              <p>提升约 1.8%，因为 51.6 − 49.8 = 1.8。</p>
+              <h4>问题说明</h4>
+              <p>回答 B 的数值计算正确，但单位错误：这里比较的是两个分数的差值，应表述为“1.80 分”，不能写成百分比。</p>
+            </div>
+          </details>
+          <details class="doc-details">
+            <summary><span class="doc-details-summary-label">查看这道题的评测记录 <code>case-0412.json</code></span></summary>
+            <div class="doc-details-content">
+              <div class="doc-code" data-language="json"><div class="doc-code-title">case-0412.json</div><pre><code>{
+  "case": "case-0412",
+  "question": "某实验得分为 51.60，共同基线为 49.80。实验相对基线提升多少分？",
+  "reference": "1.80 分",
+  "responses": { "A": "1.80 分", "B": "约 1.8%" },
+  "verdict": { "A": "correct", "B": "wrong-unit" }
+}</code></pre></div>
+            </div>
+          </details>
+          <details class="doc-details">
+            <summary><span class="doc-details-summary-label">查看各数据集的检查记录</span></summary>
+            <div class="doc-details-content">
+              <p>折叠块里的宽表同样按内容分配列宽，放不下时在自己的区域里横向滚动。</p>
+              <div class="doc-table-wrap">
+                <table class="doc-table" id="disclosure-wide-table">
+                  <thead>
+                    <tr><th class="doc-bold doc-highlight-gray">数据集</th><th class="doc-bold doc-highlight-gray">材料路径</th><th class="doc-bold doc-highlight-gray">数据范围</th><th class="doc-bold doc-highlight-gray">版本</th><th class="doc-bold doc-highlight-gray">样本数</th><th class="doc-bold doc-highlight-gray">字段数</th><th class="doc-bold doc-highlight-gray">覆盖率</th><th class="doc-bold doc-highlight-gray">检查状态</th><th class="doc-bold doc-highlight-gray">备注</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><th scope="row" class="doc-bold doc-highlight-gray">finance-reasoning-multidocument-long-context-v2026-08-25</th><td><code>/datasets/finance/reasoning/multidocument/long-context/validation-set.jsonl</code></td><td>金融研报与公告的多文档推理</td><td>2026.08.25</td><td>1280</td><td>46</td><td>98.7%</td><td>检查完成</td><td>保留来源定位与完整问题链路</td></tr>
+                    <tr><th scope="row" class="doc-bold doc-highlight-gray">professional-information-analysis-and-reasoning-specialized</th><td><code>/datasets/professional-information-analysis/reasoning/full-cases.jsonl</code></td><td>专业信息分析与推理完整 Case</td><td>2026.08.23</td><td>944</td><td>38</td><td>96.4%</td><td>检查完成</td><td>长名称和路径可在任意位置换行</td></tr>
+                    <tr><th scope="row" class="doc-bold doc-highlight-gray">benchmark-evidence-with-mixed-identifiers</th><td><code>https://example.invalid/datahub/benchmark/evidence/items/latest-snapshot</code></td><td>表格、代码标识符与混合字段</td><td>2026.08.20</td><td>—</td><td>29</td><td>待补充</td><td>等待来源</td><td>混合内容列保持左对齐</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </details>
+          <p>正文里某个名词的补充说明放进详情卡片：把名词写成指向卡片的链接，例如数据集 <a class="doc-dialog-trigger" href="#dialog-component-example">Atlas-Bench</a>，点开后卡片浮在页面上方。</p>
+        </section>
+      </div>
+
+      <div data-doc-sheet="charts">
+        <section class="doc-section">
+          <h2 id="charts-own">自己的图表类型</h2>
+          <p>图表是卡片里的声明：数据以 JSON 放在卡片里，类型由页面自己的脚本用 <code>DocCharts.define</code> 定义一次，同一类型可以画很多张。共享脚本负责宿主、主题颜色、宽度和卡片高度，宽度、主题或卡片高度变化时重画。每张卡片的说明行写着它的类型。</p>
+          <div class="doc-columns">
+            <div class="doc-column">
+              <figure class="doc-figure">
+                <h3>每周请求量</h3>
+                <p class="doc-figure-caption">类型 <code>bars</code> · 单位：千次</p>
+                <div data-doc-chart="bars">
+                  <script type="application/json">
+                    [
+                      { "label": "第 1 周", "value": 200 },
+                      { "label": "第 2 周", "value": 238 },
+                      { "label": "第 3 周", "value": 266 },
+                      { "label": "第 4 周", "value": 302 }
+                    ]
+                  </script>
+                </div>
+              </figure>
+            </div>
+            <div class="doc-column">
+              <figure class="doc-figure">
+                <h3>各时段 P95 延迟</h3>
+                <p class="doc-figure-caption">类型 <code>trend</code> · 虚线为 200 ms 的 SLO</p>
+                <div data-doc-chart="trend">
+                  <script type="application/json">
+                    {
+                      "unit": "ms",
+                      "points": [
+                        { "label": "09:00", "value": 162 },
+                        { "label": "12:00", "value": 171 },
+                        { "label": "15:00", "value": 218 },
+                        { "label": "18:00", "value": 194 }
+                      ],
+                      "reference": { "value": 200, "label": "SLO" }
+                    }
+                  </script>
+                </div>
+              </figure>
+            </div>
+          </div>
+          <div class="doc-columns">
+            <div class="doc-column">
+              <figure class="doc-figure" style="--doc-chart-height: 246px">
+                <h3>月度收入</h3>
+                <p class="doc-figure-caption">类型 <code>bars</code> · 卡片高度 246px · 单位：万元</p>
+                <div data-doc-chart="bars">
+                  <script type="application/json">
+                    [
+                      { "label": "一月", "value": 82 },
+                      { "label": "二月", "value": 96 },
+                      { "label": "三月", "value": 108 },
+                      { "label": "四月", "value": 116 }
+                    ]
+                  </script>
+                </div>
+              </figure>
+            </div>
+            <div class="doc-column">
+              <figure class="doc-figure">
+                <h3>各题得分分布</h3>
+                <p class="doc-figure-caption">类型 <code>score-strip</code> · 每个点是一道题 · 单位：分</p>
+                <div data-doc-chart="score-strip">
+                  <script type="application/json">
+                    [
+                      { "group": "候选 A", "score": 62 }, { "group": "候选 A", "score": 71 }, { "group": "候选 A", "score": 78 }, { "group": "候选 A", "score": 84 },
+                      { "group": "候选 B", "score": 58 }, { "group": "候选 B", "score": 66 }, { "group": "候选 B", "score": 73 }, { "group": "候选 B", "score": 80 },
+                      { "group": "共同基线", "score": 55 }, { "group": "共同基线", "score": 60 }, { "group": "共同基线", "score": 67 }, { "group": "共同基线", "score": 72 }
+                    ]
+                  </script>
+                </div>
+              </figure>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="charts-table">从表格画的图</h2>
+          <p>数据已经在表格里时，图表直接读表格：表格的外框写 <code>data-doc-chart-source="键"</code>，卡片里的图表宿主写同一个键 <code>data-doc-chart-data="键"</code>，不再写 JSON。图表类型拿到的数据是表格的行：每行一个对象，按表头的文字取值，数字读成数字。在预览里改表格里的数，图跟着重画。</p>
+          <div class="doc-table-wrap" data-doc-chart-source="channels">
+            <table class="doc-table">
+              <thead><tr><th class="doc-bold doc-highlight-gray">渠道</th><th class="doc-bold doc-highlight-gray">请求量（千次）</th></tr></thead>
+              <tbody><tr><td>开放 API</td><td>498</td></tr><tr><td>内部 Agent</td><td>482</td></tr><tr><td>批量任务</td><td>316</td></tr><tr><td>交互式查询</td><td>264</td></tr></tbody>
+            </table>
+          </div>
+          <figure class="doc-figure">
+            <h3>各渠道总请求量</h3>
+            <p class="doc-figure-caption">类型 <code>table-bars</code> · 数据是上面表格的行</p>
+            <div data-doc-chart="table-bars" data-doc-chart-data="channels"></div>
+          </figure>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="charts-part">交互的图表</h2>
+          <p>需要自己的按钮、计时器或监听器的图表，定义成部件：<code>DocCharts.define(类型, { mount })</code>。<code>mount</code> 在宿主里画出图和按钮，返回 <code>update</code>（宽度、主题或卡片高度变化时调用）；宿主离开页面时 <code>signal</code> 中止，部件挂的监听器随之移除。</p>
+          <figure class="doc-figure">
+            <h3>两个渠道的每周请求量</h3>
+            <p class="doc-figure-caption">类型 <code>series-toggle</code> · 点按钮只看一个渠道 · 单位：千次</p>
+            <div data-doc-chart="series-toggle">
+              <script type="application/json">
+                {
+                  "labels": ["第 1 周", "第 2 周", "第 3 周", "第 4 周"],
+                  "series": [
+                    { "name": "API", "values": [120, 142, 161, 174] },
+                    { "name": "Agent", "values": [80, 96, 105, 128] }
+                  ]
+                }
+              </script>
+            </div>
+          </figure>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="charts-figures">示意图</h2>
+          <p>不是数据图的图（结构、流程、时间线）用页面自己的 HTML、CSS 或 SVG 画，放进卡片 <code>figure.doc-figure</code>：卡片负责边框和底色，里面不再画第二层外框。SVG 的 <code>&lt;defs&gt;</code> 里的 id 带上这张图自己的前缀，两张图不重名。</p>
+          <div class="doc-columns">
+            <div class="doc-column">
+              <figure class="doc-figure">
+                <h3>分层结构</h3>
+                <p class="doc-figure-caption">页面自己的 HTML 和 CSS</p>
+                <div class="layers">
+                  <div class="layers-row"><p class="layers-name">报告</p><p class="layers-note">读者打开的页面</p></div>
+                  <div class="layers-row"><p class="layers-name">组件</p><p class="layers-note">表格、图表、卡片</p></div>
+                  <div class="layers-row"><p class="layers-name">共享脚本</p><p class="layers-note">绘制、主题和状态</p></div>
+                </div>
+              </figure>
+            </div>
+            <div class="doc-column">
+              <figure class="doc-figure">
+                <h3>流程箭头</h3>
+                <p class="doc-figure-caption">页面自己的 SVG · 箭头是 <code>&lt;marker&gt;</code></p>
+                <svg class="flow-arrows" viewBox="0 0 300 96" role="img" aria-label="写作、检查、导出三步">
+                  <defs>
+                    <marker id="catalog-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z"></path></marker>
+                  </defs>
+                  <rect x="4" y="28" width="72" height="40" rx="8"></rect>
+                  <rect x="114" y="28" width="72" height="40" rx="8"></rect>
+                  <rect x="224" y="28" width="72" height="40" rx="8"></rect>
+                  <line x1="78" y1="48" x2="110" y2="48" marker-end="url(#catalog-arrow)"></line>
+                  <line x1="188" y1="48" x2="220" y2="48" marker-end="url(#catalog-arrow)"></line>
+                  <text x="40" y="53">写作</text>
+                  <text x="150" y="53">检查</text>
+                  <text x="260" y="53">导出</text>
+                </svg>
+              </figure>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="charts-size">卡片宽度与配色</h2>
+          <p>几张卡片并排时放进分栏，一栏一张：两张分两栏，三张分三栏，窄屏时上下排列。只有一张简单的图时用 <code>.doc-figure--compact</code>，它单独占一行并居中。读者在预览里拖动卡片边缘改宽度和高度，写进卡片的 <code>--doc-span</code> 和 <code>--doc-chart-height</code>；拖动栏间的竖线改栏宽，写进各栏的 <code>--doc-column-ratio</code>。</p>
+          <figure class="doc-figure doc-figure--compact" style="--doc-span: 0.75; --doc-chart-height: 200px">
+            <h3>每日活跃用户</h3>
+            <p class="doc-figure-caption"><code>.doc-figure--compact</code> · 类型 <code>trend</code></p>
+            <div data-doc-chart="trend">
+              <script type="application/json">
+                {
+                  "unit": "人",
+                  "points": [
+                    { "label": "周一", "value": 1820 }, { "label": "周二", "value": 1940 }, { "label": "周三", "value": 2010 }, { "label": "周四", "value": 1985 },
+                    { "label": "周五", "value": 2130 }, { "label": "周六", "value": 1640 }, { "label": "周日", "value": 1580 }
+                  ]
+                }
+              </script>
+            </div>
+          </figure>
+          <p>系列颜色按顺序取默认的六色序列，浅色和深色主题各有一套。图表类型从 <code>tokens.series</code> 取这些颜色，不写死色值。</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table" data-doc-table-static>
+              <thead><tr><th class="doc-bold doc-highlight-gray">系列</th><th class="doc-bold doc-highlight-gray">浅色主题</th><th class="doc-bold doc-highlight-gray">深色主题</th></tr></thead>
+              <tbody><tr><td>Series 1</td><td>#3C9BC9</td><td>#73BDE0</td></tr><tr><td>Series 2</td><td>#ED8D5A</td><td>#F2AA82</td></tr><tr><td>Series 3</td><td>#6E9F69</td><td>#447542</td></tr><tr><td>Series 4</td><td>#927AB8</td><td>#B4A0D2</td></tr><tr><td>Series 5</td><td>#C04848</td><td>#FC6B83</td></tr><tr><td>Series 6</td><td>#65BDBA</td><td>#89D1CE</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div data-doc-sheet="tables">
+        <section class="doc-section">
+          <h2 id="tables-basic">普通表格</h2>
+          <p>表格只写表头和单元格，放在 <code>.doc-table-wrap</code> 里；不写列宽，也不写对齐用的 class。共享脚本按内容测量列宽，识别纯数字列，让它居中并可以排序。</p>
+          <h3>自动列宽</h3>
+          <p>模型和分数保持单行，路径和说明按内容宽度分配空间、平衡换行；页面宽度变化时各列比例会重新分配。</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table" id="auto-width-table">
+              <thead><tr><th class="doc-bold doc-highlight-gray">Model</th><th class="doc-bold doc-highlight-gray">Score</th><th class="doc-bold doc-highlight-gray">Source</th><th class="doc-bold doc-highlight-gray">Description</th></tr></thead>
+              <tbody>
+                <tr><td>Model A</td><td>92.5</td><td>/datasets/finance/benchmark-v1/results.jsonl</td><td>结合多份材料中的证据回答问题，并完整保留推理过程，方便读者核对结论与来源。</td></tr>
+                <tr><td>Model B</td><td>88.0</td><td>https://example.invalid/benchmarks/analysis/latest</td><td>识别长文档里的关键信息，综合不同章节的数据进行比较，说明差异及其适用范围。</td></tr>
+                <tr><td>Model C</td><td>90.2</td><td>/datasets/reasoning/validation-set.jsonl</td><td>分析表格与正文之间的关系，保留原始单位和统计口径，并给出能够追溯到材料的回答。</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>结果表</h3>
+          <p>四列及以下的短表按自然宽度靠左显示，五列及以上铺满阅读宽度。表格上方用一行小字写范围和单位：在小字里按 Tab，后面的字放到这一行的右端。</p>
+          <p class="doc-note">范围：四个实验 · 最新检查点<span class="doc-tab">单位：分</span></p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th class="doc-bold doc-highlight-gray">实验</th><th class="doc-bold doc-highlight-gray">训练说明</th><th class="doc-bold doc-highlight-gray">综合得分</th><th class="doc-bold doc-highlight-gray">相对基线</th><th class="doc-bold doc-highlight-gray">样本数</th></tr></thead>
+              <tbody>
+                <tr><td>候选 A</td><td>增加专业资料</td><td>49.80</td><td>+2.60</td><td>1,280</td></tr>
+                <tr><td>候选 B</td><td>增加结构化数据</td><td>48.90</td><td>+1.70</td><td>1,280</td></tr>
+                <tr><td>候选 C</td><td>调整自然配比</td><td>47.90</td><td>+0.70</td><td>1,280</td></tr>
+                <tr><td>共同基线</td><td>统一比较基准</td><td>47.20</td><td>0.00</td><td>1,280</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <h3>数值组合</h3>
+          <p>斜线分隔的两组数值仍算纯数值，字段和单元格居中；含普通文字的列左对齐。</p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead><tr><th class="doc-bold doc-highlight-gray">统计范围</th><th class="doc-bold doc-highlight-gray">通过 / 未通过</th><th class="doc-bold doc-highlight-gray">召回率 / 精确率</th></tr></thead>
+              <tbody>
+                <tr><td>验证集</td><td>95 / 42</td><td>114.91% / 50.56%</td></tr>
+                <tr><td>测试集</td><td>88 / 37</td><td>96.70% / 48.20%</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="tables-wide">宽表与固定首列</h2>
+          <p>放不下的宽表在自己的区域里横向滚动，不压缩文字。打开标题列（每一行的第一格是行标题），实验名称固定在左侧，读者横向滚动时仍知道每行是谁。需要突出某一行时，给这一行的单元格设底色，例如这里的候选 A。</p>
+          <p class="doc-note">范围：六个实验 · 十八个指标<span class="doc-tab">横向滚动 · 标题列固定</span></p>
+          <div class="doc-table-wrap">
+            <table class="doc-table" id="wide-matrix-table">
+              <thead>
+                <tr><th class="doc-bold doc-highlight-gray">实验</th><th class="doc-bold doc-highlight-gray">专业知识</th><th class="doc-bold doc-highlight-gray">基础知识</th><th class="doc-bold doc-highlight-gray">语言理解</th><th class="doc-bold doc-highlight-gray">数学</th><th class="doc-bold doc-highlight-gray">推理</th><th class="doc-bold doc-highlight-gray">代码</th><th class="doc-bold doc-highlight-gray">金融综合</th><th class="doc-bold doc-highlight-gray">金融知识</th><th class="doc-bold doc-highlight-gray">金融推理</th><th class="doc-bold doc-highlight-gray">金融计算</th><th class="doc-bold doc-highlight-gray">金融长窗口</th><th class="doc-bold doc-highlight-gray">长上下文检索</th><th class="doc-bold doc-highlight-gray">多文档推理</th><th class="doc-bold doc-highlight-gray">表格理解</th><th class="doc-bold doc-highlight-gray">Agent 执行</th><th class="doc-bold doc-highlight-gray">事实核验</th><th class="doc-bold doc-highlight-gray">成本效率</th><th class="doc-bold doc-highlight-gray">宏平均</th></tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row" class="doc-bold doc-highlight-blue">候选 A</th><td class="doc-highlight-blue">51.2</td><td class="doc-highlight-blue">47.8</td><td class="doc-highlight-blue">76.4</td><td class="doc-highlight-blue">54.7</td><td class="doc-highlight-blue">60.5</td><td class="doc-highlight-blue">53.8</td><td class="doc-highlight-blue">51.6</td><td class="doc-highlight-blue">54.2</td><td class="doc-highlight-blue">49.7</td><td class="doc-highlight-blue">52.3</td><td class="doc-highlight-blue">16.5</td><td class="doc-highlight-blue">61.8</td><td class="doc-highlight-blue">58.4</td><td class="doc-highlight-blue">63.2</td><td class="doc-highlight-blue">55.7</td><td class="doc-highlight-blue">69.1</td><td class="doc-highlight-blue">72.4</td><td class="doc-highlight-blue">57.9</td></tr>
+                <tr><th scope="row" class="doc-bold doc-highlight-gray">候选 B</th><td>49.9</td><td>46.8</td><td>75.6</td><td>52.1</td><td>59.8</td><td>50.7</td><td>50.8</td><td>53.1</td><td>48.9</td><td>51.7</td><td>16.1</td><td>60.4</td><td>57.9</td><td>61.8</td><td>54.2</td><td>67.8</td><td>75.1</td><td>57.3</td></tr>
+                <tr><th scope="row" class="doc-bold doc-highlight-gray">候选 C</th><td>48.7</td><td>45.9</td><td>74.8</td><td>50.6</td><td>59.1</td><td>49.5</td><td>49.9</td><td>52.6</td><td>48.1</td><td>50.4</td><td>15.8</td><td>59.6</td><td>56.8</td><td>60.9</td><td>53.5</td><td>66.9</td><td>73.8</td><td>56.5</td></tr>
+                <tr><th scope="row" class="doc-bold doc-highlight-gray">网页来源</th><td>47.9</td><td>45.4</td><td>73.9</td><td>49.8</td><td>58.7</td><td>48.6</td><td>50.1</td><td>51.8</td><td>47.6</td><td>51.0</td><td>15.4</td><td>58.9</td><td>55.7</td><td>59.8</td><td>52.6</td><td>65.7</td><td>74.6</td><td>55.9</td></tr>
+                <tr><th scope="row" class="doc-bold doc-highlight-gray">研报来源</th><td>48.2</td><td>46.1</td><td>74.5</td><td>49.2</td><td>58.9</td><td>48.0</td><td>51.4</td><td>54.0</td><td>49.3</td><td>52.0</td><td>16.4</td><td>59.2</td><td>57.1</td><td>61.4</td><td>54.8</td><td>67.2</td><td>70.9</td><td>56.6</td></tr>
+                <tr><th scope="row" class="doc-bold doc-highlight-gray">共同基线</th><td>46.8</td><td>44.7</td><td>72.9</td><td>47.5</td><td>57.8</td><td>46.2</td><td>48.7</td><td>50.9</td><td>46.8</td><td>49.6</td><td>14.9</td><td>57.1</td><td>54.6</td><td>58.7</td><td>51.3</td><td>64.2</td><td>71.6</td><td>54.8</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="tables-sort">排序</h2>
+          <p>纯数字列自动可以排序；点击表头切换方向，空值总在最后，相同的值保持原来的顺序。其余的用属性说明：<code>data-sort-type="text"</code> 让文本列也能排序，<code>data-sort-default</code> 设打开时的排序，<code>data-sort-value</code> 给格式化过的单元格一个数值，<code>data-sort-ignore</code> 让某列不参与排序，<code>data-sort-rank</code> 的列在排序后重新编号。行序本身就是信息（时间线、步骤、排名）、读者排序会造成误解时，在表格上写 <code>data-doc-table-static</code>，读者就不能排序。</p>
+          <p class="doc-note">七个可排序字段<span class="doc-tab">打开时按综合得分降序</span></p>
+          <div class="doc-table-wrap">
+            <table class="doc-table">
+              <thead>
+                <tr>
+                  <th class="doc-bold doc-highlight-gray" data-sort-ignore>排名</th>
+                  <th class="doc-bold doc-highlight-gray" data-sort-type="text" data-sort-key="model">模型</th>
+                  <th class="doc-bold doc-highlight-gray" data-sort-type="text" data-sort-key="provider">提供方</th>
+                  <th class="doc-bold doc-highlight-gray" data-sort-key="overall" data-sort-default="desc">综合得分</th>
+                  <th class="doc-bold doc-highlight-gray" data-sort-key="exact-match">Exact Match</th>
+                  <th class="doc-bold doc-highlight-gray" data-sort-key="pass-at-1">Pass@1</th>
+                  <th class="doc-bold doc-highlight-gray" data-sort-key="tokens">平均 Tokens</th>
+                  <th class="doc-bold doc-highlight-gray" data-sort-key="cost">成本 / 题</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td data-sort-rank>1</td><td>Model Aurora</td><td>Provider A</td><td>88.7</td><td>74.1%</td><td>82.3%</td><td data-sort-value="18420">18,420</td><td data-sort-value="1.84">$1.84</td></tr>
+                <tr><td data-sort-rank>2</td><td>Model Birch</td><td>Provider B</td><td>86.9</td><td>72.8%</td><td>80.6%</td><td data-sort-value="14210">14,210</td><td data-sort-value="1.26">$1.26</td></tr>
+                <tr><td data-sort-rank>3</td><td>Model Cinder</td><td>Provider C</td><td>84.5</td><td>70.4%</td><td>79.2%</td><td data-sort-value="22190">22,190</td><td data-sort-value="2.41">$2.41</td></tr>
+                <tr><td data-sort-rank>4</td><td>Model Delta</td><td>Provider A</td><td>82.8</td><td>68.7%</td><td>76.4%</td><td data-sort-value="11980">11,980</td><td data-sort-value="0.92">$0.92</td></tr>
+                <tr><td data-sort-rank>5</td><td>Model Elm</td><td>Open Model</td><td>80.6</td><td>66.2%</td><td>74.8%</td><td data-sort-value="16340">16,340</td><td data-sort-value="">—</td></tr>
+                <tr><td data-sort-rank>6</td><td>Model Fjord</td><td>Provider D</td><td>78.9</td><td>65.3%</td><td>71.7%</td><td data-sort-value="9870">9,870</td><td data-sort-value="0.61">$0.61</td></tr>
+                <tr><td data-sort-rank>7</td><td>Model Grove</td><td>Open Model</td><td>76.4</td><td>61.9%</td><td>69.5%</td><td data-sort-value="12880">12,880</td><td data-sort-value="">—</td></tr>
+                <tr><td data-sort-rank>8</td><td>Model Haze</td><td>Provider B</td><td>75.8</td><td>61.1%</td><td>68.8%</td><td data-sort-value="13760">13,760</td><td data-sort-value="1.08">$1.08</td></tr>
+                <tr><td data-sort-rank>9</td><td>Model Iris</td><td>Provider E</td><td>74.9</td><td>60.4%</td><td>67.9%</td><td data-sort-value="10840">10,840</td><td data-sort-value="0.74">$0.74</td></tr>
+                <tr><td data-sort-rank>10</td><td>Model Juniper</td><td>Open Model</td><td>73.7</td><td>59.8%</td><td>66.5%</td><td data-sort-value="17120">17,120</td><td data-sort-value="">—</td></tr>
+                <tr><td data-sort-rank>11</td><td>Model Kestrel</td><td>Provider A</td><td>72.8</td><td>58.6%</td><td>65.7%</td><td data-sort-value="12460">12,460</td><td data-sort-value="0.88">$0.88</td></tr>
+                <tr><td data-sort-rank>12</td><td>Model Lumen</td><td>Provider C</td><td>71.9</td><td>57.9%</td><td>64.8%</td><td data-sort-value="19680">19,680</td><td data-sort-value="1.72">$1.72</td></tr>
+                <tr><td data-sort-rank>13</td><td>Model Morrow</td><td>Provider D</td><td>70.6</td><td>56.8%</td><td>63.6%</td><td data-sort-value="9350">9,350</td><td data-sort-value="0.57">$0.57</td></tr>
+                <tr><td data-sort-rank>14</td><td>Model Nimbus</td><td>Open Model</td><td>69.8</td><td>55.9%</td><td>62.4%</td><td data-sort-value="15330">15,330</td><td data-sort-value="">—</td></tr>
+                <tr><td data-sort-rank>15</td><td>Model Onyx</td><td>Provider E</td><td>68.5</td><td>54.7%</td><td>61.2%</td><td data-sort-value="11640">11,640</td><td data-sort-value="0.81">$0.81</td></tr>
+                <tr><td data-sort-rank>16</td><td>Model Prairie</td><td>Provider B</td><td>67.4</td><td>53.8%</td><td>60.1%</td><td data-sort-value="14490">14,490</td><td data-sort-value="1.17">$1.17</td></tr>
+                <tr><td data-sort-rank>17</td><td>Model Quartz</td><td>Provider C</td><td>66.2</td><td>52.6%</td><td>58.9%</td><td data-sort-value="18370">18,370</td><td data-sort-value="1.58">$1.58</td></tr>
+                <tr><td data-sort-rank>18</td><td>Model Rowan</td><td>Provider A</td><td>65.1</td><td>51.7%</td><td>57.6%</td><td data-sort-value="10220">10,220</td><td data-sort-value="0.69">$0.69</td></tr>
+                <tr><td data-sort-rank>19</td><td>Model Solace</td><td>Open Model</td><td>63.8</td><td>50.3%</td><td>56.4%</td><td data-sort-value="16810">16,810</td><td data-sort-value="">—</td></tr>
+                <tr><td data-sort-rank>20</td><td>Model Timber</td><td>Provider D</td><td>62.7</td><td>49.6%</td><td>55.2%</td><td data-sort-value="8750">8,750</td><td data-sort-value="0.49">$0.49</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <div data-doc-sheet="interaction">
+        <section class="doc-section">
+          <h2 id="interaction-state">浏览器里的阅读状态</h2>
+          <p>读者在页面上留下的东西（备忘录、筛选）用 <code>data-doc-bind="键"</code> 声明，不需要脚本：控件的值写进这个键，键的值显示在控件上；<code>data-doc-show="键:值"</code> 的元素只在键是这个值（或者为空）时显示。这些键自动保存在当前浏览器里，每份报告各存各的，也写进“导出当前视图副本”；带 <code>data-doc-transient</code> 的键只在当前页面有效，重新打开时回到默认。</p>
+          <div class="doc-columns">
+            <div class="doc-column">
+              <h3>备忘录与临时输入</h3>
+              <div class="doc-state-fields">
+                <label for="gallery-memo">备忘录</label>
+                <textarea class="doc-state-field" id="gallery-memo" data-doc-bind="memo" rows="4" placeholder="写一条备忘录…"></textarea>
+                <label for="gallery-temp-input">临时输入</label>
+                <input class="doc-state-field" id="gallery-temp-input" data-doc-bind="temporaryInput" data-doc-transient placeholder="例如：下一步检查红色系列">
+              </div>
+              <p class="doc-note">备忘录自动保存在当前浏览器里；临时输入重新打开时清空。</p>
+            </div>
+            <div class="doc-column">
+              <h3>筛选</h3>
+              <div class="doc-filter">
+                <div class="doc-filter-row" role="group" aria-label="状态筛选">
+                  <button class="doc-filter-button" type="button" data-doc-bind="filter" data-doc-transient value="" aria-pressed="true">全部</button>
+                  <button class="doc-filter-button" type="button" data-doc-bind="filter" data-doc-transient value="review">待复核</button>
+                  <button class="doc-filter-button" type="button" data-doc-bind="filter" data-doc-transient value="done">已完成</button>
+                </div>
+                <ul class="doc-state-list">
+                  <li data-doc-show="filter:review">图表：检查坐标轴文字</li>
+                  <li data-doc-show="filter:done">示意图：箭头指向正确</li>
+                  <li data-doc-show="filter:review">导出文件：确认离线打开</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          <p>每一组的标题是普通标题块，控件是整体块：输入框一块，筛选按钮和它筛选的结果合成一个筛选块（<code>.doc-filter</code>），在预览里整块移动，里面的写法由报告决定。</p>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="interaction-linked">图表与表格联动</h2>
+          <p>筛选和表格用同一个键联动，不需要脚本：下拉框写 <code>data-doc-bind="series"</code>，表格的每一行写 <code>data-doc-show="series:系列"</code>，选一个系列，表格只留它那一行。左边的图从这张表格画（<code>data-doc-chart-data</code>），在预览里改表格里的数，图跟着重画。表格的排序也可以绑定到一个键（<code>data-doc-bind</code> 写在表格上）。</p>
+          <div class="doc-state-fields">
+            <label for="linked-filter">系列</label>
+            <select id="linked-filter" class="doc-state-field" data-doc-bind="series" data-doc-transient><option value="">全部</option><option value="api">API</option><option value="agent">Agent</option></select>
+          </div>
+          <div class="doc-columns">
+            <div class="doc-column">
+              <figure class="doc-figure"><h3>按周请求量</h3><div data-doc-chart="table-bars" data-doc-chart-data="weekly"></div></figure>
+            </div>
+            <div class="doc-column">
+              <div class="doc-table-wrap" data-doc-chart-source="weekly"><table class="doc-table" data-doc-bind="linkedSort" data-doc-transient><thead><tr><th class="doc-bold doc-highlight-gray">系列</th><th class="doc-bold doc-highlight-gray">合计</th></tr></thead><tbody><tr data-doc-show="series:api"><td>API</td><td>262</td></tr><tr data-doc-show="series:agent"><td>Agent</td><td>176</td></tr></tbody></table></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="doc-section">
+          <hr>
+          <h2 id="interaction-sheets">分页</h2>
+          <p>这一页的四个分页就是 Sheet 组件：每个分页标签对应一个面板，面板是标签栏的兄弟元素，标签和面板用同一个键配对。分页区自己启动，不需要脚本；选中的分页按它的名字（<code>data-doc-sheets="gallery"</code>）记在当前浏览器里，重新打开时回到上次看的那一页。标签栏滚出视口后，右侧会出现一列竖向的标签。</p>
+        </section>
+      </div>
+    </section>
+
+    <p></p>
+
+    <dialog class="doc-dialog" id="dialog-component-example">
+      <div class="doc-dialog-panel">
+        <div class="doc-dialog-content">
+          <h3>Atlas-Bench 详情</h3>
+          <p><strong>Atlas-Bench</strong> 是本页使用的虚构数据集名称。详情卡片里的写法和正文一样，段落、表格、公式和代码都可以放。</p>
+          <h3>检查记录</h3>
+          <div class="doc-table-wrap">
+            <table class="doc-table" data-doc-table-static>
+              <thead><tr><th class="doc-bold doc-highlight-gray">阶段</th><th class="doc-bold doc-highlight-gray">检查内容</th><th class="doc-bold doc-highlight-gray">状态</th></tr></thead>
+              <tbody>
+                <tr><td>材料读取</td><td>确认来源、版本和数据范围</td><td>完成</td></tr>
+                <tr><td>内容组织</td><td>保留大纲、表格和完整 Case</td><td>完成</td></tr>
+                <tr><td>可视化</td><td>选择能准确表达关系的组件</td><td>完成</td></tr>
+                <tr><td>响应式</td><td>检查桌面、平板和手机宽度</td><td>完成</td></tr>
+                <tr><td>独立导出</td><td>确认没有外部脚本和样式</td><td>完成</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>卡片高度随内容变化；内容比屏幕高时卡片里面滚动，页面不动。按 Esc 或点卡片外的区域都能关闭，关闭后焦点回到打开它的链接或按钮。</p>
+        </div>
+      </div>
+    </dialog>
+  </main>
+
+  <script>
+    // ---------- 图表：报告自己的图表类型 ----------
+    // 每个类型定义一次；声明为这个类型的每张图按自己的数据绘制，宽度、主题或卡片高度变化时重画。
+    // 坐标轴放在 class="axis" 的分组里，取共享脚本的坐标轴样式；颜色取自 tokens。
+
+    // 柱形：数据是 [{ label, value }]。
+    DocCharts.define("bars", ({ host, data, tokens, width, height }) => {
+      /** @type {Array<{ label: string, value: number }>} */
+      const rows = data;
+      drawBars(host, rows, { tokens, width, height, label: "柱形图" });
+    });
+
+    // 从表格画的柱形：数据是表格的行，第一列是名称，第二列是数值。表格改了，共享脚本会再画一次。
+    DocCharts.define("table-bars", ({ host, data, tokens, width, height }) => {
+      /** @type {DocTableRows} */
+      const table = data;
+      const [name, value] = table.columns;
+      const rows = table.flatMap((row) => (typeof row[value] === "number" ? [{ label: String(row[name] ?? ""), value: row[value] }] : []));
+      drawBars(host, rows, { tokens, width, height, label: `${value}，按${name}` });
+    });
+
+    /**
+     * @param {HTMLElement} host
+     * @param {Array<{ label: string, value: number }>} rows
+     * @param {{ tokens: ReturnType<typeof DocTokens.read>, width: number, height: number | null, label: string }} options
+     */
+    function drawBars(host, rows, { tokens, width: shown, height, label }) {
+      const width = Math.max(shown, 280); // 在隐藏的分页里宽度是 0：先按 280 画，显示出来时共享脚本会重画
+      const svg = d3.select(host).append("svg").attr("role", "img").attr("aria-label", label);
+      const format = d3.format(",");
+      // 窄的时候横着画：名称在左边一行一个，不会挤在一起。
+      if (width < 520) {
+        const plot = height ?? Math.max(160, rows.length * 36 + 30);
+        const margin = { top: 6, right: 44, bottom: 24, left: 88 };
+        const x = d3.scaleLinear([0, d3.max(rows, (row) => row.value) ?? 0], [margin.left, width - margin.right]).nice();
+        const y = d3.scaleBand(rows.map((row) => row.label), [margin.top, plot - margin.bottom]).padding(0.3);
+        svg.attr("width", width).attr("height", plot);
+        svg.append("g").attr("class", "axis").attr("transform", `translate(0,${plot - margin.bottom})`).call(d3.axisBottom(x).ticks(3));
+        svg.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).tickSizeOuter(0));
+        svg.append("g").selectAll("rect").data(rows).join("rect")
+          .attr("x", x(0)).attr("width", (row) => x(row.value) - x(0))
+          .attr("y", (row) => y(row.label) ?? 0).attr("height", y.bandwidth())
+          .attr("rx", 4).attr("fill", tokens.series[0]);
+        svg.append("g").selectAll("text").data(rows).join("text")
+          .attr("x", (row) => x(row.value) + 6).attr("y", (row) => (y(row.label) ?? 0) + y.bandwidth() / 2).attr("dy", "0.35em")
+          .attr("fill", tokens.muted).style("font-size", "13px").text((row) => format(row.value));
+        return;
+      }
+      const plot = height ?? 240;
+      const margin = { top: 24, right: 12, bottom: 30, left: 44 };
+      const x = d3.scaleBand(rows.map((row) => row.label), [margin.left, width - margin.right]).padding(0.36);
+      const y = d3.scaleLinear([0, d3.max(rows, (row) => row.value) ?? 0], [plot - margin.bottom, margin.top]).nice();
+      svg.attr("width", width).attr("height", plot);
+      svg.append("g").attr("class", "axis").attr("transform", `translate(0,${plot - margin.bottom})`).call(d3.axisBottom(x).tickSizeOuter(0));
+      svg.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(6));
+      svg.append("g").selectAll("rect").data(rows).join("rect")
+        .attr("x", (row) => x(row.label) ?? 0).attr("width", x.bandwidth())
+        .attr("y", (row) => y(row.value)).attr("height", (row) => y(0) - y(row.value))
+        .attr("rx", 4).attr("fill", tokens.series[0]);
+      svg.append("g").selectAll("text").data(rows).join("text")
+        .attr("x", (row) => (x(row.label) ?? 0) + x.bandwidth() / 2).attr("y", (row) => y(row.value) - 6)
+        .attr("text-anchor", "middle").attr("fill", tokens.muted).style("font-size", "13px")
+        .text((row) => format(row.value));
+    }
+
+    // 折线：数据是 { unit, points: [{ label, value }], reference?: { value, label } }，参考线自己画。
+    DocCharts.define("trend", ({ host, data, tokens, width, height }) => {
+      /** @type {{ unit: string, points: Array<{ label: string, value: number }>, reference?: { value: number, label: string } }} */
+      const chart = data;
+      const plot = height ?? 240;
+      const margin = { top: 20, right: 16, bottom: 30, left: 48 };
+      const values = [...chart.points.map((point) => point.value), ...(chart.reference ? [chart.reference.value] : [])];
+      const x = d3.scalePoint(chart.points.map((point) => point.label), [margin.left, width - margin.right]).padding(0.3);
+      const y = d3.scaleLinear([d3.min(values) ?? 0, d3.max(values) ?? 0], [plot - margin.bottom, margin.top]).nice();
+      const svg = d3.select(host).append("svg").attr("width", width).attr("height", plot).attr("role", "img").attr("aria-label", `折线图，单位：${chart.unit}`);
+      svg.append("g").attr("class", "axis").attr("transform", `translate(0,${plot - margin.bottom})`).call(d3.axisBottom(x).tickSizeOuter(0));
+      svg.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(4));
+      if (chart.reference) {
+        const at = y(chart.reference.value);
+        svg.append("line").attr("x1", margin.left).attr("x2", width - margin.right).attr("y1", at).attr("y2", at)
+          .attr("stroke", tokens.muted).attr("stroke-dasharray", "4 4");
+        svg.append("text").attr("x", width - margin.right).attr("y", at - 6).attr("text-anchor", "end")
+          .attr("fill", tokens.muted).style("font-size", "13px").text(`${chart.reference.label} ${chart.reference.value} ${chart.unit}`);
+      }
+      /** @type {Array<[number, number]>} */
+      const along = chart.points.map((point) => [x(point.label) ?? 0, y(point.value)]);
+      svg.append("path").attr("d", d3.line()(along)).attr("fill", "none").attr("stroke", tokens.series[0]).attr("stroke-width", 2.2);
+      svg.append("g").selectAll("circle").data(chart.points).join("circle")
+        .attr("cx", (point) => x(point.label) ?? 0).attr("cy", (point) => y(point.value)).attr("r", 3.5).attr("fill", tokens.series[0]);
+    });
+
+    // 分布：每个点是一道题。
+    DocCharts.define("score-strip", ({ host, data, tokens, width, height }) => {
+      /** @type {Array<{ group: string, score: number }>} */
+      const scores = data;
+      const plot = height ?? 170; // 读者设过卡片高度时用它
+      const margin = { top: 12, right: 16, bottom: 28, left: 72 };
+      const groups = [...new Set(scores.map((row) => row.group))];
+      const x = d3.scaleLinear([40, 100], [margin.left, width - margin.right]);
+      const y = d3.scalePoint(groups, [margin.top, plot - margin.bottom]).padding(0.5);
+      const svg = d3.select(host).append("svg")
+        .attr("width", width).attr("height", plot)
+        .attr("role", "img").attr("aria-label", "各题得分分布")
+        .attr("aria-description", "候选 A 的各题得分整体高于候选 B 和共同基线。");
+      svg.append("desc").text("候选 A、候选 B 与共同基线每道题的得分，每个点是一道题。");
+      svg.append("g").attr("class", "axis").attr("transform", `translate(0,${plot - margin.bottom})`).call(d3.axisBottom(x).ticks(width < 520 ? 4 : 6));
+      svg.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).tickSize(0))
+        .call((g) => g.select(".domain").remove());
+      svg.append("g").selectAll("circle").data(scores).join("circle")
+        .attr("cx", (row) => x(row.score)).attr("cy", (row) => y(row.group) ?? 0).attr("r", 4)
+        .attr("fill", (row) => tokens.series[groups.indexOf(row.group) % tokens.series.length]);
+    });
+
+    // 部件：两条折线，宿主里自己的按钮只看其中一条；按钮的监听器随 signal 移除。
+    DocCharts.define("series-toggle", {
+      mount({ host, data, tokens, width, height, signal }) {
+        /** @type {{ labels: string[], series: Array<{ name: string, values: number[] }> }} */
+        const chart = data;
+        let shown = ""; // 只看的渠道（空：全部）
+        let size = { tokens, width, height };
+        const draw = () => {
+          host.querySelector("svg")?.remove();
+          const plot = size.height ?? 220;
+          const margin = { top: 16, right: 16, bottom: 30, left: 44 };
+          const lines = chart.series.filter((series) => !shown || series.name === shown);
+          const x = d3.scalePoint(chart.labels, [margin.left, size.width - margin.right]).padding(0.3);
+          const y = d3.scaleLinear([0, d3.max(chart.series.flatMap((series) => series.values)) ?? 0], [plot - margin.bottom, margin.top]).nice();
+          const svg = d3.select(host).insert("svg", ":first-child").attr("width", size.width).attr("height", plot).attr("role", "img").attr("aria-label", "两个渠道的每周请求量");
+          svg.append("g").attr("class", "axis").attr("transform", `translate(0,${plot - margin.bottom})`).call(d3.axisBottom(x).tickSizeOuter(0));
+          svg.append("g").attr("class", "axis").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(4));
+          /** @type {(values: number[]) => Array<[number, number]>} */
+          const along = (values) => values.map((value, index) => [x(chart.labels[index]) ?? 0, y(value)]);
+          svg.append("g").selectAll("path").data(lines).join("path")
+            .attr("d", (series) => d3.line()(along(series.values))).attr("fill", "none").attr("stroke-width", 2.2)
+            .attr("stroke", (series) => size.tokens.series[chart.series.indexOf(series) % size.tokens.series.length]);
+        };
+        const row = document.createElement("div");
+        row.className = "toggle-row";
+        for (const name of ["", ...chart.series.map((series) => series.name)]) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "toggle-button";
+          button.textContent = name || "全部";
+          button.setAttribute("aria-pressed", String(name === shown));
+          button.addEventListener("click", () => {
+            shown = name;
+            for (const each of row.children) each.setAttribute("aria-pressed", String(each === button));
+            draw();
+          }, { signal });
+          row.append(button);
+        }
+        host.append(row);
+        draw();
+        return {
+          update(context) {
+            size = context;
+            draw();
+          },
+        };
+      },
+    });
+  </script>
+</body>
+</html>

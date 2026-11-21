@@ -1,0 +1,19 @@
+{
+  "id": "gallery/todos",
+  "apiVersion": 1,
+  "version": "2.0.0",
+  "name": { "zh": "我的待办", "en": "My to-dos" },
+  "description": { "zh": "所有文档里没完成的待办：勾选就写回那篇文档，点文字打开它", "en": "The to-dos of every document not done yet: check one in its document, or click it to open it there" },
+  "words": "wodedaiban daiban renwu todo todos tasks checklist 待办 任务 清单 我的待办 没完成",
+  "parts": {
+    "settings": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-todos-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[4, 4], [4, 6], [8, 4]], "resize": true },
+  "settings": [
+    { "key": "document", "label": { "zh": "只看这篇文档", "en": "Only this document" }, "type": "document" },
+    { "key": "done", "label": { "zh": "也显示已完成的", "en": "Show done ones too" }, "type": "switch", "default": false }
+  ],
+  "needs": ["workspace"]
+}

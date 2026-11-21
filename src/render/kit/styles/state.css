@@ -1,0 +1,85 @@
+/* A report's state widgets (state.js): fields, filter buttons, lists of what the reader kept. */
+
+/* Labelled fields, one below another: a whole block of the report's controls. */
+.doc-state-fields {
+  display: grid;
+  gap: 6px;
+  margin-block: var(--doc-component-gap);
+}
+
+.doc-state-fields > label {
+  margin-top: 4px;
+  color: var(--doc-muted);
+  font-size: var(--doc-note-font-size);
+  line-height: var(--doc-note-line-height);
+}
+
+.doc-state-fields > label:first-child { margin-top: 0; }
+
+.doc-state-field {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--doc-border);
+  border-radius: 8px;
+  color: var(--doc-text);
+  background-color: var(--doc-bg);
+  line-height: 20px;
+  resize: vertical;
+}
+/* A select field: the kit's chevron (choice.css) at its right, clear of its words. */
+select.doc-state-field { padding-right: 32px; background-position: right 10px center; }
+
+.doc-state-actions,
+.doc-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.doc-filter-row { margin-block: var(--doc-component-gap); }
+
+/* A filter: its buttons and what they filter, one block (the page editor's 整体块). */
+.doc-filter { margin-block: var(--doc-component-gap); }
+.doc-filter > .doc-filter-row { margin-block: 0; }
+.doc-filter > :last-child { margin-bottom: 0; }
+
+.doc-state-actions { margin-top: 10px; }
+
+/* A filter's button: a control's corners (8, no pill), its fill under the pointer at once and going over 100ms,
+   pressed a step deeper at once (the accent's pale fill with a tenth more of the accent). */
+.doc-filter-button {
+  min-height: 30px;
+  padding: 4px 10px;
+  border: 1px solid var(--doc-border);
+  border-radius: var(--doc-radius-control);
+  color: var(--doc-muted);
+  background: transparent;
+  font-size: var(--doc-small-font-size);
+  cursor: pointer;
+  transition: color 100ms ease-out, background-color 100ms ease-out, border-color 100ms ease-out;
+}
+
+.doc-filter-button:hover,
+.doc-filter-button:is(.is-active, [aria-pressed="true"]) {
+  color: var(--doc-text);
+  border-color: color-mix(in srgb, var(--doc-accent) 48%, var(--doc-border));
+  background: var(--doc-accent-soft);
+}
+.doc-filter-button:hover { transition: none; }
+.doc-filter-button:active { background: color-mix(in srgb, var(--doc-accent) 10%, var(--doc-accent-soft)); transition: none; }
+
+.doc-state-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 var(--doc-component-gap);
+  padding: 0;
+  list-style: none;
+}
+
+.doc-state-list li {
+  padding: 9px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--doc-text) 5%, var(--doc-surface));
+}

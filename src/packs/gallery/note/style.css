@@ -1,0 +1,97 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens: its head (the chip, a
+   pencil, and 便签, how many characters it holds its quiet meta after it, none on a narrow card), its end
+   clear of the card's grip, and under it the field the script draws, the rest of the note's face: no
+   border and no fill of its own, words half a size larger than the other cards' on wide lines (26px, a
+   faint rule under each, scrolling with them: a hint that it takes writing), its placeholder (写点什么…)
+   faint, the caret the accent's. While the reader types the card is ringed in the accent's wash and a line
+   under the field says its two keys; scrolled down, the field's top fades over 8px. On a custom page it is the card's whole face, taken out over the card's padding so that
+   its ring is the card's edge; where no card is around it (a document, as gallery block check shows it) the
+   instance frames itself, a few lines high. Light and dark. */
+[data-doc-component="gallery/note"] {
+  --gallery-note-rule: light-dark(rgb(55 53 47 / 7.5%), rgb(255 255 255 / 6%));
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 16px;
+  border-radius: var(--gallery-card-radius);
+  box-shadow: var(--gallery-card-shadow);
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-note-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 20px;
+    min-width: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+  }
+  > .gallery-note-head > .gallery-note-chip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-fill);
+    color: var(--gallery-muted);
+  }
+  > .gallery-note-head > .gallery-note-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  > .gallery-note-head > .gallery-note-title {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: var(--gallery-title-size);
+    line-height: var(--gallery-title-line);
+    font-weight: 600;
+    color: var(--gallery-text);
+  }
+  > .gallery-note-head > .gallery-note-meta { flex: none; font-size: var(--gallery-meta-size); color: var(--gallery-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  > .gallery-note-head[data-layout="narrow"] > .gallery-note-meta { display: none; }
+  > .gallery-note-field {
+    display: block;
+    flex: 1 1 auto;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 104px;
+    margin: 8px 0 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    resize: none;
+    background: transparent linear-gradient(to bottom, transparent 25px, var(--gallery-note-rule) 25px, var(--gallery-note-rule) 26px, transparent 26px) 0 0 / 100% 26px local;
+    font: inherit;
+    font-size: 13.5px;
+    line-height: 26px;
+    color: var(--gallery-text);
+    caret-color: var(--gallery-accent);
+    overflow-wrap: break-word;
+    scrollbar-width: none;
+  }
+  > .gallery-note-field[data-scrolled] { mask-image: linear-gradient(to bottom, transparent, #000 8px); }
+  > .gallery-note-head[data-layout="narrow"] ~ .gallery-note-field { font-size: 13px; }
+  > .gallery-note-field::placeholder { color: var(--gallery-faint); opacity: 1; }
+  > .gallery-note-field:read-only { cursor: default; }
+  > .gallery-note-foot { display: none; flex: none; gap: 12px; padding-top: 6px; font-size: 11.5px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; }
+  > .gallery-note-foot b { font-weight: 600; color: var(--gallery-muted); }
+  > .gallery-note-field:focus:not(:read-only) + .gallery-note-foot { display: flex; }
+  &:has(> .gallery-note-field:focus:not(:read-only)) { box-shadow: var(--gallery-card-shadow), 0 0 0 2px var(--gallery-accent-wash); }
+}
+/* On a custom page the board draws the frame: the note is the card's whole face, out over its padding, its
+   ring (while the reader types) at the card's edge, inside it. */
+.gallery-card > [data-doc-component="gallery/note"] {
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  padding: var(--gallery-card-pad);
+  box-shadow: none;
+  /* The field as high as whole lines fit under the head (20px and 8px), and over the keys' line (22px) while
+     the reader types, so that a line scrolled to is never cut at the top: on a 4 × 2 card three lines,
+     two while typing. */
+  > .gallery-note-field { flex: none; min-height: 0; height: max(26px, round(down, calc(100% - 28px), 26px)); }
+  > .gallery-note-field:focus:not(:read-only) { height: max(26px, round(down, calc(100% - 50px), 26px)); }
+  &:has(> .gallery-note-field:focus:not(:read-only)) { box-shadow: inset 0 0 0 2px var(--gallery-accent-wash); }
+}

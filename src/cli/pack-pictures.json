@@ -1,0 +1,30 @@
+{
+  "shared": "fe38596704e51af7",
+  "blocks": {
+    "gallery-soft/countdown": "f82282bae43f8db2",
+    "gallery-soft/habit": "ee926b2a1dde7792",
+    "gallery-soft/heatmap": "db083a02e1b8528d",
+    "gallery-soft/note": "b88f107da85522d4",
+    "gallery-soft/recent": "f7ebce6a13b059a6",
+    "gallery-soft/static": "2a63c24e784614fe",
+    "gallery-soft/stats": "3682b6b0c73bc048",
+    "gallery-soft/today": "d230258753c11eab",
+    "gallery-soft/todos": "55e5a3753f50bb83",
+    "gallery-soft/weather": "b791817135eb0706",
+    "gallery/card": "a5d8a4c07484f704",
+    "gallery/chart-card": "e13990c255a7a404",
+    "gallery/chart-view": "e1c504fda63499c2",
+    "gallery/countdown": "1ddbaf1516ba83d0",
+    "gallery/habit": "46f4341b2ffdd67f",
+    "gallery/heatmap": "8c886f0cde70c29d",
+    "gallery/kanban": "89b68feb09720765",
+    "gallery/metric": "09145cbfd8e9d4b5",
+    "gallery/note": "3ee17d4cab913636",
+    "gallery/recent": "05366eee408aaa7d",
+    "gallery/static": "17d70457acda0bf9",
+    "gallery/stats": "7d75f1a5681803ca",
+    "gallery/today": "4f747b5a74d74fa7",
+    "gallery/todos": "19888142c581ecfd",
+    "gallery/weather": "dba198f05dcb6cd1"
+  }
+}

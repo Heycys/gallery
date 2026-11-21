@@ -1,0 +1,46 @@
+/* 图片 (an image block): a picture of the report's folder and its caption under it.
+   Its width is the picture's own, at most the width it stands in, or --doc-span (sizes.css: a
+   share of the reading width, at most the width it stands in; the picture then fills it). Without a span it is at most 80% of the
+   window's height, its width following, so a tall picture (a scan, a phone's screenshot) shows
+   whole on a screen; a picture wider than tall reaches that only on a short window. Centered;
+   .doc-image--left and .doc-image--right put it at that side. The caption is as wide as the
+   picture (it takes no width of its own): 14px, gray, shown only with text (an empty <figcaption>
+   is always written). */
+:where(.doc-image) {
+  /* Only valid while --doc-span is set (--doc-span-width, sizes.css), so the fallbacks below give the picture's own width. */
+  --doc-image-fill: calc(var(--doc-span) * 0% + 100%);
+}
+
+.doc-image {
+  width: var(--doc-span-width, fit-content);
+  min-width: 0;
+  max-width: 100%;
+  margin: var(--doc-media-gap) auto;
+}
+.doc-image--left { margin-inline: 0 auto; }
+.doc-image--right { margin-inline: auto 0; }
+
+.doc-image > img {
+  display: block;
+  width: var(--doc-image-fill, auto);
+  max-width: 100%;
+  /* A picture the reader sized is as tall as its width makes it: with a span the fill is a
+     percentage, which against the figure's height (its content's) is no limit. */
+  max-height: var(--doc-image-fill, 80vh);
+  height: auto;
+  /* A width of the source's own on the picture (style="width: 300px") meets that height limit
+     without its shape changing: the picture is drawn whole inside the box, never stretched. */
+  object-fit: contain;
+  border-radius: 2px;
+}
+
+/* Centered under the picture, the rest of its caption the media blocks' (media.css). */
+.doc-image > figcaption {
+  contain: inline-size; /* as wide as the picture, never wider */
+  padding-inline: 2px;
+  text-align: center;
+}
+
+@media print {
+  .doc-image { break-inside: avoid; }
+}

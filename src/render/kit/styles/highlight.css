@@ -1,0 +1,52 @@
+/* A highlight block (高亮块, a callout): a group of blocks set apart,
+   10px round, 12px in, a light gray background by default.
+   A color class on it (the editor's 颜色: base.css) gives it that background, or colors its text
+   and draws it with a thin border instead. An icon (.doc-icon: an emoji, an icon of a set, an
+   image, as the page's) may come first: it stands left of the blocks, 24px, on their first line,
+   the blocks 8px right of it. Its text reads as in any flow; it is for content the reading task
+   needs to stand out. The opening summary is one, first on the page: the same look, the same
+   blocks inside. */
+:is(.doc-summary, .doc-panel) {
+  position: relative;
+  margin-block: var(--doc-block-gap);
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+/* Dark #2a2a29 (2026-11-17: #383836 before, the brightest slab on a dark page's first screen), as far above the
+   page as the light gray is below white. */
+:where(.doc-summary, .doc-panel) { background: light-dark(#f1f1ef, #2a2a29); }
+:is(.doc-summary, .doc-panel):is(@text-colors) { border-color: light-dark(rgb(42 28 0 / 9%), rgb(255 255 243 / 9%)); background: none; }
+
+/* Its icon, on the first line of its first block (a heading's own line height). */
+:is(.doc-summary, .doc-panel):has(> .doc-icon) { --doc-panel-line: var(--doc-body-line-height); padding-left: 44px; }
+:is(.doc-summary, .doc-panel):has(> .doc-icon + h2) { --doc-panel-line: var(--doc-h2-line-height); }
+:is(.doc-summary, .doc-panel):has(> .doc-icon + h3) { --doc-panel-line: var(--doc-h3-line-height); }
+:is(.doc-summary, .doc-panel):has(> .doc-icon + h4) { --doc-panel-line: var(--doc-h4-line-height); }
+/* Its icon alone (no block yet): a line high, so the icon stands inside it (its padding and border around the line). */
+:is(.doc-summary, .doc-panel):has(> .doc-icon:only-child) { min-height: calc(var(--doc-panel-line) + 26px); }
+:is(.doc-summary, .doc-panel) > .doc-icon {
+  position: absolute;
+  left: 12px;
+  top: calc(12px + (var(--doc-panel-line) - 24px) / 2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  font-size: 21px;
+  line-height: 1;
+}
+:is(.doc-summary, .doc-panel) > .doc-icon > :is(img, svg) { width: 22px; height: 22px; }
+:is(.doc-summary, .doc-panel) > .doc-icon > img[alt=""] { width: 24px; height: 24px; border-radius: 3px; }
+:is(.doc-summary, .doc-panel) > .doc-icon[data-icon]:empty { width: 24px; height: 24px; }
+
+/* Its text keeps the flow's gaps (flow.css), and a text, code or formula block at its edges takes none (these rules
+   weigh as much as a component's own margin and stand before the components' files, which win): a
+   card, a table, a callout or a disclosure first or last in it keeps its own margins, a panel's
+   inside being the one place a component is spaced as it is among text. A callout's blocks are
+   spaced as a panel's, by the same rules (callout.css: one kind of block, its own look). A column's,
+   a disclosure's and a detail card's edges take none whatever the block (flow.css). */
+:is(.doc-summary, .doc-panel, .doc-callout) > :where(:first-child, .doc-icon + *) { margin-top: 0; }
+:is(.doc-summary, .doc-panel, .doc-callout) > :where(:last-child) { margin-bottom: 0; }

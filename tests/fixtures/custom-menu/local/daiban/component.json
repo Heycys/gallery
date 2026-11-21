@@ -1,0 +1,12 @@
+{
+  "id": "local/daiban",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "待办清单", "en": "Checklist" },
+  "description": { "zh": "一张待办清单", "en": "A checklist" },
+  "words": "todo list",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" }
+  },
+  "markdown": "parts"
+}

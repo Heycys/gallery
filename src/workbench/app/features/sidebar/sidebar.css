@@ -1,0 +1,391 @@
+/* =========================================================
+   侧栏：容器负责占位宽度（收起 = 宽度过渡到 0），
+   侧栏本体挂在 0 宽的绝对定位锚点上，收起后变成浮动层
+   ========================================================= */
+/* 和编辑区之间不画线（侧栏只靠它的暖灰底色和编辑区分开）；拖宽度的 .sb-resizer 照旧，悬停时才显出线。
+   收起、展开时容器的宽和侧栏的滑动是同一个钟（--sbDur 280ms、--easeSheet，2026-11-17 定的）：侧栏的右边一直贴着容器的右边，
+   页面跟着铺到窗口左边、正文重新居中；容器的底色也一起淡掉（收起后窗口左边是页面自己的底） */
+.sb-container {
+  position: relative; flex: none; z-index: 20;
+  width: var(--sb-w);
+  background-color: var(--sidBac);
+  transition: width var(--sbDur) var(--easeSheet), background-color var(--sbDur) var(--easeSheet);
+}
+.sb-container.collapsed { width: 0; background-color: transparent; }
+.sb-anchor { position: absolute; top: 0; left: 0; bottom: 0; width: 0; z-index: 9; }
+
+/* 侧栏自己有底色（不只靠容器）：从浮出的样子钉住时，容器的宽还在从 0 长出来，行也不会画在页面的白底上。
+   三种样子：钉住（这里）、藏起来（.floating:not(.peek)）、浮出（.floating.peek）；三个动作各走一条路，每条路上的过渡写在它要去的那个样子上，
+   半路反过来（收起时又展开、浮出时又收回）就从半路原路回去：
+   - 收起（钉住 → 藏起来）：整栏连着底色向左滑出、一起淡掉（translate、opacity），形状不变；
+   - 展开（藏起来 → 钉住，Ctrl+\ 或点着顶栏按钮时没有浮出）：原路滑回来、淡进来；
+   - 浮出、收回（藏起来 ⇄ 浮出）：浮动面板（往下 59px、矮一截、右边圆角、影子），从左边滑进来、淡进来，原路滑出、淡掉；
+     浮出的形状（下移、高度、圆角、影子）在进来的第一帧就换上（这时它还在窗口外、看不见），收回时等滑出去了才换回钉住的形状；
+   - 停靠（浮出 → 钉住）：一次变形，往上回到原位、高度长满、圆角和影子淡掉，容器的灰在它下面长出来，没有跳动。
+   藏起来的样子就是钉住的形状挪到窗口外（不是浮出的形状）：所以收起、展开只有滑动和淡，不会斜着走 */
+.sidebar {
+  position: relative; display: flex; flex-direction: column;
+  width: var(--sb-w); height: 100%; background: var(--sidBac);
+  translate: 0 0;
+  transition: translate var(--sbDur) var(--easeSheet), opacity var(--sbDur) var(--easeSheet), transform var(--sbDur) var(--easeSheet),
+    height var(--sbDur) var(--easeSheet), border-radius var(--sbDur) var(--easeSheet), width var(--sbDur) var(--easeSheet), visibility 0s;
+}
+/* 浮出时的影子：浮出的那一刻就在，停靠时随着变形淡掉，收回时等滑出去了才拿掉 */
+.sidebar .float-bg {
+  display: block; position: absolute; inset: 0; z-index: -1; opacity: 0;
+  border-radius: 0 14px 14px 0; background: var(--sidBac); box-shadow: var(--shaOutLg);
+  transition: opacity var(--sbDur) var(--easeSheet);
+}
+.sb-inner { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+/* Sidebar actions, including public extension buttons, share the sidebar icon token. */
+.sidebar :is(.icon-btn,.g-icon-btn,.row-act) { color: var(--sidIco); }
+
+/* 藏起来（收起之后，没有浮出）：钉住的形状，挪到窗口左边外面、透明；滑完了才看不见、点不到（visibility 晚 --sbDur） */
+.sidebar.floating:not(.peek) {
+  translate: calc(-1 * var(--sb-w)) 0;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transition: translate var(--sbDur) var(--easeSheet), opacity var(--sbDur) var(--easeSheet),
+    transform 0s linear var(--sbDur), height 0s linear var(--sbDur), border-radius 0s linear var(--sbDur), visibility 0s linear var(--sbDur);
+}
+.sidebar.floating:not(.peek) .float-bg { transition: opacity 0s linear var(--sbDur); }
+/* 浮出（peek）：浮动面板 */
+.sidebar.floating.peek {
+  height: calc(100vh - 91px); transform: translateY(59px); border-radius: 0 14px 14px 0;
+  transition: translate var(--sbDur) var(--easeSheet), opacity var(--sbDur) var(--easeSheet), transform 0s, height 0s, border-radius 0s, visibility 0s;
+}
+.sidebar.floating.peek .float-bg { opacity: 1; transition: none; }
+.sidebar.floating.peek .sb-inner { border-radius: 0 14px 14px 0; }
+/* 顶部 15px 透明“桥”：鼠标从 ≡ 滑到面板时不中断 hover */
+.sidebar.floating.peek::before { content: ""; position: absolute; left: 0; right: 0; top: -15px; height: 15px; }
+
+/* 移动端抽屉 */
+.sidebar.mobile {
+  position: fixed; top: 0; left: 0; bottom: 0; height: auto;
+  width: min(var(--sb-w), 86vw);
+  transform: translateX(-100%); visibility: hidden; pointer-events: none;
+  transition: transform var(--sbDur) var(--easeSheet), visibility var(--sbDur);
+}
+.sidebar.mobile { border-radius: 0 14px 14px 0; }
+.sidebar.mobile .float-bg { opacity: 1; }
+.sidebar.mobile .sb-inner { border-radius: 0 14px 14px 0; }
+.sidebar.mobile.mobile-open { transform: none; visibility: visible; pointer-events: auto; }
+/* 抽屉后面的遮罩和抽屉一起淡入淡出（visibility 让它收起后点不到） */
+.sb-backdrop { position: fixed; inset: 0; z-index: 1; background: var(--overlay); opacity: 0; visibility: hidden; transition: opacity var(--sbDur) var(--easeSheet), visibility var(--sbDur); }
+.sb-backdrop.show { opacity: 1; visibility: visible; }
+
+/* 收起时贴着窗口左边缘的感应条（层级低于侧栏本体）：宽度由 Sidebar.tsx 按报告页的空当给出，8–32px；从顶栏下面开始，
+   顶栏里的展开按钮（它自己悬停就浮出侧栏）整个点得到 */
+.sb-edge { display: none; position: fixed; top: 44px; bottom: 0; left: 0; width: 32px; z-index: 8; }
+.app.peekable .sb-edge { display: block; }
+
+/* Online pages only: a viewport overlay, docked to the window or the open peek panel's right edge.
+   Only the button moves; the sidebar keeps its original geometry. */
+.sb-web-button {
+  position: fixed; top: 0; left: 0; z-index: 10; width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center; border: 0; border-radius: 50%;
+  background: var(--sidBac); color: var(--sidIco); box-shadow: 0 0 0 1px var(--floatOutline), 0 2px 8px rgba(0,0,0,.14);
+  touch-action: none; user-select: none; cursor: grab; transition: transform var(--sbDur) var(--easeSheet);
+}
+.sb-web-button svg { width: 18px; height: 18px; pointer-events: none; }
+.sb-web-button:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--sidBac), 0 0 0 4px var(--blue), 0 2px 8px rgba(0,0,0,.14); }
+.sb-web-button.dragging { cursor: grabbing; transition: none; }
+.sb-web-drag-cover { position: fixed; inset: 0; z-index: 8; cursor: grabbing; }
+@media (prefers-reduced-motion: reduce) { .sb-web-button { transition: none; } }
+
+/* 拖拽调宽手柄：边界两侧各 2px，悬停竖线仍画在侧栏内侧 */
+.sb-resizer { position: absolute; top: 0; bottom: 0; right: -2px; width: 4px; cursor: col-resize; z-index: 10; }
+.sb-resizer::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 2px; background: transparent; transition: background .15s; }
+.sb-resizer:hover::after, body.resizing .sb-resizer::after { background: var(--borStrTra); }
+body.resizing, body.resizing * { cursor: col-resize !important; user-select: none !important; }
+body.resizing .sb-container, body.resizing .sidebar { transition: none !important; }
+
+/* 头部（用户 2026-11-17 定的样子，用现在的字）：第一行是开关、字标 Gallery 和行尾的「新建」，下面一整行灰底的搜索，
+   再下面是自定义页的行。左右各留 8px，和页面行一样：开关的中线（27px）对着下面各行图标的中线（搜索、首页这些；用户：「侧边栏按钮和之前的一样，
+   最左侧，然后和下面的图标竖直对齐」），字标的左边对着它们的文字（46px）；「新建」的中线对着下面各行行尾 ··· 的中线（离侧栏右边 28px）。
+   第一行 8px 起、28px 高，中线在 22px，和侧栏收起后顶栏的展开按钮（topbar.css .tb-menu）同一处；第一行和搜索之间空 8px，搜索和自定义页之间也是 8px */
+.sb-head {
+  flex: none; display: flex; flex-direction: column; padding: 8px 8px 4px;
+  transition: box-shadow .15s;
+}
+.sb-head.scrolled { box-shadow: 0 1px 0 var(--borSec); }
+.sb-top { height: 28px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px; padding-left: 5px; }
+.sb-top .sb-new { margin: 0 6px 0 auto; }
+/* 浮出时（顶栏有自己的展开按钮，就在面板上面那一行）开关不显示，也不留空位：它收成 0 宽，字标挪到行首，左边对着下面各行图标的左边（18px），
+   面板顶上不是一段空白再接 Gallery（2026-11-17 复核提的；新建还在行尾，所以这一行留着）。
+   浮出的那一刻就收（面板这时在窗口外），收回时等滑出去了才回来；停靠时它和面板的变形同一个钟（--sbDur）长回 28px、淡进来，字标跟着平平地挪回原位。
+   藏着时点不到、键盘也走不到（visibility） */
+.sb-toggle { overflow: hidden; }
+.sb-toggle svg { flex: none; transition: opacity var(--sbDur) var(--easeSheet); }
+.sidebar:not(.floating) .sb-toggle { transition: background-color var(--hoverOut) ease-out, width var(--sbDur) var(--easeSheet); }
+.sidebar:not(.floating) .sb-toggle:is(:hover, :active, :focus-visible) { transition: width var(--sbDur) var(--easeSheet); } /* 灰底照样立刻出现（styles/base.css） */
+.sidebar.floating.peek .sb-toggle { width: 0; visibility: hidden; }
+.sidebar.floating.peek .sb-toggle svg { opacity: 0; transition: none; }
+.sidebar.floating:not(.peek) .sb-toggle { transition: background-color var(--hoverOut) ease-out, visibility 0s linear var(--sbDur), width 0s linear var(--sbDur); }
+.sidebar.floating:not(.peek) .sb-toggle svg { transition: opacity 0s linear var(--sbDur); }
+/* 搜索：一整行的灰底，圆角 8、不是胶囊；放大镜在各行图标的竖线上，「搜索」在它们的文字处，右边是快捷键 Ctrl/⌘+K（灰字）。
+   平时是浅的那一档（--fillQuiet，5%）：7% 和选中的页面行一样深，每次启动选中的「首页」就在它正下方，看着像叠了两个框（2026-11-18 合入时定）；
+   指针移上 7%（--fill），移走 100ms 淡回去；按下 10%（--fillStrong）；键盘走到它画环（平时就有灰底，填不出来：styles/base.css） */
+.sb-search {
+  flex: none; height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 8px;
+  border-radius: var(--r-ctl); background: var(--fillQuiet); color: var(--texSec); font-size: 14px; font-weight: 500; text-align: left;
+  transition: background-color var(--hoverOut) ease-out;
+}
+.sb-search:hover { background: var(--fill); transition: none; }
+.sb-search:active { background: var(--fillStrong); transition: none; }
+.sb-search-icon { flex: none; width: 22px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--sidIco); }
+.sb-search-icon svg { width: 18px; height: 18px; }
+.sb-search-label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.sb-search-key { flex: none; font: inherit; font-size: 12px; font-weight: 400; color: var(--texTer); }
+/* 字标：书卷气的衬线，只用系统里有的字（Mac 的 Iowan Old Style，Windows 的 Palatino Linotype，
+   都没有时 Georgia），19px 常规字重（试过粗体和 Georgia、Sitka：粗体压过下面的行，Georgia 显得硬），侧栏的主文字色；
+   只是名字，不能点、不能选 */
+.sb-brand {
+  min-width: 0; overflow: hidden; white-space: nowrap;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  font-size: 19px; font-weight: 400; line-height: 28px; color: var(--texPri);
+  cursor: default; user-select: none;
+}
+/* 头部的行（自定义页、更多页面）：和页面行一样宽、一样高，图标、文字分别对齐页面行的图标和标题；字样同底部的「设置」。
+   圆角 8；指针移上 5%（--fillQuiet），移走 100ms 淡掉；按下 10%（--fillStrong） */
+.sb-act {
+  min-width: 0; height: 30px;
+  display: flex; align-items: center; gap: 8px; padding: 0 8px;
+  border-radius: var(--r-ctl); font-size: 14px; font-weight: 500; color: var(--texSec); text-align: left;
+  transition: background-color var(--hoverOut) ease-out;
+}
+.sb-act:hover { background: var(--fillQuiet); transition: none; }
+body:not(.dragging) .sb-act:active:not(:has(.sb-page-icon:active, .row-act:active)) { background: var(--fillStrong); transition: none; } /* 按的是行里的图标或 ··· 时，行不跟着深 */
+.sb-act-icon { flex: none; width: 22px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--sidIco); }
+.sb-act-icon svg { width: 18px; height: 18px; }
+.sb-act-label { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+/* 有自定义页时字标点得到：进侧栏头部的第一个页 */
+.sb-brand.home { cursor: pointer; }
+/* 键盘走到它（有自定义页时它是个按钮）：填底色，左右各多出 5px（负的外边距抵掉，字不挪） */
+button.sb-brand:focus-visible { padding: 0 5px; margin: 0 -5px; border-radius: var(--r-ctl); background: var(--bacTerTra); }
+/* 自定义页（SidebarHead.tsx）：一列行，在搜索下面 8px，一行和一行之间 1px，按住拖动排顺序（2026-11-09），落点是一条蓝线（.sb-head-line，和文档树的一样）；
+   打开着的那一页和文档树里打开着的那份一样是灰底。页的行悬停时右边是 ···（.sb-page-actions，和文档树条目的按钮一样）。没有自定义页时不占地方 */
+.sb-rows { position: relative; display: flex; flex-direction: column; gap: 1px; }
+.sb-rows:has(> .sb-act) { margin-top: 8px; }
+.sb-page { cursor: pointer; user-select: none; outline: none; }
+/* 打开着的那一行（7%，--fill）比悬停的（5%）深一点，指针移上去它也不再变：所在的位置排在指针所在的前面；按下照样深到 10% */
+.sb-act.selected { background: var(--fill); color: var(--texPri); }
+.sb-act.selected:hover, .sb-act.selected.menu-open { background: var(--fill); }
+.sb-act.menu-open { background: var(--fill); }
+.sb-page:not(.selected):focus-visible { background: var(--bacTerTra); } /* a key reaching it fills it, no line; the open page is already filled, its focus is the ring (styles/base.css) */
+.sb-page .pg-icon { display: flex; align-items: center; justify-content: center; width: 20px; height: 20px; }
+/* 自定义页那一行的图标是个按钮：点它换图标（和树里的条目一样，下面 .row-icon），悬停时灰底，选图标时一直灰着 */
+.sb-page .sb-page-icon { height: 22px; border-radius: var(--r-small); }
+.sb-page .sb-page-icon:hover, .sb-page.picking .sb-page-icon { background: var(--bacTerTra); }
+.sb-page.renaming { cursor: default; }
+.sb-page .sb-page-actions { padding-right: 0; }
+.sb-page:hover .sb-page-actions, .sb-page.menu-open .sb-page-actions { display: flex; }
+.sb-act.drag-src { opacity: .4; }
+body.dragging .sb-act:not(.selected):hover { background: transparent; }
+body.dragging .sb-page-actions { display: none !important; }
+.sb-page .row-rename { margin: 0 -2px 0 -6px; font-weight: 400; }
+
+/* 滚动区 */
+.sb-scroll {
+  position: relative; flex: 1; min-height: 0;
+  overflow-y: auto; overflow-x: hidden; padding: 6px 0 12px;
+  scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent;
+}
+
+/* 分组标题：整行只占位置（拖放的落点、拖放线的宽度按整行量）；悬停的灰底只包着名字和三角（.sec-toggle，22px 高），
+   点它折叠 / 展开；右键整行 = 全部折叠 / 全部展开（SidebarTree.tsx Section）。名字放不下时（侧栏窄、右边出了 ＋ ···、同名时后面跟着灰字）
+   由样式在末尾用 … 收住（.sec-text 一个盒子装着名字和灰字：先收灰字，灰字没了再收名字），不按字数；侧栏拉宽就多露出几个字 */
+.section { margin: 0 8px 4px; }
+.section.expanded { padding-bottom: 12px; }
+.sec-head { height: 30px; display: flex; align-items: center; padding: 0 2px; user-select: none; }
+.sec-toggle { flex: 0 1 auto; min-width: 0; height: 22px; display: inline-flex; align-items: center; gap: 2px; padding: 0 4px 0 6px; border-radius: var(--r-small); transition: background-color var(--hoverOut) ease-out; }
+.sec-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; line-height: 16px; }
+.sec-toggle:hover, .sec-head.menu-open .sec-toggle { background: var(--fillQuiet); transition: none; }
+body:not(.dragging) .sec-toggle:active { background: var(--fillStrong); transition: none; }
+.sec-label { font-size: 12px; font-weight: 500; line-height: 16px; color: var(--texTer); }
+.sec-chev { flex: none; width: 12px; height: 12px; color: var(--texTer); opacity: 0; transition: opacity .1s; }
+.sec-chev svg { stroke-width: 1.8; transition: transform .13s ease-out; }
+.section.expanded .sec-chev svg { transform: rotate(90deg); }
+.sec-toggle:hover .sec-chev, .sec-head.menu-open .sec-chev { opacity: 1; }
+/* 收着的一栏的箭头一直在：不然它和展开的一栏平时看着一模一样（和有子页面的条目的箭头一个道理，上面 .row-chevron） */
+.section:not(.expanded) .sec-chev { opacity: 1; }
+.tree { margin-top: 1px; }
+
+/* 页面行：圆角 8，行与行之间照旧 1px；指针移上 5%（--fillQuiet），移走 100ms 淡掉；打开着的那一行 7%（--fill，指针在上面也不变）；
+   按下 10%（--fillStrong，开始拖动后不算：body.dragging） */
+.row {
+  position: relative; height: 30px; margin-bottom: 1px;
+  display: flex; align-items: center; padding: 5px 8px 5px calc(16px + var(--depth, 0) * 8px);
+  border-radius: var(--r-ctl); cursor: pointer; user-select: none; font-size: 14px; color: var(--texAcc);
+  transition: background-color var(--hoverOut) ease-out;
+}
+.row:hover, .row.menu-open { background: var(--fillQuiet); transition: none; }
+.row.selected { background: var(--fill); color: var(--texPri); }
+.row.selected:hover, .row.selected.menu-open { background: var(--fill); }
+body:not(.dragging) .row:not(.renaming):active:not(:has(.row-act:active, button.row-icon:active, .row-chevron:active)) { background: var(--fillStrong); transition: none; }
+/* 图标那一格 22×22、圆角 6（行尾小按钮的圆角）。点它换图标（用户 2026-11-13：点图标呼出图标选择器直接改），所以是个按钮：悬停时灰底，给它选图标时
+   一直灰着（.picking），点它不打开条目；拖它和拖标题一样移动条目（useTreeDnd.ts）。找不到底稿、扩展的条目的图标不能点（div） */
+.row-icon { position: relative; flex: none; width: 22px; height: 22px; margin-right: 6px; border-radius: var(--r-small); display: flex; align-items: center; justify-content: center; }
+button.row-icon:hover, .row.picking button.row-icon { background: var(--bacTerTra); }
+/* 有子页面的条目（展开着、收着、哪一层都一样）：图标左边一直有展开箭头，一眼看出它是父级页面（用户 2026-11-13：箭头只在悬停时才出现，
+   看不出来）。箭头放在行的左内边距里，不为它再挪条目：每行的左内边距 16px（每深一级多 8px），第一层的图标在头部图标那条竖线右边 8px，
+   标题从 52px 起（2026-11-13 中间试过把条目右移给箭头腾地方、行首的小圆点，都没采用）。
+   箭头是个看不见的按钮，盖住图标左边的整段空白：从行的左边到图标那一格、上下占满整行（用户：图标左侧的所有空间都是箭头的点击区域），
+   第一层 16px 宽，越往里越宽；没有底色，12px 的箭头、侧栏图标的灰（--sidIco），靠右、离图标那一格 2px，悬停时箭头深一点。
+   点它只展开或收起，不打开文档；没有子页面的条目没有它，点那段空白就是点这一行 */
+.row-chevron {
+  position: absolute; left: 0; top: 0; bottom: 0; width: calc(16px + var(--depth, 0) * 8px); padding-right: 2px;
+  display: flex; align-items: center; justify-content: flex-end; color: var(--sidIco);
+}
+.row-chevron svg { width: 12px; height: 12px; stroke-width: 1.8; transition: transform .13s ease-out; }
+.node.open > .row .row-chevron svg { transform: rotate(90deg); }
+.row-chevron:hover { color: var(--texPri); }
+/* 标题优先：它要多宽给多宽，放不下时由样式在末尾用 … 收住；右边的灰字（.row-tag）只用标题剩下的地方，也一样（下面）。
+   ＋ 和 ··· 靠右（margin-left: auto），和一栏标题右边的两个按钮（.sec-actions）同一个右边距，竖直对齐 */
+.row-title { flex: 0 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 21px; }
+.row-actions { display: none; flex: none; align-items: center; gap: 2px; margin-left: auto; padding-left: 4px; }
+.row:hover .row-actions, .row.menu-open .row-actions { display: flex; }
+/* 行尾的 ＋ 和 ···（条目、一栏的标题、自定义页的行）：24×24、圆角 6，指针移上 7%（--fill：比行自己的 5% 深一档，看得出是按钮），按下 10%；
+   图标还是 16px。中线离行的右边 20px，和第一行的「新建」、Agent 改过的蓝点在一条竖线上 */
+.sidebar .row-act { width: 24px; height: 24px; }
+.sidebar .row-act:hover { background: var(--fill); }
+/* 键盘（文档树的条目、扩展栏的条目都能用 Tab 走到：SidebarTree.tsx）：走到的那一行填底色（打开着的那一行已经填着，是环：styles/base.css），
+   行里的 ＋ ··· 这时也显出来，Tab 接着走得到它们；一栏的标题、自定义页的行也一样。[data-keys]：键盘的焦点在这一行（或它里面）上，
+   Sidebar.tsx 记的，只认键盘（:focus-visible），点过之后不留着。不用 :has(:focus-visible)：焦点从行挪到它的 ＋ 的那一刻两边都不是焦点，
+   ＋ 就藏起来了，浏览器再看它能不能拿焦点时它已经不能，焦点掉到页面上 */
+.row:not(.selected):focus-visible { background: var(--bacTerTra); }
+/* 键盘走到的那一刻底色就在，不淡入（和悬停一样；侧栏的这几种行自己带着 100ms 的淡出，styles/base.css 的那一条管不到它们） */
+:is(.row, .sb-act, .sb-search, .sec-toggle):focus-visible { transition: none; }
+:is(.row, .sb-page):not(.renaming)[data-keys] :is(.row-actions, .sb-page-actions), .sec-head[data-keys] .sec-actions { display: flex; }
+.row:not(.renaming)[data-keys] :is(.row-tag, .row-new), .sb-page[data-keys] .row-new, .sec-head[data-keys] .row-new { display: none; }
+/* 别人（Agent）刚改了、读者还没打开的页面（state/updates.ts）：行的右端一个蓝色实心圆点，6px（--newDot），圆心对着悬停时 ··· 的中心（离行的右边 20px），
+   光标在这一行上、菜单开着时让给 ＋ / ···。行的左边是有子页面的条目的展开箭头（.row-chevron），和它不在一处，不会看混。
+   盒子 14px 宽、点画在它的右边：标题长时在点前面 8px 收住；不占图标、标题的位置，谁也不挪。收着的上级（下面有这样的页面）、收着的栏的标题、
+   自定义页的行和「更多页面」也一样（SidebarTree.tsx、SidebarHead.tsx） */
+.row-new { position: relative; flex: none; width: 14px; height: 6px; margin: 0 9px 0 auto; pointer-events: none; }
+.row-new::after { content: ""; position: absolute; right: 0; top: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--newDot); }
+.row:hover .row-new, .row.menu-open .row-new { display: none; }
+body.dragging .row:hover .row-new { display: block; }
+.sec-head .row-new { margin-right: 15px; }
+.sec-head:hover .row-new, .sec-head.menu-open .row-new { display: none; }
+.sb-act .row-new { width: 6px; margin-right: 9px; } /* 和文档树的点在一条竖线上 */
+.sb-page:hover .row-new, .sb-page.menu-open .row-new { display: none; }
+
+/* 条目上的改名框：盖在标题处，文字不挪位置；改名时不显示 ＋ / ··· */
+.row.renaming { cursor: default; }
+.row.renaming .row-actions { display: none; }
+.row-rename {
+  flex: 1; min-width: 0; height: 24px; margin: 0 -2px 0 -6px; padding: 0 6px;
+  border: 0; border-radius: var(--r-small); outline: none;
+  background: var(--inputBac); color: var(--texPri); font: inherit; font-size: 14px;
+  box-shadow: inset 0 0 0 1px var(--blueLine), 0 0 0 2px var(--blueBg);
+}
+
+/* 拖拽 */
+body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; }
+body.dragging .row:not(.selected):hover { background: transparent; }
+body.dragging .row-actions { display: none !important; }
+body.dragging .row-chevron:hover { color: var(--sidIco); }
+body.dragging :is(button.row-icon, .sb-page-icon):hover { background: transparent; }
+.row.drag-src { opacity: .4; }
+.row.drop-inside { background: var(--blueBg) !important; }
+.drop-line { position: absolute; height: 3px; border-radius: 2px; background: var(--blueLine); pointer-events: none; z-index: 5; display: none; }
+.drop-line.show { display: block; }
+.drag-ghost {
+  position: fixed; left: 0; top: 0; z-index: 3000; pointer-events: none;
+  height: 30px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 8px;
+  background: var(--popBac); color: var(--texPri); border-radius: var(--r-ctl); box-shadow: var(--shaOutMd);
+  opacity: .9; font-size: 14px; white-space: nowrap; overflow: hidden;
+}
+.drag-ghost .t { overflow: hidden; text-overflow: ellipsis; }
+
+/* 底部：设置和外观按钮（2026-11-17 定的：图标不换，做成圆角 8 的按钮）。「设置」只有它的字那么宽（不再占满一行），30 高，
+   齿轮在各行图标的竖线上（27px）、字在它们的文字处（46px）；外观按钮在最右，中线对着上面各行的 ···（离右边 28px）。
+   扩展放在底部的整行（.g-sidebar-row）还是一整行，圆角一样 */
+.sb-foot { flex: none; height: 46px; display: flex; align-items: center; gap: 4px; padding: 0 8px 2px; }
+:is(.ws-btn,.g-sidebar-row) { min-width: 0; display: flex; align-items: center; gap: 10px; border-radius: var(--r-ctl); font-size: 14px; font-weight: 500; color: var(--texSec); text-align: left; }
+.ws-btn { flex: none; max-width: calc(100% - 44px); height: 30px; padding: 0 10px; }
+.g-sidebar-row { flex: 1; height: 28px; padding: 0 6px 0 10px; }
+.sb-foot > .icon-btn { margin: 0 6px 0 auto; }
+:is(.ws-btn,.g-sidebar-row) svg { flex: none; width: 18px; height: 18px; color: var(--sidIco); }
+:is(.ws-btn,.g-sidebar-row):hover, :is(.ws-btn,.g-sidebar-row).menu-open { background: var(--fillQuiet); }
+body:not(.dragging) :is(.ws-btn,.g-sidebar-row):active { background: var(--fillStrong); }
+/* 设置的菜单：和它盖住的那几行一样宽（侧栏宽减去两边的 8px），最窄 240、最宽 320（回收区的子菜单是固定的 240：.settings-menu） */
+.menu.ws-menu { width: clamp(240px, calc(var(--sb-w) - 16px), 320px); }
+.ws-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+@media (max-width: 768px) {
+  .sb-resizer { display: none; }
+}
+
+/* 状态提示与数据源连接状态 */
+.sb-note { margin: 4px 16px; font-size: 13px; color: var(--texSec); }
+.sb-note.inset { margin: 2px 8px 4px; padding-left: 8px; }
+.ws-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--texDis); }
+.ws-dot.ready { background: var(--gre-tx); }
+.ws-dot.loading { background: var(--yel-tx); }
+.ws-dot.offline, .ws-dot.error { background: var(--red-tx); }
+
+
+/* 一栏的标题悬停时右边的 + 和 ···（和条目的两个按钮一样的顺序）；改名时标题处是改名框 */
+.sec-head { position: relative; }
+.sec-actions { display: none; flex: none; margin-left: auto; align-items: center; gap: 2px; padding-left: 4px; padding-right: 6px; }
+.sec-head:hover .sec-actions, .sec-head.menu-open .sec-actions { display: flex; }
+.sec-head .row-rename { flex: none; width: calc(100% - 8px); height: 24px; margin: 0 4px; font-size: 12px; }
+body.dragging .sec-actions { display: none !important; }
+/* 拖动栏的标题：被拖的那一栏淡一点 */
+.section.drag-src { opacity: .4; }
+/* 空着的栏：一行灰字，和深度 0 的条目的标题对齐（52px），拖条目进来时它也是落点 */
+.sb-note.sb-empty { margin: 2px 0 4px; padding: 0 8px 0 44px; height: 26px; line-height: 26px; } /* 44：栏左边的 8px 加上，正好 52（.sb-note.inset 原来压过了它，字在 24px 处） */
+
+/* 扩展提供的栏里的提示（没有条目、条目读不出来：SidebarExtension.tsx）：一行灰字，读不出来的原因长时换行 */
+.sb-ext-note { line-height: 1.5; overflow-wrap: anywhere; }
+
+/* 条目右边的灰字：网页链接的「链接」，不在自己那一栏的文档写的那一栏的名字（.row-column），找不到底稿的「找不到底稿」；悬停时让给 ＋ / ···（.row-actions）。
+   用标题剩下的地方（flex-basis 0，标题先拿它要的），靠右写，放不下时在末尾用 …（样式，不按字数）；剩下的地方没有时它一个字也不露 */
+.row-tag { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; justify-content: flex-end; height: 18px; padding-left: 6px; font-size: 12px; line-height: 18px; color: var(--texSec); white-space: nowrap; overflow: hidden; }
+/* 整个露出来或一个字也不露：一条宽 0 的空盒占着第一行，放不下的灰字就折到第二行，被 18px 的高裁掉（不再是同一栏里有的行写「Default docu…」、有的写「Default do…」） */
+.row-tag::before { content: ""; flex: none; width: 0; height: 18px; }
+.row:hover .row-tag, .row.menu-open .row-tag { display: none; }
+
+/* 添加在线网页… / 修改网址…（LinkForm.tsx）：菜单一样的卡片，两栏输入，底下是取消、添加 */
+.link-form { padding: 0 0 2px; }
+/* 卡片四边已留 5px（components.css .menu）：里面的东西照旧离卡片边 12px */
+.link-field { display: block; padding: 2px 7px 6px; }
+.link-label { display: block; margin-bottom: 4px; font-size: 12px; color: var(--texSec); }
+.link-error { margin: 0 7px 6px; font-size: 13px; line-height: 1.5; color: var(--btnDanTex); }
+.link-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 6px 7px 0; }
+.link-actions .dialog-btn { height: 28px; padding: 0 8px; }
+
+/* 找不到底稿的整行灰着（不在自己那一栏的文档右边的灰字是 .row-tag.row-column，截断同 .row-tag） */
+.row.missing .row-title, .row.missing .pg-icon { color: var(--texTer); opacity: .7; }
+/* 工作区的栏和别的栏同名时，名字后面的灰字（上一级目录），在 .sec-text 里，截断在名字之前 */
+.sec-above { margin-left: 4px; font-size: 12px; font-weight: 400; line-height: 16px; color: var(--texTer); }
+
+/* 添加其他 Gallery 项目…（ProjectForm.tsx）：路径框和它右边的「确认」（主按钮：淡蓝底）在一行，没有取消；下面是别的工作区，展开看它们的文档，
+   一行一行是侧栏条目的样子（.row：30 高、圆角 6、14px，指针在上面是灰，选中的一行是侧栏选中的底色，选中又在指针下深一点）；
+   工作区前面是展开的箭头，文档按层级缩进（--depth，和侧栏一样每级 8px）；工作区后面的灰字（上一级目录）和个数在行末，放不下时由样式用 … 收住 */
+.project-form { padding: 0 0 2px; }
+.project-path { display: flex; align-items: center; gap: 8px; padding: 2px 7px 8px; }
+.project-path .pop-input { flex: 1; min-width: 0; }
+.project-path .dialog-btn { flex: none; height: 28px; padding: 0 8px; }
+.project-list { max-height: 300px; overflow-y: auto; margin: 0 calc(-1 * var(--pad-card)) calc(-1 * var(--pad-card)); padding: 5px; border-top: 1px solid var(--borSec); scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent; }
+.project-row { height: 30px; margin-bottom: 1px; display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px calc(4px + var(--depth, 0) * 8px); border-radius: var(--r-row); cursor: pointer; user-select: none; font-size: 14px; color: var(--texAcc); }
+/* 卡片里的行：移上 7%、选中 7%、按下 10%（菜单的行一样） */
+.project-row:hover { background: var(--fill); }
+.project-row.selected, .project-row.selected:hover { background: var(--fill); color: var(--texPri); }
+.project-row:active { background: var(--fillStrong); }
+.project-toggle { flex: none; width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: var(--texTer); }
+.project-toggle:hover:not(:disabled) { background: var(--bacTerTra); }
+.project-toggle:active:not(:disabled) { background: var(--bacPre); }
+.project-toggle svg { width: 12px; height: 12px; stroke-width: 1.8; transition: transform .13s ease-out; }
+.project-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
+.project-toggle:disabled { visibility: hidden; }
+.project-row .mi-icon { color: var(--sidIco); }
+.project-document { padding-left: calc(4px + 28px + var(--depth, 0) * 8px); }
+.project-above { margin-left: 6px; font-size: 12px; font-weight: 400; color: var(--texTer); }
+.project-count { flex: none; font-size: 12px; color: var(--texTer); }
+
+/* 侧栏条目的图标选择器的框（iconPicker.ts；条目和自定义页的 ··· 菜单、右键菜单里的「更换图标」打开它）：铺满整个窗口、透明，选择器在里面；
+   关着时完全透明、不接指针（不用 visibility：焦点要能进去），框说它的选择器摆好了（shown）才显出来。在弹出菜单那一层（1000），提示条（2500）和提示（3000）在它上面 */
+.icon-picker-frame { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; z-index: 1000; background: transparent; opacity: 0; pointer-events: none; }
+.icon-picker-frame.open { opacity: 1; pointer-events: auto; }

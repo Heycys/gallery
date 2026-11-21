@@ -1,0 +1,8 @@
+{
+  "id": "gallery-soft",
+  "name": { "zh": "柔光风格", "en": "Soft style" },
+  "description": { "zh": "柔和的配色、圆润的卡片：首页卡片的另一种样子。", "en": "Soft colors and rounded cards: another look for the home page's cards." },
+  "version": "1.0.0",
+  "author": "Gallery",
+  "icon": "🌷"
+}

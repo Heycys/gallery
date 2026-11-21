@@ -1,0 +1,8 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page or the blocks in the slot, which read as the page's. The look is a
+   card's of the kit (.doc-figure, since 2026-11-17): a 1px line, 12px corners, the ground it stands on
+   (--doc-figure-ground: the page's color, a detail card's surface in one), which is the surface inside it
+   as in the kit's, the kit's insets at its top and sides, and its title bold at the card title's size with
+   no tracking; in the kit's colors, which follow the theme. */
+[data-doc-component="gallery/card"] { --doc-surface: var(--doc-figure-ground, var(--doc-bg)); margin: var(--doc-component-gap) 0; padding: 14px 18px 8px; border: 1px solid var(--doc-border); border-radius: 12px; background: var(--doc-surface); }
+[data-doc-component="gallery/card"] > h3 { margin: 0 0 6px; font-size: var(--doc-card-title-font-size); line-height: var(--doc-card-title-line-height); font-weight: 700; letter-spacing: 0; }

@@ -1,0 +1,19 @@
+{
+  "id": "gallery/weather",
+  "apiVersion": 1,
+  "version": "2.0.0",
+  "name": { "zh": "天气", "en": "Weather" },
+  "description": { "zh": "一个城市现在的天气和接下来几天的预报，数据来自 Open-Meteo，要先允许联网", "en": "A city's weather now and for the days ahead, from Open-Meteo, once the reader lets it online" },
+  "words": "tianqi qiwen yubao weather forecast temperature 天气 气温 预报 温度 下雨",
+  "parts": {
+    "settings": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-weather-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[4, 2], [2, 2], [4, 4]], "resize": true, "consent": { "zh": "允许联网之后显示天气", "en": "Allow internet access to show the weather" } },
+  "settings": [
+    { "key": "city", "label": { "zh": "城市", "en": "City" }, "type": "text", "default": "", "required": true },
+    { "key": "unit", "label": { "zh": "单位", "en": "Unit" }, "type": "select", "options": ["℃", "℉"], "default": "℃" }
+  ],
+  "needs": ["net:api.open-meteo.com", "net:geocoding-api.open-meteo.com"]
+}

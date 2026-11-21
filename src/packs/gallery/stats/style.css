@@ -1,0 +1,80 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens: no head, four cells, each
+   its label after a small picture of what it counts (12px, muted; the picture faint), its number (28px,
+   32px on a wide card) with its unit or its whole after it, its picture at the bottom (the documents'
+   squares, the words' line and the area fading under it, the to-dos' bar, the week's bars: the accent and
+   its middle shade, on the track) and a faint line under it, its key words 600. In a row (8 × 2, 12 × 2)
+   the cells stand a hairline apart, the face out over the card's padding at its sides so that each cell has
+   the card's own 16px; two by two (4 × 4) the face fills the card, each cell padded 16px, lined between
+   them. Unread (no workspace) a faint dash each and a line at the bottom left. Light and dark. */
+[data-doc-component="gallery/stats"] {
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-stats-face { position: relative; display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; }
+  > .gallery-stats-face > .gallery-stats-grid { flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); min-height: 0; margin: 0; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell { display: flex; flex-direction: column; min-width: 0; padding: 0 var(--gallery-card-pad); }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell + .gallery-stats-cell { border-left: 1px solid var(--gallery-hair); }
+  > .gallery-stats-face[data-unread] > .gallery-stats-grid > .gallery-stats-cell + .gallery-stats-cell { border-left-color: transparent; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > dd { margin: 0; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-label { display: flex; align-items: center; gap: 6px; padding-inline-end: 0; font-size: 12px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-label > svg { flex: none; width: 13px; height: 13px; color: var(--gallery-faint); }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-label > .gallery-stats-label-words { overflow: hidden; text-overflow: ellipsis; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value { display: flex; align-items: baseline; margin-top: 7px; white-space: nowrap; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value > .gallery-stats-number {
+    font-size: var(--gallery-figure-size);
+    line-height: 1;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: var(--gallery-numeral-tracking);
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-stats-face[data-unread] > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value > .gallery-stats-number { font-weight: 300; color: var(--gallery-faintest); }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value > .gallery-stats-unit { margin-left: var(--gallery-unit-gap); font-size: var(--gallery-unit); font-weight: 500; color: var(--gallery-muted); }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value > .gallery-stats-of { margin-left: 3px; font-size: 15px; font-weight: 600; color: var(--gallery-faint); }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-picture { margin-top: auto; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-picture > svg { display: block; overflow: visible; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-caption { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 11.5px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; overflow: hidden; }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-caption > .gallery-stats-mark { flex: none; width: 6px; height: 6px; border-radius: 2px; background: var(--gallery-accent); }
+  > .gallery-stats-face > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-caption > .gallery-stats-strong { font-weight: 600; color: var(--gallery-muted); }
+  /* The pictures' colors. */
+  > .gallery-stats-face .gallery-stats-on { fill: var(--gallery-accent); }
+  > .gallery-stats-face :is(.gallery-stats-off, .gallery-stats-stub) { fill: var(--gallery-track); }
+  > .gallery-stats-face .gallery-stats-empty { fill: var(--gallery-fill); }
+  > .gallery-stats-face .gallery-stats-flat { stroke: var(--gallery-track); }
+  > .gallery-stats-face .gallery-stats-line { stroke: var(--gallery-accent); }
+  > .gallery-stats-face .gallery-stats-stop { stop-color: var(--gallery-accent); }
+  > .gallery-stats-face .gallery-stats-end { fill: var(--gallery-accent); stroke: var(--gallery-card-fill); }
+  > .gallery-stats-face .gallery-stats-today { fill: var(--gallery-accent); }
+  > .gallery-stats-face .gallery-stats-day { fill: var(--gallery-accent-mid); }
+  > .gallery-stats-face .gallery-stats-bar { position: relative; display: block; height: 6px; border-radius: 3px; overflow: hidden; background: var(--gallery-track); }
+  > .gallery-stats-face .gallery-stats-bar > .gallery-stats-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--gallery-accent); }
+  /* Unread: a line at the bottom left. */
+  > .gallery-stats-face > .gallery-stats-line { position: absolute; left: var(--gallery-card-pad); bottom: 0; margin: 0; font-size: 11.5px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-stats-face > .gallery-stats-line[hidden] { display: none; }
+  /* A wide card: the numbers larger. */
+  > .gallery-stats-face[data-layout="wide"] > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value > .gallery-stats-number { font-size: 32px; }
+  /* A narrow card, two by two: a square one (4 × 4) with its pictures and captions, a compact one (4 × 2, as the
+     phone flow makes of an 8 × 2: it keeps the height and cuts the width) with the labels and the numbers
+     alone, so that all four fit its 144px. */
+  > .gallery-stats-face:is([data-layout="square"], [data-layout="compact"]) > .gallery-stats-grid { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  > .gallery-stats-face:is([data-layout="square"], [data-layout="compact"]) > .gallery-stats-grid > .gallery-stats-cell { padding: var(--gallery-card-pad); }
+  > .gallery-stats-face:is([data-layout="square"], [data-layout="compact"]) > .gallery-stats-grid > .gallery-stats-cell + .gallery-stats-cell { border-left: 0; }
+  > .gallery-stats-face:is([data-layout="square"], [data-layout="compact"]) > .gallery-stats-grid > .gallery-stats-cell:nth-child(2n) { border-left: 1px solid var(--gallery-hair); }
+  > .gallery-stats-face:is([data-layout="square"], [data-layout="compact"]) > .gallery-stats-grid > .gallery-stats-cell:nth-child(n + 3) { border-top: 1px solid var(--gallery-hair); }
+  > .gallery-stats-face:is([data-layout="square"], [data-layout="compact"])[data-unread] > .gallery-stats-grid > .gallery-stats-cell { border-color: transparent; }
+  > .gallery-stats-face[data-layout="compact"] > .gallery-stats-grid > .gallery-stats-cell { justify-content: center; padding: 10px var(--gallery-card-pad); }
+  > .gallery-stats-face[data-layout="compact"] > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value { margin-top: 4px; }
+  > .gallery-stats-face[data-layout="compact"] > .gallery-stats-grid > .gallery-stats-cell > .gallery-stats-value > .gallery-stats-number { font-size: 24px; }
+  > .gallery-stats-face[data-layout="compact"] > .gallery-stats-grid > .gallery-stats-cell > :is(.gallery-stats-picture, .gallery-stats-caption),
+  > .gallery-stats-face[data-layout="compact"] > .gallery-stats-line { display: none; }
+  > .gallery-stats-face[data-layout="square"] .gallery-stats-bar { height: 8px; border-radius: 4px; }
+  > .gallery-stats-face[data-layout="square"] .gallery-stats-bar > .gallery-stats-fill { border-radius: 4px; }
+  > .gallery-stats-face[data-layout="square"] > .gallery-stats-line { bottom: var(--gallery-card-pad); }
+}
+/* On a custom page the face is the card's: out over its padding at its sides (all round when square), so
+   that each cell has the card's own room. */
+.gallery-card > [data-doc-component="gallery/stats"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/stats"] > .gallery-stats-face { height: 100%; margin: 0 calc(-1 * var(--gallery-card-pad)); }
+.gallery-card > [data-doc-component="gallery/stats"] > .gallery-stats-face:is([data-layout="square"], [data-layout="compact"]) { height: calc(100% + 2 * var(--gallery-card-pad)); margin: calc(-1 * var(--gallery-card-pad)); }

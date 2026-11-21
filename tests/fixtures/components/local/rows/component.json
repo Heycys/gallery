@@ -1,0 +1,16 @@
+{
+  "id": "local/rows",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "排序表", "en": "Ordered rows" },
+  "description": { "zh": "一张能改行序的表", "en": "A table whose rows can be put in another order" },
+  "words": "rows order paixu 排序",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "rows": { "at": ":scope > table", "edit": "data" },
+    "moves": { "at": ":scope > script", "edit": "data", "optional": true }
+  },
+  "runtime": { "generated": [".rows-drawn"] },
+  "schema": 2,
+  "markdown": "parts"
+}

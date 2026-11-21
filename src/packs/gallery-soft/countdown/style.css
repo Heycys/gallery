@@ -1,0 +1,211 @@
+/* 柔光风格's countdown. Every selector starts at the instance and goes down a step at a time (>), so that
+   nothing here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark(): the
+   page's color scheme, which follows its theme), then the face: a faint wash of the accent from the card's
+   top over the soft card's fill; a head of an hourglass's chip and the day's name, one line; the count the
+   hero at the bottom, its words before it and its unit after it muted, the date under it; on a card wider
+   than two cells a small page of a calendar beside the count (the month on a band of the accent, the day
+   large), on the day 就是今天 in the accent; with no date the cards' empty face (a calendar in a soft disc,
+   a line, where to set one). On a custom page the face is the card's whole room, taken out over the card's
+   padding and given the soft frame's (data-pad: 18px on a 2 × 2 card, 20px on a 4 × 2), the board's line
+   around it; where no card is (a document, as gallery block check shows it) the face frames itself at the
+   size of a 2 × 2 card. */
+[data-doc-component="gallery-soft/countdown"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-ink: light-dark(#356cb3, #98bee9);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-on-accent: light-dark(#ffffff, #152436);
+  --soft-track: light-dark(rgb(28 28 32 / 7%), rgb(255 255 255 / 8%));
+  --soft-grip-room: 0px;
+  > .gallery-soft-countdown-face {
+    --soft-pad: 18px;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 144px;
+    max-width: 100%;
+    height: 144px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-wash), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-countdown-face[data-pad="m"] { --soft-pad: 20px; }
+  > .gallery-soft-countdown-face[data-pad="l"] { --soft-pad: 24px; }
+  > .gallery-soft-countdown-face[data-pad="xs"] { padding: 0 calc(16px - var(--soft-edge, 0px)); justify-content: center; }
+  > .gallery-soft-countdown-face:not([data-w="1"], [data-w="2"]) { width: 304px; }
+  /* The head: the hourglass's chip and the day's name. */
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    height: 28px;
+    min-width: 0;
+    padding-inline-end: var(--soft-grip-room);
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-head > .gallery-soft-countdown-chip {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--soft-accent-soft);
+    color: var(--soft-accent);
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-head > .gallery-soft-countdown-chip > svg { display: block; width: 16px; height: 16px; }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-head > .gallery-soft-countdown-name {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-head { gap: 8px; height: 24px; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-head > .gallery-soft-countdown-chip { width: 24px; height: 24px; border-radius: 7px; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-head > .gallery-soft-countdown-chip > svg { width: 14px; height: 14px; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-head > .gallery-soft-countdown-name { font-size: 13px; }
+  /* The count at the bottom, the calendar's page beside it on a wide card. */
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body {
+    display: flex;
+    align-items: flex-end;
+    gap: 16px;
+    margin-top: auto;
+    min-width: 0;
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-grow { flex: 1; min-width: 0; }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-count {
+    margin: 0;
+    white-space: nowrap;
+    font-family: var(--soft-num);
+    font-size: 44px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -.025em;
+    font-variant-numeric: tabular-nums;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-count { font-size: 40px; }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-count > :is(.gallery-soft-countdown-label, .gallery-soft-countdown-unit) {
+    font-family: var(--soft-font);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0;
+    color: var(--soft-muted);
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-count > .gallery-soft-countdown-label { margin-right: 6px; }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-count > .gallery-soft-countdown-unit { margin-left: 4px; }
+  /* On the day: its words in the accent. */
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-words {
+    font-family: var(--soft-font);
+    font-size: 26px;
+    line-height: 1.1;
+    letter-spacing: .02em;
+    color: var(--soft-accent-ink);
+  }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-words { font-size: 24px; }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-grow > .gallery-soft-countdown-date {
+    margin: 8px 0 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12px;
+    color: var(--soft-muted);
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: none;
+    width: 62px;
+    height: 70px;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--soft-card);
+    box-shadow: 0 0 0 1px var(--soft-card-line), 0 6px 14px -8px rgb(0 0 0 / 25%);
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-page > .gallery-soft-countdown-month {
+    height: 22px;
+    background: var(--soft-accent);
+    color: var(--soft-on-accent);
+    font: 600 11.5px/22px var(--soft-font);
+    text-align: center;
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-body > .gallery-soft-countdown-page > .gallery-soft-countdown-day {
+    display: grid;
+    place-items: center;
+    flex: 1;
+    font: 700 28px/1 var(--soft-num);
+    letter-spacing: -.02em;
+    color: var(--soft-strong);
+  }
+  /* No date: the cards' empty face. */
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    flex: 1;
+    min-height: 0;
+    text-align: center;
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-empty > .gallery-soft-countdown-disc {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+    border-radius: 50%;
+    background: var(--soft-track);
+    color: var(--soft-muted);
+  }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-empty > .gallery-soft-countdown-disc > svg { display: block; width: 20px; height: 20px; }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-empty > .gallery-soft-countdown-line { margin: 0; font-size: 13px; color: var(--soft-text); }
+  > .gallery-soft-countdown-face > .gallery-soft-countdown-empty > .gallery-soft-countdown-how { margin: 0; font-size: 12px; color: var(--soft-muted); text-wrap: pretty; }
+  /* A 2 × 2 card: a smaller disc, a line each, so that the three stand clear of the head. */
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-empty { gap: 0; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-disc { width: 30px; height: 30px; margin-bottom: 4px; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-disc > svg { width: 15px; height: 15px; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-empty > :is(.gallery-soft-countdown-line, .gallery-soft-countdown-how) { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-line { font-size: 12.5px; line-height: 18px; }
+  > .gallery-soft-countdown-face[data-pad="s"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-how { line-height: 16px; }
+  /* A card 2 cells high and wider: the disc beside its line and what to do, which under the head have no room for a column. */
+  > .gallery-soft-countdown-face[data-pad="m"] > .gallery-soft-countdown-empty { display: grid; grid-template-columns: auto minmax(0, max-content); column-gap: 12px; row-gap: 2px; align-content: center; justify-content: center; text-align: left; }
+  > .gallery-soft-countdown-face[data-pad="m"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-disc { grid-row: 1 / span 2; width: 36px; height: 36px; margin: 0; }
+  > .gallery-soft-countdown-face[data-pad="m"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-disc > svg { width: 17px; height: 17px; }
+  > .gallery-soft-countdown-face[data-pad="m"] > .gallery-soft-countdown-empty > :is(.gallery-soft-countdown-line, .gallery-soft-countdown-how) { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  > .gallery-soft-countdown-face[data-pad="m"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-line { align-self: end; }
+  > .gallery-soft-countdown-face[data-pad="m"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-how { align-self: start; }
+  > .gallery-soft-countdown-face[data-pad="m"] > .gallery-soft-countdown-empty > .gallery-soft-countdown-line:last-child { grid-row: 1 / span 2; align-self: center; }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it; the head's end kept clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/countdown"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/countdown"] > .gallery-soft-countdown-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}

@@ -1,0 +1,5 @@
+interface:
+  display_name: "Gallery"
+  short_description: "Write interactive HTML documents the user views and edits"
+  brand_color: "#2678D8"
+  default_prompt: "Use $gallery to turn these materials into an interactive HTML document."

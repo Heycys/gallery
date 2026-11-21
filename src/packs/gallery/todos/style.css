@@ -1,0 +1,222 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens, a grid laid out by the
+   card's cells (the face's data-layout): the head (the chip, a checked list, 我的待办 and its quiet meta),
+   its end clear of the card's grip; how many are done (on a 4 × 4 card a line, 已完成 19 / 27 and the
+   percent at its end, over a row of ticks, one an item, done in the accent; on a 4 × 6 a ring of 64px, its
+   percent in the middle, beside the open count large and 已完成 under it; on an 8 × 4 a ring of 96px at the
+   left over a key of three rows); and the list, scrolling, faded at its foot while there is more: the
+   groups small and gray (the document's icon, its title, its open count fainter), each item a box of 16px
+   (the control blue's, ticked, once done), its words (struck through and faint once done) and, under them (at
+   their right on a wide card), the headings it stands under, faint. A card with no item to show is the
+   cards' empty face in the middle: a soft square with the list's picture (or, all of them done, a full
+   green ring with a tick), a line and what to do. Light and dark. */
+[data-doc-component="gallery/todos"] {
+  /* The to-do box (the one every checkbox in Gallery has, 2026-11): 16px, 5px corners, a 1.25px gray line that darkens under the
+     pointer, the control blue (the switch's) filled under a white tick once done: the kit's tokens (styles/tokens.css), their
+     values where a page's kit has none. */
+  --gallery-todos-box: var(--doc-check-line, light-dark(#8e8b86, #ada9a3));
+  --gallery-todos-box-hover: var(--doc-check-line-hover, light-dark(#5c5a55, #d3d1cb));
+  --gallery-todos-blue: var(--doc-control-blue, light-dark(#4a81d4, #4f7fcb));
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-todos-face {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 20px auto minmax(0, 1fr);
+    grid-template-areas: "head" "summary" "list";
+    box-sizing: border-box;
+    min-height: 0;
+  }
+  > .gallery-todos-face > .gallery-todos-head {
+    grid-area: head;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+  }
+  > .gallery-todos-face > .gallery-todos-head > .gallery-todos-chip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-fill);
+    color: var(--gallery-muted);
+  }
+  > .gallery-todos-face > .gallery-todos-head > .gallery-todos-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  > .gallery-todos-face > .gallery-todos-head > .gallery-todos-title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--gallery-title-size); line-height: var(--gallery-title-line); font-weight: 600; color: var(--gallery-text); }
+  > .gallery-todos-face > .gallery-todos-head > .gallery-todos-count { flex: none; font-size: var(--gallery-meta-size); color: var(--gallery-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+  /* How many are done: the parts each layout shows. */
+  > .gallery-todos-face > .gallery-todos-summary { grid-area: summary; margin-top: 12px; min-width: 0; }
+  > .gallery-todos-face > .gallery-todos-summary[hidden] { display: none; }
+  > .gallery-todos-face > .gallery-todos-summary > :is(.gallery-todos-ring, .gallery-todos-big, .gallery-todos-key) { display: none; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-progress { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 6px; font-size: 12px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-progress b { font-weight: 600; color: var(--gallery-text); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-progress > .gallery-todos-share { font-size: 11.5px; color: var(--gallery-muted); font-variant-numeric: tabular-nums; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ticks { display: flex; gap: 2px; height: 6px; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ticks > .gallery-todos-tick { flex: 1; border-radius: 2px; background: var(--gallery-track); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ticks > .gallery-todos-on { background: var(--gallery-accent); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ring { position: relative; flex: none; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ring > svg { display: block; transform: rotate(-90deg); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ring > svg > circle { fill: none; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ring > svg > .gallery-todos-track { stroke: var(--gallery-track); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ring > svg > .gallery-todos-arc { stroke: var(--gallery-accent); stroke-linecap: round; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ring > .gallery-todos-percent {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    line-height: 1;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: var(--gallery-numeral-tracking);
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-ring > .gallery-todos-percent > .gallery-todos-percent-value > .gallery-todos-percent-sign { margin-left: 1px; font-size: 11px; font-weight: 500; letter-spacing: 0; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-big > p { margin: 0; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-big > .gallery-todos-big-line { display: flex; align-items: baseline; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-big > .gallery-todos-big-line > .gallery-todos-open {
+    font-size: var(--gallery-figure-size);
+    line-height: 1;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: var(--gallery-numeral-tracking);
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-big > .gallery-todos-big-line > .gallery-todos-open-unit { margin-left: var(--gallery-unit-gap); font-size: var(--gallery-unit); font-weight: 500; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-big > .gallery-todos-big-done { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-key { flex-direction: column; gap: 6px; margin: 16px 0 0; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-key > .gallery-todos-key-row { display: flex; align-items: center; gap: 8px; font-size: 12px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-key > .gallery-todos-key-row::before { content: ""; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--gallery-accent); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-key > .gallery-todos-key-row[data-kind="left"]::before { background: var(--gallery-track); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-key > .gallery-todos-key-row[data-kind="from"]::before { background: transparent; box-shadow: inset 0 0 0 1.5px var(--gallery-faintest); }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-key > .gallery-todos-key-row > dt { margin: 0; }
+  > .gallery-todos-face > .gallery-todos-summary > .gallery-todos-key > .gallery-todos-key-row > dd { margin: 0 0 0 auto; font-weight: 600; color: var(--gallery-text); font-variant-numeric: tabular-nums; }
+
+  /* The list: groups and items, scrolling, faded at its foot while there is more. */
+  /* The list scrolls, so it clips: its edges keep 4px at the sides and 3px at the top (given back by its margin), room for the keys' ring. */
+  > .gallery-todos-face > .gallery-todos-list { grid-area: list; min-height: 0; margin: 5px -4px 0; padding: 3px 4px 0; overflow: auto; scrollbar-width: none; }
+  > .gallery-todos-face > .gallery-todos-list[hidden] { display: none; }
+  > .gallery-todos-face > .gallery-todos-list[data-more] {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 28px), transparent);
+  }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head { display: flex; align-items: center; gap: 4px; min-width: 0; margin: 10px 0 2px; font-size: 11.5px; line-height: 18px; font-weight: 600; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-doc {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    font: inherit;
+    color: inherit;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-doc:hover { color: var(--gallery-text); }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-doc:focus-visible,
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > :is(.gallery-todos-check, .gallery-todos-todo):focus-visible { outline: 2px solid var(--gallery-accent); outline-offset: 2px; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-group-count { flex: none; margin-left: 2px; font-weight: 400; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-doc > .gallery-todos-icon { flex: none; display: grid; place-items: center; width: 13px; height: 13px; margin-right: 2px; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-doc > .gallery-todos-icon > img { display: block; width: 12px; height: 12px; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-doc > .gallery-todos-glyph::before { content: ""; width: 12px; height: 12px; background: var(--gallery-faint); -webkit-mask: var(--gallery-todos-icon) center / contain no-repeat; mask: var(--gallery-todos-icon) center / contain no-repeat; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-group-head > .gallery-todos-doc > .gallery-todos-icon:empty::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    background: var(--gallery-faint);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z'/%3E%3Cpath d='M13.5 3.5V8H18'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z'/%3E%3Cpath d='M13.5 3.5V8H18'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items { margin: 0; padding: 0; list-style: none; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item { display: flex; align-items: flex-start; gap: 9px; padding: 4px 0; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-check { flex: none; margin: 1.5px 0 0; padding: 0; border: 0; border-radius: 5px; background: none; cursor: pointer; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item .gallery-todos-box {
+    display: grid;
+    place-items: center;
+    flex: none;
+    box-sizing: border-box;
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    box-shadow: inset 0 0 0 1.25px var(--gallery-todos-box);
+    color: #fff;
+  }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-box { margin-top: 1.5px; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item :not(.gallery-todos-done):hover .gallery-todos-box { box-shadow: inset 0 0 0 1.25px var(--gallery-todos-box-hover); }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item .gallery-todos-box > svg { display: block; width: 12px; height: 12px; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-done .gallery-todos-box { background: var(--gallery-todos-blue); box-shadow: none; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-todo {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-todo:hover { background: var(--gallery-hover); box-shadow: 0 0 0 3px var(--gallery-hover); }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-todo > .gallery-todos-text { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; font-size: 13px; line-height: 19px; color: var(--gallery-text); }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-todo > .gallery-todos-path { font-size: 11.5px; line-height: 15px; color: var(--gallery-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  > .gallery-todos-face > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-done > .gallery-todos-todo > .gallery-todos-text { color: var(--gallery-faint); text-decoration: line-through; text-decoration-color: var(--gallery-faintest); }
+
+  /* Nothing to list: the cards' empty face in the middle. The pack's one empty face: a card with no head row, or four cells high or more, centres it over a 28px chip; under a head row in a short card (4 × 2, 2 × 2) it is two lines at the left with no chip, there being no room for one. */
+  > .gallery-todos-face > .gallery-todos-empty { grid-area: list; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 0; text-align: center; }
+  > .gallery-todos-face > .gallery-todos-empty[hidden] { display: none; }
+  > .gallery-todos-face > .gallery-todos-empty > p { margin: 0; }
+  > .gallery-todos-face > .gallery-todos-empty > .gallery-todos-line { font-size: 13.5px; line-height: 20px; font-weight: 600; color: var(--gallery-text); }
+  > .gallery-todos-face > .gallery-todos-empty > .gallery-todos-hint { font-size: 12px; line-height: 18px; color: var(--gallery-muted); text-wrap: pretty; }
+  > .gallery-todos-face > .gallery-todos-empty > .gallery-todos-empty-picture { display: grid; place-items: center; width: 28px; height: 28px; margin-bottom: 6px; border-radius: 8px; background: var(--gallery-fill); color: var(--gallery-faint); }
+  > .gallery-todos-face > .gallery-todos-empty > .gallery-todos-empty-picture > svg { width: 16px; height: 16px; }
+  > .gallery-todos-face > .gallery-todos-empty[data-picture="done"] > .gallery-todos-empty-picture { position: relative; width: 72px; height: 72px; margin-bottom: 10px; border-radius: 0; background: none; color: var(--gallery-good); }
+  > .gallery-todos-face > .gallery-todos-empty[data-picture="done"] > .gallery-todos-empty-picture > svg:first-child { position: absolute; inset: 0; width: 72px; height: 72px; }
+  > .gallery-todos-face > .gallery-todos-empty[data-picture="done"] > .gallery-todos-empty-picture > svg:first-child > circle { fill: none; stroke: var(--gallery-good); stroke-width: 7; }
+  > .gallery-todos-face > .gallery-todos-empty[data-picture="done"] > .gallery-todos-empty-picture > svg:last-child { width: 26px; height: 26px; stroke-width: 2.4; }
+  > .gallery-todos-face[data-state="done"],
+  > .gallery-todos-face[data-state="none"],
+  > .gallery-todos-face[data-state="unread"] { grid-template-rows: 20px 0 minmax(0, 1fr); }
+  /* A refused check: a line at the foot, over the list, for a few seconds. */
+  > .gallery-todos-face > .gallery-todos-note { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 6px 10px; border-radius: 8px; background: var(--gallery-card-fill); box-shadow: 0 0 0 1px var(--gallery-hair), 0 4px 12px -6px rgb(0 0 0 / 20%); font-size: 12px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-todos-face > .gallery-todos-note[hidden] { display: none; }
+
+  /* A tall card: the ring beside the open count. */
+  > .gallery-todos-face[data-layout="tall"] > .gallery-todos-summary { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+  > .gallery-todos-face[data-layout="tall"] > .gallery-todos-summary[hidden] { display: none; }
+  > .gallery-todos-face[data-layout="tall"] > .gallery-todos-summary > :is(.gallery-todos-progress, .gallery-todos-ticks) { display: none; }
+  > .gallery-todos-face[data-layout="tall"] > .gallery-todos-summary > :is(.gallery-todos-ring, .gallery-todos-big) { display: block; }
+  > .gallery-todos-face[data-layout="tall"] > .gallery-todos-list { margin-top: 7px; }
+  /* A wide card: the ring and the key at the left, the list at the right, each item's headings at its right. */
+  > .gallery-todos-face[data-layout="wide"] { grid-template-columns: 150px minmax(0, 1fr); grid-template-rows: 20px minmax(0, 1fr); grid-template-areas: "head head" "summary list"; column-gap: 28px; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-summary { display: flex; flex-direction: column; margin-top: 4px; padding-top: 4px; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-summary[hidden] { display: none; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-summary > :is(.gallery-todos-progress, .gallery-todos-ticks) { display: none; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-summary > .gallery-todos-ring { display: block; align-self: flex-start; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-summary > .gallery-todos-ring > .gallery-todos-percent { font-size: 22px; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-summary > .gallery-todos-key { display: flex; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-list { margin-top: 1px; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-todo { flex-direction: row; align-items: baseline; justify-content: space-between; gap: 16px; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-list > .gallery-todos-group > .gallery-todos-items > .gallery-todos-item > .gallery-todos-todo > .gallery-todos-path { flex: none; max-width: 45%; }
+  > .gallery-todos-face[data-layout="wide"] > .gallery-todos-empty { grid-column: 1 / -1; }
+  > .gallery-todos-face[data-layout="wide"]:is([data-state="done"], [data-state="none"], [data-state="unread"]) { grid-template-areas: "head head" "list list"; }
+}
+/* On a custom page the face fills the card the board frames. */
+.gallery-card > [data-doc-component="gallery/todos"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/todos"] > .gallery-todos-face { height: 100%; }

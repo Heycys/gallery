@@ -1,0 +1,222 @@
+/* 柔光风格's to-dos. Every selector starts at the instance and goes down from it, so that nothing here
+   reaches the rest of the page. The soft look's tokens first, light and dark (light-dark(): the page's color
+   scheme, which follows its theme), then the face: a faint wash of the accent from the card's top over the
+   soft card's fill; a head of a checked list's chip and 我的待办, how many are done at its end (fading while
+   the grip shows); the list the hero, grouped by document, each group's title small and muted after its
+   document's icon, its count at the end, each item a row: a box with no fill and a gray ring (the control blue's
+   fill and a white check in it, once done, the words then faint and struck), the words, the headings it stands under faint
+   at the end; a row under the pointer a soft gray. By the card's size (data-layout, from the script): square
+   (4 × 4) the list alone; tall (4 × 6) a ring of the share done and a key of the two counts over it; wide (8 ×
+   4) the ring and the key down the left side, a hairline after them, the groups two to a row beside them.
+   Under the list a muted line of how many more are below. Nothing to list: the cards' empty face (a soft
+   disc of the list's picture, red where nothing could be read; all done the ring full in green). On a custom
+   page the face is the card's whole room, taken out over the card's padding and given the soft frame's
+   (data-pad: 24px on these tall cards), the board's line around it; where no card is (a document, as gallery
+   block check shows it) the face frames itself at a 4 × 4 card's size. */
+[data-doc-component="gallery-soft/todos"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-faint: light-dark(#ababb0, #66666c);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-accent-mid: light-dark(#afcaea, #4a6f9b);
+  --soft-on-accent: light-dark(#ffffff, #152436);
+  --soft-track: light-dark(rgb(28 28 32 / 7%), rgb(255 255 255 / 8%));
+  /* The to-do box (the one every checkbox in Gallery has, 2026-11): 16px, 5px corners, a 1.25px gray line that darkens under the
+     pointer, the control blue (the switch's) filled under a white tick once done: the kit's tokens (styles/tokens.css), their
+     values where a page's kit has none. */
+  --soft-box: var(--doc-check-line, light-dark(#8e8b86, #ada9a3));
+  --soft-box-hover: var(--doc-check-line-hover, light-dark(#5c5a55, #d3d1cb));
+  --soft-blue: var(--doc-control-blue, light-dark(#4a81d4, #4f7fcb));
+  --soft-hover: light-dark(rgb(55 53 47 / 6%), rgb(255 255 255 / 6%));
+  --soft-good: light-dark(#23874f, #6fcf97);
+  --soft-good-mark: light-dark(#2fa463, #4cb87c);
+  --soft-bad: light-dark(#c9473d, #f08a80);
+  --soft-bad-soft: light-dark(#fcecea, rgb(240 138 128 / 14%));
+  --soft-grip-room: 0px;
+  > .gallery-soft-todos-face {
+    --soft-pad: 24px;
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 28px minmax(0, 1fr) auto auto;
+    grid-template-areas: "head" "list" "more" "note";
+    min-width: 0;
+    width: 304px;
+    max-width: 100%;
+    height: 304px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-wash), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-todos-face[data-pad="m"] { --soft-pad: 20px; }
+  > .gallery-soft-todos-face[data-pad="s"] { --soft-pad: 18px; }
+  > .gallery-soft-todos-face[data-layout="tall"] { grid-template-rows: 28px auto minmax(0, 1fr) auto auto; grid-template-areas: "head" "summary" "list" "more" "note"; }
+  > .gallery-soft-todos-face[data-layout="wide"] { grid-template-columns: 136px minmax(0, 1fr); grid-template-rows: 28px minmax(0, 1fr) auto auto; grid-template-areas: "head head" "summary list" ". more" ". note"; column-gap: 28px; }
+  /* The head: the chip, 我的待办, how many are done at its end. */
+  > .gallery-soft-todos-face > .gallery-soft-todos-head { grid-area: head; display: flex; align-items: center; gap: 10px; min-width: 0; padding-inline-end: var(--soft-grip-room); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-head > .gallery-soft-todos-chip { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--soft-accent-soft); color: var(--soft-accent); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-head > .gallery-soft-todos-chip > svg { display: block; width: 16px; height: 16px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-head > .gallery-soft-todos-title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 600; color: var(--soft-strong); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-head > .gallery-soft-todos-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+    margin-left: auto;
+    margin-inline-end: calc(-1 * var(--soft-grip-room));
+    font-size: 12px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+    opacity: calc(1 - var(--gallery-grip-shown, 0));
+    transition: opacity .12s ease-out;
+  }
+  > .gallery-soft-todos-face > .gallery-soft-todos-head > .gallery-soft-todos-count > .gallery-soft-todos-done-count { font: 600 12px var(--soft-num); color: var(--soft-text); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-head > .gallery-soft-todos-count > .gallery-soft-todos-of { font-family: var(--soft-num); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-head > .gallery-soft-todos-count > .gallery-soft-todos-dot { width: 3px; height: 3px; border-radius: 50%; background: currentColor; opacity: .7; }
+  /* A ring of the share done, its percent in its middle. */
+  .gallery-soft-todos-ring { position: relative; display: grid; place-items: center; flex: none; }
+  .gallery-soft-todos-ring > svg { position: absolute; inset: 0; display: block; }
+  .gallery-soft-todos-ring > svg > circle { fill: none; }
+  .gallery-soft-todos-ring > svg > .gallery-soft-todos-track { stroke: var(--soft-track); }
+  .gallery-soft-todos-ring > svg > .gallery-soft-todos-arc { stroke: var(--soft-accent); stroke-linecap: round; }
+  .gallery-soft-todos-ring > .gallery-soft-todos-percent { position: relative; font: 700 15px/1 var(--soft-num); letter-spacing: -.01em; color: var(--soft-strong); }
+  .gallery-soft-todos-ring > .gallery-soft-todos-percent > .gallery-soft-todos-percent-sign { margin-left: 1px; font-size: .62em; font-weight: 600; color: var(--soft-muted); }
+  /* The summary: the ring and a key of the two counts (a tall card's over the list, a wide one's beside it). */
+  > .gallery-soft-todos-face > .gallery-soft-todos-summary { grid-area: summary; display: none; }
+  > .gallery-soft-todos-face[data-state="items"][data-layout="tall"] > .gallery-soft-todos-summary { display: flex; align-items: center; gap: 14px; margin-top: 16px; }
+  > .gallery-soft-todos-face[data-state="items"][data-layout="wide"] > .gallery-soft-todos-summary { display: flex; flex-direction: column; justify-content: center; gap: 18px; margin-top: 16px; padding-right: 28px; box-shadow: inset -1px 0 0 var(--soft-track); }
+  > .gallery-soft-todos-face[data-layout="wide"] > .gallery-soft-todos-summary .gallery-soft-todos-percent { font-size: 24px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-summary > .gallery-soft-todos-key { display: grid; grid-template-columns: auto auto; align-items: center; column-gap: 18px; row-gap: 4px; margin: 0; font-size: 12.5px; }
+  > .gallery-soft-todos-face[data-layout="wide"] > .gallery-soft-todos-summary > .gallery-soft-todos-key { grid-template-columns: 1fr auto; row-gap: 8px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-summary > .gallery-soft-todos-key > .gallery-soft-todos-key-row { display: contents; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-summary > .gallery-soft-todos-key > .gallery-soft-todos-key-row > .gallery-soft-todos-key-name { display: flex; align-items: center; gap: 7px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-summary > .gallery-soft-todos-key > .gallery-soft-todos-key-row > .gallery-soft-todos-key-name > .gallery-soft-todos-key-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--soft-accent); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-summary > .gallery-soft-todos-key > .gallery-soft-todos-key-row[data-kind="left"] > .gallery-soft-todos-key-name > .gallery-soft-todos-key-dot { background: var(--soft-track); box-shadow: inset 0 0 0 1.5px var(--soft-accent-mid); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-summary > .gallery-soft-todos-key > .gallery-soft-todos-key-row > .gallery-soft-todos-key-count { margin: 0; font: 600 13px var(--soft-num); color: var(--soft-strong); text-align: right; }
+  /* The list: its groups, a row an item. */
+  > .gallery-soft-todos-face > .gallery-soft-todos-list {
+    grid-area: list;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 0;
+    /* The list scrolls, so it clips: its edges keep 6px at the sides (where a row's fill and the keys' ring lie) and 3px at the top, given back by its margins. */
+    margin: 11px -6px 0;
+    padding: 3px 6px 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  > .gallery-soft-todos-face[data-layout="tall"] > .gallery-soft-todos-list { margin-top: 17px; }
+  > .gallery-soft-todos-face[data-layout="wide"] > .gallery-soft-todos-list { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 28px; row-gap: 12px; align-content: start; margin-top: 13px; }
+  > .gallery-soft-todos-face:not([data-state="items"]) > :is(.gallery-soft-todos-list, .gallery-soft-todos-more) { display: none; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group { min-width: 0; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head { display: flex; align-items: center; gap: 6px; height: 20px; min-width: 0; font-size: 12px; font-weight: 500; color: var(--soft-muted); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-icon { display: grid; place-items: center; flex: none; width: 16px; height: 16px; font-size: 12px; line-height: 1; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-icon > :is(svg, img) { display: block; width: 14px; height: 14px; object-fit: cover; border-radius: 3px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-plain { color: var(--soft-faint); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-glyph::before { content: ""; width: 14px; height: 14px; background: var(--soft-muted); -webkit-mask: var(--gallery-soft-todos-icon) center / contain no-repeat; mask: var(--gallery-soft-todos-icon) center / contain no-repeat; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-doc {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-doc:hover { color: var(--soft-text); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-doc:focus-visible { color: var(--soft-text); outline: 2px solid var(--soft-accent); outline-offset: 2px; border-radius: 3px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-group-head > .gallery-soft-todos-group-count { flex: none; margin-left: auto; font: 500 11.5px var(--soft-num); color: var(--soft-muted); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items { margin: 0; padding: 0; list-style: none; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    box-sizing: border-box;
+    min-height: 28px;
+    min-width: 0;
+    margin: 0 -6px;
+    padding: 4px 6px;
+    border-radius: 6px;
+  }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item:hover { background: var(--soft-hover); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item > :is(.gallery-soft-todos-check, .gallery-soft-todos-todo) {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+  }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item > .gallery-soft-todos-check { display: grid; place-items: center; flex: none; margin-top: 2px; border-radius: 5px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item > .gallery-soft-todos-check:focus-visible { outline: 2px solid var(--soft-accent); outline-offset: 2px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item .gallery-soft-todos-box {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    box-shadow: inset 0 0 0 1.25px var(--soft-box);
+    color: transparent;
+  }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item .gallery-soft-todos-box > svg { display: block; width: 12px; height: 12px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item:not(.gallery-soft-todos-done):hover .gallery-soft-todos-box { box-shadow: inset 0 0 0 1.25px var(--soft-box-hover); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-done .gallery-soft-todos-box { background: var(--soft-blue); box-shadow: none; color: #fff; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item > .gallery-soft-todos-todo { display: flex; flex-direction: column; align-items: stretch; flex: 1; min-width: 0; text-align: left; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item > .gallery-soft-todos-todo:focus-visible { outline: 2px solid var(--soft-accent); outline-offset: 2px; border-radius: 3px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item > .gallery-soft-todos-todo > .gallery-soft-todos-text { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13.5px; line-height: 20px; color: var(--soft-text); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-done > .gallery-soft-todos-todo > .gallery-soft-todos-text { color: var(--soft-faint); text-decoration: line-through; text-decoration-color: var(--soft-faint); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-list > .gallery-soft-todos-group > .gallery-soft-todos-items > .gallery-soft-todos-item > .gallery-soft-todos-todo > .gallery-soft-todos-path { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 11.5px; line-height: 15px; color: var(--soft-muted); }
+  /* How many more are below. */
+  > .gallery-soft-todos-face > .gallery-soft-todos-more { grid-area: more; display: flex; align-items: center; gap: 4px; margin: 8px 0 0; font-size: 12px; color: var(--soft-muted); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-more[hidden] { display: none; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-more > .gallery-soft-todos-arrow { display: block; width: 13px; height: 13px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-more > .gallery-soft-todos-arrow > svg { display: block; width: 100%; height: 100%; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-note { grid-area: note; margin: 6px 0 0; font-size: 12px; color: var(--soft-bad); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-note[hidden] { display: none; }
+  /* Nothing to list: the cards' empty face, over the list's room and the summary's. */
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty { display: none; }
+  > .gallery-soft-todos-face:not([data-state="items"]) > .gallery-soft-todos-empty { grid-column: 1 / -1; grid-row: 2 / -1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 0; text-align: center; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-disc { display: grid; place-items: center; flex: none; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 50%; background: var(--soft-track); color: var(--soft-muted); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-disc > svg { display: block; width: 20px; height: 20px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-bad { background: var(--soft-bad-soft); color: var(--soft-bad); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-full { margin-bottom: 12px; }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-full > svg > .gallery-soft-todos-arc { stroke: var(--soft-good-mark); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-full > .gallery-soft-todos-percent { font-size: 20px; color: var(--soft-good); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-line { margin: 0; font-size: 13px; color: var(--soft-text); }
+  > .gallery-soft-todos-face > .gallery-soft-todos-empty > .gallery-soft-todos-how { margin: 0; font-size: 12px; color: var(--soft-muted); text-wrap: pretty; }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it; the head's end kept clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/todos"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/todos"] > .gallery-soft-todos-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}

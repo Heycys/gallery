@@ -1,0 +1,174 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens, laid out by the card's cells
+   (the face's data-layout): "wide" (4 × 2) the head (a ringed check's warm chip, the name, a field with no line
+   until it is typed in, the days in all after it, faint), the streak (36px) and 天连续 with the button at
+   its right, and this week's seven circles at the bottom; "narrow" (2 × 2) the name alone (13px, 600, two lines at most), a
+   flame and the streak (40px), and the button as wide as the card; "tall" (4 × 4) the head, the streak and
+   the button, 最近五周 and its count, and five weeks of circles of 26px. A day done the accent, ticked; one
+   done before the streak (a month's) the accent's pale tint; today ringed in the accent; the days to come
+   an outline. The button has no line: a pale blue 打卡, a pale green ✓ 已打卡, a line of words where nothing
+   writes. Never checked in: 还没打过卡 where the streak stands, the chip gray. Light and dark. */
+[data-doc-component="gallery/habit"] {
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-habit-face { display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; }
+  > .gallery-habit-face > .gallery-habit-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 20px;
+    min-width: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+  }
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-chip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-warm-soft);
+    color: var(--gallery-warm);
+  }
+  > .gallery-habit-face[data-fresh] > .gallery-habit-head > .gallery-habit-chip { background: var(--gallery-fill); color: var(--gallery-muted); }
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  /* The name: a field drawn as the head's title, as wide as its words (field-sizing), a soft fill while typed in. */
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-name {
+    field-sizing: content;
+    min-width: 2em;
+    max-width: 100%;
+    flex: 0 1 auto;
+    box-sizing: border-box;
+    height: 20px;
+    margin: 0 -4px;
+    padding: 0 4px;
+    border: 0;
+    border-radius: 4px;
+    outline: 0;
+    background: transparent;
+    font: inherit;
+    font-size: var(--gallery-title-size);
+    line-height: var(--gallery-title-line);
+    font-weight: 600;
+    color: var(--gallery-text);
+    text-overflow: ellipsis;
+  }
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-name::placeholder { color: var(--gallery-faint); font-weight: 500; }
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-name:not(:read-only):is(:hover, :focus) { background: var(--gallery-hover); }
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-name:read-only { cursor: default; }
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-label { display: none; }
+  > .gallery-habit-face > .gallery-habit-head > .gallery-habit-total { flex: none; font-size: var(--gallery-meta-size); color: var(--gallery-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  > .gallery-habit-face > .gallery-habit-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; margin-top: 10px; flex: none; }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-streak { display: flex; align-items: baseline; margin: 0; min-width: 0; }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-streak > .gallery-habit-flame { display: none; align-self: center; margin-right: 4px; color: var(--gallery-warm); }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-streak > .gallery-habit-flame > svg { display: block; width: 18px; height: 18px; }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-streak > .gallery-habit-count {
+    font-size: var(--gallery-hero-size);
+    line-height: 1;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: var(--gallery-numeral-tracking);
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-streak > .gallery-habit-unit { margin-left: var(--gallery-unit-gap); font-size: var(--gallery-unit); font-weight: 500; color: var(--gallery-muted); white-space: nowrap; }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-fresh { display: none; margin: 0; font-size: 12.5px; line-height: 18px; color: var(--gallery-muted); }
+  > .gallery-habit-face[data-fresh] > .gallery-habit-row > .gallery-habit-streak { display: none; }
+  > .gallery-habit-face[data-fresh] > .gallery-habit-row > .gallery-habit-fresh { display: block; }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex: none;
+    height: var(--gallery-button-height);
+    padding: 0 14px;
+    border: 0;
+    border-radius: var(--gallery-button-radius);
+    background: var(--gallery-accent-soft);
+    color: var(--gallery-accent-ink);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 20ms ease-in;
+  }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-check:hover { background: color-mix(in srgb, var(--gallery-accent) 18%, var(--gallery-accent-soft)); }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-check:focus-visible { outline: 2px solid var(--gallery-accent); outline-offset: 2px; }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-check.gallery-habit-done { background: var(--gallery-good-soft); color: var(--gallery-good-ink); }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-check.gallery-habit-done:hover { background: color-mix(in srgb, var(--gallery-good) 18%, var(--gallery-good-soft)); }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-check > svg { display: block; width: 13px; height: 13px; }
+  > .gallery-habit-face > .gallery-habit-row > .gallery-habit-check:disabled { padding: 0; background: transparent; color: var(--gallery-faint); font-weight: 500; cursor: default; }
+  > .gallery-habit-face > .gallery-habit-caption { display: none; }
+  /* This week: seven circles at the bottom, 4px in from either side, so that today's second ring, done,
+     stays inside the content on a Monday and a Sunday too. */
+  > .gallery-habit-face > .gallery-habit-week { display: flex; justify-content: space-between; margin: auto 0 0; padding: 0 4px; list-style: none; }
+  > .gallery-habit-face > .gallery-habit-week > .gallery-habit-day {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gallery-fill);
+    font-size: 11px;
+    line-height: 1;
+    color: var(--gallery-faint);
+    font-variant-numeric: tabular-nums;
+  }
+  > .gallery-habit-face > .gallery-habit-week > .gallery-habit-day > svg { display: block; width: 13px; height: 13px; }
+  > .gallery-habit-face > .gallery-habit-week > .gallery-habit-kept { background: var(--gallery-accent-fill); color: #fff; }
+  > .gallery-habit-face > .gallery-habit-week > .gallery-habit-today { background: transparent; box-shadow: inset 0 0 0 1.5px var(--gallery-accent); color: var(--gallery-accent-ink); font-weight: 600; }
+  > .gallery-habit-face > .gallery-habit-week > .gallery-habit-today.gallery-habit-kept { background: var(--gallery-accent-fill); color: #fff; box-shadow: 0 0 0 2px var(--gallery-card-fill), 0 0 0 3.5px var(--gallery-accent-fill); }
+  > .gallery-habit-face > .gallery-habit-week > .gallery-habit-future { background: transparent; box-shadow: inset 0 0 0 1px var(--gallery-faintest); color: var(--gallery-faint); }
+
+  /* A narrow card: the name, the streak with its flame, the button as wide as the card. */
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > :is(.gallery-habit-chip, .gallery-habit-total) { display: none; }
+  /* Its name: the words, 13px and 600 on 18px lines, two lines at most and then cut (…), 12px clear of the
+     card's edge (the grip's dots end 9px into the content); the field lies over them unseen, the one a
+     press or Tab reaches, and stands in their place, one line, while it has the focus. */
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head { position: relative; display: block; height: auto; padding-inline-end: 0; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > .gallery-habit-label {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    margin: 0 -4px;
+    padding: 0 16px 0 4px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 18px;
+    font-weight: 600;
+    color: var(--gallery-text);
+    overflow-wrap: anywhere;
+  }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > .gallery-habit-label[data-empty] { font-weight: 500; color: var(--gallery-faint); }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > .gallery-habit-name { position: absolute; inset: 0 auto auto 0; width: calc(100% + 8px); max-width: none; height: 100%; opacity: 0; line-height: 18px; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > .gallery-habit-name:read-only { pointer-events: none; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > .gallery-habit-name:not(:read-only):hover + .gallery-habit-label { background: var(--gallery-hover); }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > .gallery-habit-name:not(:read-only):focus { width: calc(100% + 8px - var(--gallery-grip-room, 0px) * var(--gallery-grip-shown, 0)); height: 18px; opacity: 1; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-head > .gallery-habit-name:not(:read-only):focus + .gallery-habit-label { visibility: hidden; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-row { display: contents; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-row > :is(.gallery-habit-streak, .gallery-habit-fresh) { margin: auto 0 10px; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-row > .gallery-habit-streak > .gallery-habit-flame { display: block; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-row > .gallery-habit-streak > .gallery-habit-count { font-size: var(--gallery-hero-size); }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-row > .gallery-habit-check { width: 100%; margin-top: auto; }
+  > .gallery-habit-face[data-layout="narrow"] > .gallery-habit-week { display: none; }
+  /* A tall card: five weeks of circles under 最近五周. */
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-caption { display: flex; justify-content: space-between; margin: auto 0 8px; font-size: 11.5px; line-height: 16px; color: var(--gallery-faint); white-space: nowrap; }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-caption b { font-weight: 600; color: var(--gallery-muted); }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 5px; justify-items: center; margin: 0; padding: 0; }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week > .gallery-habit-initial { height: 14px; font-size: 10.5px; line-height: 14px; color: var(--gallery-faint); }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week > .gallery-habit-day { width: 26px; height: 26px; font-size: 10.5px; background: transparent; color: var(--gallery-faint); }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week > .gallery-habit-kept { background: var(--gallery-accent-soft); color: var(--gallery-accent-ink); }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week > .gallery-habit-kept.gallery-habit-streak-day { background: var(--gallery-accent-fill); color: #fff; }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week > .gallery-habit-today { background: transparent; box-shadow: inset 0 0 0 1.5px var(--gallery-accent); color: var(--gallery-accent-ink); }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week > .gallery-habit-today.gallery-habit-kept { background: var(--gallery-accent-fill); color: #fff; box-shadow: 0 0 0 2px var(--gallery-card-fill), 0 0 0 3.5px var(--gallery-accent-fill); }
+  > .gallery-habit-face[data-layout="tall"] > .gallery-habit-week > .gallery-habit-future { background: transparent; box-shadow: inset 0 0 0 1px var(--gallery-faintest); color: var(--gallery-faint); }
+}
+/* On a custom page the face fills the card the board frames. */
+.gallery-card > [data-doc-component="gallery/habit"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/habit"] > .gallery-habit-face { height: 100%; }

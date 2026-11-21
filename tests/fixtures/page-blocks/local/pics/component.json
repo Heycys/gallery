@@ -1,0 +1,14 @@
+{
+  "id": "local/pics",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "图片说明", "en": "Captioned picture" },
+  "description": { "zh": "一张页面自己的图，按一下在下面加一行说明", "en": "A picture of the page's own; a press adds a caption line under it" },
+  "words": "tupian pics picture",
+  "parts": {
+    "body": { "at": ":scope > div.pics-body", "edit": "data" }
+  },
+  "runtime": { "generated": [".pics-add"] },
+  "places": ["page"],
+  "card": { "w": 4, "h": 2 }
+}

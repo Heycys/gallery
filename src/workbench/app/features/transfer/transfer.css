@@ -1,0 +1,73 @@
+/* =========================================================
+   导出、导入对话框（说明见 TransferDialogs.tsx）：
+   导出宽 320、内边距 24；导入是一块拖放区
+   ========================================================= */
+.xf-overlay { position: fixed; inset: 0; z-index: 1500; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--overlay); }
+/* 圆角 16、和暗色一起淡入淡出：styles/base.css */
+.xf-export, .xf-import { --ringBase: var(--bacEle); background: var(--bacEle); box-shadow: var(--shaOutScr); color: var(--texPri); }
+
+.xf-export { width: 320px; max-width: 100%; padding: 24px; font-size: 14px; }
+.xf-row { display: flex; align-items: center; justify-content: space-between; height: 28px; }
+.xf-label { margin-inline-end: auto; color: var(--texTer); line-height: 21px; white-space: nowrap; }
+/* 下拉按钮：圆角 8、左右 8、间距 6，右边 -6px 贴齐；值后面上下两个小箭头（自绘，16px、1.25 的线），--icoSec */
+.xf-select {
+  display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; margin-inline-end: -6px; border-radius: var(--r-ctl);
+  line-height: 1.2; white-space: nowrap; cursor: pointer; user-select: none; color: var(--texPri);
+}
+.xf-select:hover, .xf-select.open { background: var(--bacIntTra); }
+.xf-select:active { background: var(--bacPre); }
+.xf-select svg { width: 16px; height: 16px; margin-inline-end: -2px; color: var(--icoSec); stroke-width: 1.25; }
+/* 键盘走到按钮和下拉上面时是底色，不描边（components.css .dialog-btn 一样）；开关画环（styles/base.css 的键盘焦点） */
+.xf-select:focus-visible, .xf-btn:focus-visible, .xf-choose:focus-visible { outline: none; background: var(--bacTerTra); }
+
+/* 比例百分比：一行高 32，输入框 60×28 */
+.xf-scale-row { height: 32px; }
+.xf-scale {
+  width: 60px; height: 28px; padding: 4px 10px; border: none; border-radius: var(--r-ctl); outline: none;
+  background: var(--fieldBac); box-shadow: 0 0 0 1px var(--borPriTra); color: var(--texPri); font: inherit; font-size: 14px; text-align: end;
+}
+.xf-scale:focus { box-shadow: 0 0 0 1px var(--blue) inset, 0 0 0 1px var(--blue); }
+.xf-error { display: flex; align-items: center; min-height: 32px; padding: 4px 0; font-size: 12px; line-height: 16px; color: var(--btnDanTex); }
+
+/* 开关：一行高 32；开关是菜单里、组件列表里的同一个（components.css .g-switch：30×18、圆钮 14），
+   这里只有一行的高和不可用时的淡 */
+.xf-switch-row { height: 32px; }
+.xf-switch-row .xf-label { line-height: 20px; }
+.xf-switch { cursor: pointer; }
+.xf-switch.disabled { opacity: var(--off); cursor: default; }
+
+/* 取消（灰字，没有底色）+ 导出（淡蓝底、蓝字：--btnPriBg），上边距 16、靠右 */
+.xf-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.xf-btn {
+  display: inline-flex; align-items: center; justify-content: center; height: 28px; padding: 0 8px; border-radius: var(--r-ctl);
+  font-size: 14px; line-height: 1.2; white-space: nowrap; cursor: pointer; user-select: none;
+}
+.xf-btn.gray { color: var(--texPri); }
+.xf-btn.gray:hover { background: var(--bacIntTra); }
+.xf-btn.gray:active { background: var(--bacPre); }
+.xf-btn.blue { background: var(--btnPriBg); color: var(--btnPriTex); font-weight: 500; }
+.xf-btn.blue:hover, .xf-btn.blue:focus-visible { background: var(--btnPriBgHi); }
+.xf-btn.blue:active { background: var(--btnPriBgPre); }
+.xf-btn[aria-disabled="true"] { opacity: var(--off); pointer-events: none; }
+
+/* 下拉菜单：宽 180、在对话框上面；几项都没有图标（Menu.tsx 的 .noicon） */
+.menu.menu-select { z-index: 1600; min-width: 180px; width: 180px; }
+
+/* 导入：标题和导入到哪里，一块拖放区（灰色虚线，悬停略深；拖着文件时蓝色），一行说明 */
+.xf-import { display: flex; flex-direction: column; gap: 14px; width: min(460px, calc(100vw - 32px)); padding: 20px 20px 18px; font-size: 14px; }
+.xf-import-head { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.xf-import-title { font-size: 16px; font-weight: 600; line-height: 1.4; }
+.xf-import-where { font-size: 13px; line-height: 1.5; color: var(--texSec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.xf-drop {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 30px 16px 26px; border-radius: 10px;
+  border: 1px dashed var(--borStrTra); color: var(--texPri); cursor: pointer; user-select: none; transition: background 120ms, border-color 120ms;
+}
+.xf-drop:hover { background: var(--bacIntTra); }
+.xf-drop.dragging { border-color: var(--blue); background: var(--bluBacIntTra); }
+.xf-drop:focus-visible { outline: none; background: var(--bacTerTra); }
+.xf-drop svg { width: 28px; height: 28px; margin-bottom: 4px; color: var(--icoSec); stroke-width: 1.4; transition: color 120ms; }
+.xf-drop.dragging svg { color: var(--blue); }
+.xf-drop-main { line-height: 20px; }
+.xf-choose { margin-inline-start: 2px; color: var(--blueTex); }
+.xf-drop-kinds { font-size: 12px; line-height: 16px; color: var(--texTer); }
+.xf-import-note { font-size: 12px; line-height: 16px; color: var(--texTer); }

@@ -1,0 +1,392 @@
+/* 表格 (tables.js): the frame (.doc-table-wrap) and the scrollbars the kit draws over it, the
+   table, its sort controls, a sticky first column, and the scope line above it. Its width and
+   scroll height are sizes (sizes.css). A table is lines on the page: the
+   frame's rounded line around it and one line between every two rows and every two columns, all
+   one color (--doc-hairline); no fills of its own. A header cell (th) looks as any other: its
+   gray and its bold are looks it was given (the page editor's 标题行 gives them; its 标题列 none:
+   a header column only sticks), it only sticks. The frame and the table are one: the table fills the frame to its edge, the frame's
+   line drawn over it. The line is drawn once wherever it lies: in dark it is a light veil over what
+   is under it (tokens.css), so that it shows on a gray header cell and beside a gray highlight
+   block as on the page, and a line drawn over another would be lighter there. In a block with a
+   fill of its own (a highlight block, one of the palette's colors) the frame is opaque, the line as
+   it lies on the palette's gray (--doc-table-frame-filled): beside the body rows the veil over
+   the table's fill (the page's) would be the gray of the block around it. */
+
+.doc-table-wrap {
+  --doc-table-frame: var(--doc-hairline);
+  --doc-table-frame-solid: var(--doc-hairline-solid);
+  position: relative;
+  align-self: start;
+  /* A share over 1 keeps the wrapper at the reading width; the table is that much wider and
+     scrolls inside it (tables.js). */
+  width: var(--doc-span-width, fit-content);
+  max-width: 100%;
+  max-height: var(--doc-table-height, min(72vh, 720px));
+  margin-block: var(--doc-component-gap);
+  overflow: auto;
+  /* Its line: an outline on its inner edge, painted over the table, where the last cells draw none of
+     their own (below; once the kit runs, its layer draws it instead, over cells that stick too:
+     .doc-scrollbars-frame); its rounded corners clip the table. */
+  outline: 1px solid var(--doc-table-frame);
+  outline-offset: -1px;
+  border-radius: var(--doc-table-radius);
+  background: var(--doc-table-fill);
+  /* Sideways it never bounces past its ends (a touchpad's, which pulled the table off the frame's
+     edge) nor hands the scroll on (to the browser's back and forward). Down, only a frame that
+     scrolls down (below) is held so, the wheel past its ends handed on to the page by the kit
+     (tables/scrollbars.js): any other hands it to the page as the browser does. */
+  overscroll-behavior-inline: none;
+  isolation: isolate;
+  /* No scrollbar of the system's takes room from the columns: the kit draws its own over the frame. */
+  scrollbar-width: none;
+}
+.doc-table-wrap::-webkit-scrollbar { display: none; } /* WebKit without scrollbar-width */
+/* A table narrower than the text is placed on the page as a paragraph's words are (对齐 in the page
+   editor's block menu, a text block's classes: components/align.mjs): at the left unless its frame
+   says centred or at the right, where the text has room (a frame as wide as the text has none). */
+:is(.doc-table-wrap, table).doc-align-center { margin-inline: auto; }
+:is(.doc-table-wrap, table).doc-align-right { margin-inline: auto 0; }
+/* A short table, or one mostly of words (data-doc-whole, tables/whole.js), is shown whole: its
+   frame as tall as its rows, read with the page. A long table of data keeps the kit's height above,
+   its rows scrolling under the header row that stays; a height written on the frame
+   (--doc-table-height, the reader's) holds either way. */
+.doc-table-wrap[data-doc-whole] { max-height: var(--doc-table-height, none); }
+.doc-table-wrap:has(> .doc-scrollbars[data-y]) { overscroll-behavior-block: none; }
+
+/* The frame's scrollbars (tables.js): a layer stuck at the frame's top-left that takes no room (no
+   height; as wide as the frame's inside, which it never makes wider, so that the frame's line is
+   as wide as the frame in the same layout as the frame: below), with a rail along the right edge
+   and one along the bottom for each axis that overflows (data-y, data-x), each thumb 3px in from
+   the frame's edge. tables.js sets each rail's place (the part of the edge that scrolls: below the
+   header, between the rounded corners) and its track, thumb size and thumb offset
+   (--doc-scrollbar-*). They show while the pointer is over the frame or it scrolls. */
+.doc-scrollbars {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  width: 100%;
+  height: 0;
+}
+.doc-scrollbar {
+  position: absolute;
+  display: none;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.doc-scrollbars[data-y] > .doc-scrollbar--y,
+.doc-scrollbars[data-x] > .doc-scrollbar--x { display: block; }
+.doc-table-wrap:hover > .doc-scrollbars > .doc-scrollbar,
+.doc-scrollbars[data-active] > .doc-scrollbar,
+.doc-scrollbar[data-drag] { opacity: 1; }
+.doc-scrollbar--y { width: 12px; height: var(--doc-scrollbar-track); }
+.doc-scrollbar--x { width: var(--doc-scrollbar-track); height: 12px; }
+.doc-scrollbar-thumb {
+  position: absolute;
+  border-radius: 999px;
+  background: var(--doc-scrollbar-thumb);
+  transition: background-color 120ms ease;
+}
+.doc-scrollbar--y > .doc-scrollbar-thumb {
+  top: 0;
+  right: 3px; /* clear of the edge, where the page editor's handles of the frame's edges are */
+  width: 6px;
+  height: var(--doc-scrollbar-thumb-size);
+  transform: translateY(var(--doc-scrollbar-thumb-at));
+}
+.doc-scrollbar--x > .doc-scrollbar-thumb {
+  bottom: 3px;
+  left: 0;
+  width: var(--doc-scrollbar-thumb-size);
+  height: 6px;
+  transform: translateX(var(--doc-scrollbar-thumb-at));
+}
+.doc-scrollbar:is(:hover, [data-drag]) > .doc-scrollbar-thumb { background: var(--doc-scrollbar-thumb-active); }
+/* The frame's line above everything in the frame (a header row or column that sticks over the
+   outline too): as big as the frame, on the layer stuck at its top-left; as wide as the layer, so
+   as the frame whenever the frame is laid out (a width read and written later by a script could
+   disagree with it for a frame), as tall as tables.js reads the frame. */
+.doc-scrollbars-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--doc-table-frame);
+  border-radius: var(--doc-table-radius);
+  pointer-events: none;
+}
+/* Where the layer draws the frame's line, the frame's outline (before the kit runs, and on paper,
+   where the layer is hidden) is not drawn under it. */
+.doc-table-wrap:has(> .doc-scrollbars) { outline-color: transparent; }
+/* In a block with a fill of its own (a highlight block, its gray its own unless it is given a text
+   color; any block of the palette's background colors) the frame's line is opaque (above). */
+:is(:is(.doc-summary, .doc-panel):not(@text-colors), @highlight-colors) .doc-table-wrap { --doc-table-frame: var(--doc-table-frame-filled); --doc-table-frame-solid: var(--doc-table-frame-filled); }
+/* A frame that scrolls sideways and is not at its end fades out at its right edge (data-more,
+   tables.js): the columns go on past it, which its rails, shown only under the pointer, do not say.
+   Drawn over the cells by the frame's line layer, taking no room. */
+.doc-scrollbars-frame::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 28px;
+  border-radius: 0 calc(var(--doc-table-radius) - 1px) calc(var(--doc-table-radius) - 1px) 0;
+  background: linear-gradient(to right, transparent, var(--doc-table-fill));
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.doc-scrollbars[data-more] > .doc-scrollbars-frame::after { opacity: 1; }
+/* Its right edge, under which the columns past it lie, is drawn opaque (the dark line is a veil that
+   shows what is under it): the line over the fade, nothing of those columns through it. */
+.doc-scrollbars[data-more] > .doc-scrollbars-frame { border-right-color: var(--doc-table-frame-solid); }
+
+/* Each cell draws its own lines, on its right and at its bottom (separate borders: a cell that sticks
+   while the frame scrolls takes its lines along, a merged cell has them where it ends); in a frame
+   the frame's line is the last ones (below). A table outside a frame draws its top and left edges
+   itself. */
+.doc-table {
+  width: auto;
+  max-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--doc-table-fill);
+  font-size: var(--doc-table-font-size);
+  font-weight: 400;
+  line-height: var(--doc-table-line-height);
+}
+
+:not(.doc-table-wrap) > .doc-table { border-top: 1px solid var(--doc-hairline); border-left: 1px solid var(--doc-hairline); }
+/* Keys moving into a frame that scrolls: the accent's line in place of its own. */
+.doc-table-wrap:focus-visible { outline-offset: -2px; }
+
+/* A cell's words break as the page's do (word-break inherited: an ordinary word whole at a line's
+   end, a long run anywhere in the span the kit holds it in, .doc-long-run, page.css), a word wider
+   than its column anywhere too (overflow-wrap); what a table keeps whole says so below: its headers,
+   a short field, inline code. */
+.doc-table th,
+.doc-table td {
+  padding: 10px 9px; /* 9px at the sides */
+  border: 0 solid var(--doc-hairline);
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+  font-weight: 400; /* a th's too: its bold is a look (.doc-bold) */
+  overflow-wrap: anywhere;
+  text-align: left;
+  vertical-align: top;
+  white-space: normal;
+}
+/* A cell left empty is one line high, as a text block left empty is (flow.css): a row of empty cells
+   is as tall as a row of words from the first paint on, not flat until the page editor makes the
+   cells editable (an empty editable cell is a line high). */
+.doc-table :is(td, th):empty::after { content: "\200b"; }
+
+/* In a frame the last column's lines and the last row's are the frame's line, which lies over them:
+   theirs are not drawn (the row's last cell, at the frame's right edge, unless a cell of the last
+   column above reaches down past its row: such a table keeps them; the footer's last row, or the
+   body's). Where a cell spans rows only the table's slots say which cells lie on those edges (one
+   spanning down to the last row lies on the bottom one; below one spanning in the last column a row
+   ends inside): the kit marks them (data-doc-edge, tables/edges.js). */
+.doc-table-wrap > .doc-table:not(:has(> * > tr > :last-child[rowspan]:not([rowspan="1"]))) > * > tr > :last-child,
+.doc-table-wrap > .doc-table > * > tr > [data-doc-edge~="right"] { border-right-color: transparent; }
+.doc-table-wrap > .doc-table > tfoot > tr:last-child > *,
+.doc-table-wrap > .doc-table:not(:has(> tfoot)) > tbody:last-of-type > tr:last-child > *,
+.doc-table-wrap > .doc-table:not(:has(> :is(tbody, tfoot))) > thead > tr:last-child > *,
+.doc-table-wrap > .doc-table > * > tr > [data-doc-edge~="bottom"] { border-bottom-color: transparent; }
+
+/* A list in a cell (the page editor's 单元格里的列表): the browser's markers, its items close
+   together, nothing above or below it at the cell's edges. */
+.doc-table :is(td, th) > :is(ul, ol) { margin: 2px 0; padding-inline-start: 1.4em; }
+.doc-table :is(td, th) > ul { list-style: disc; }
+.doc-table :is(td, th) > ol { list-style: decimal; }
+.doc-table :is(td, th) > :is(ul, ol):first-child { margin-top: 0; }
+.doc-table :is(td, th) > :is(ul, ol):last-child { margin-bottom: 0; }
+.doc-table :is(td, th) > :is(ul, ol) > li + li { margin-top: 2px; }
+
+/* A picture in a cell (单元格里的图片, an <img> amid its words): as wide as its width says (pixels; the
+   page editor's drag of its edge writes it), with none at most 240px, never past its cell; its height
+   by its own ratio, its middle on the line's, so a row grows with it. */
+.doc-table :is(td, th) img { max-width: 100%; height: auto; vertical-align: middle; }
+.doc-table :is(td, th) img:not([width]) { max-width: min(100%, 240px); }
+
+.doc-table--auto { table-layout: fixed; max-width: none; }
+.doc-table [data-column-kind="compact"] { white-space: nowrap; word-break: normal; }
+.doc-table [data-column-kind="narrative"] { overflow-wrap: break-word; }
+/* No word-break here: a compact cell that wraps (data-column-wrap="") keeps the compact rule's normal
+   above, a column of paths (token-heavy) the page's (its long runs breaking anywhere). */
+.doc-table [data-column-kind="token-heavy"],
+.doc-table [data-column-wrap] { white-space: normal; overflow-wrap: anywhere; }
+.doc-table [data-column-kind] code { white-space: inherit; }
+/* A short field (compact) keeps its pieces whole (a number, （1606））: its column's floor is the widest of them (layout.js). */
+/* Words kept whole (keep-all: a line breaks at a space or a punctuation mark, never between the
+   characters of a Chinese word): a header's (标准差, 区间, a unit in brackets: （%）) and a short
+   field's that wraps (卷数 beside columns of prose: 六十卷、 / 目录一卷; tables/layout.js), where its
+   column holds its longest word (data-column-wrap="words"); a narrower one breaks between characters
+   as Chinese text does, never before a closing mark. A header the kit marks nothing on (it fits, or
+   the browser lays the table out) keeps them whole too. */
+.doc-table th:not([data-column-wrap]),
+.doc-table [data-column-wrap="words"] { word-break: keep-all; }
+/* What a header or a short field keeps whole, a long run in it too: the span the kit holds the run in
+   (.doc-long-run, base.css) breaks as its cell does. */
+.doc-table :is(th:not([data-column-wrap]), [data-column-wrap="words"], [data-column-kind="compact"]) .doc-long-run { word-break: inherit; }
+/* Inline code in a cell breaks only after a slash or at a space (a path at its folders, never at a
+   hyphen or inside a word): its runs (tables/cells.js, as the page renders; not while the page
+   editor edits the cell) each kept on one line, a break allowed between them. A column the kit sizes
+   is at least as wide as its code's longest run, up to 320px of it (tables/layout.js), and a table
+   the browser lays out (merged cells) makes room for it itself; a number range held on one line
+   (.doc-range, runtime/spacing.js) alike. Only a run or a range wider than its column (past 320px,
+   half a narrow screen, or in a column the reader sized: data-run-wrap, layout.js) breaks where the
+   column ends (a range at its dash): code first between its names, at the <wbr> cells.js puts after
+   a dot, before underscores and where a lowercase letter meets a capital (window.|__demo,
+   request|Animation|Frame), anywhere only in a name wider than the column. */
+.doc-table code { overflow-wrap: break-word; word-break: normal; }
+.doc-code-run { white-space: nowrap; }
+.doc-code-run wbr { display: none; } /* Chrome breaks at a <wbr> even in nowrap */
+.doc-table [data-run-wrap] .doc-code-run { white-space: normal; overflow-wrap: anywhere; }
+.doc-table [data-run-wrap] .doc-code-run wbr { display: inline; }
+.doc-table [data-run-wrap] .doc-range { white-space: normal; }
+
+/* The header row stays at the top of a frame that scrolls down, the first column (a sticky first
+   column, .doc-table--sticky-first, or a header column: each body row's first cell a th
+   scope="row") at its left when it scrolls sideways, the cell where they meet at both: over the cells
+   beneath them, so filled (a cell's own fill, always opaque, or the table's when it has none), their
+   lines their own. The first column's fill is the kit's to decide, so it is the one declaration here
+   that wins over a style attribute (!important: nothing else beats one): a source style that makes
+   a cell see-through (a translucent or transparent background) would show the cells passing
+   beneath it. */
+.doc-table > thead th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: var(--doc-fill, var(--doc-table-fill));
+}
+.doc-table--sticky-first :is(th, td):first-child,
+.doc-table > tbody > tr > th[scope="row"]:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--doc-fill, var(--doc-table-fill)) !important;
+}
+.doc-table--sticky-first th:first-child { z-index: 5; }
+.doc-table:has(> tbody > tr > th[scope="row"]:first-child) > thead > tr > th:first-child {
+  left: 0;
+  z-index: 5;
+}
+
+.doc-table .number { text-align: center; font-variant-numeric: tabular-nums; }
+
+/* A cell's look (the page editor's table tools write these classes on its td or th): a text color
+   (base.css), a fill over the whole cell (base.css's: a cell is square, and one that sticks wears it too, above), bold words (the words
+   typed in it later too), and an alignment over the kit's own (a numeric column's centre), a vertical one (the kit's: top). A header
+   row's look is these: .doc-highlight-gray and .doc-bold (a header column has none of its own). */
+.doc-table :is(td, th).doc-bold { font-weight: 700; }
+.doc-table :is(td, th).doc-align-left { text-align: left; }
+.doc-table :is(td, th).doc-align-center { text-align: center; }
+.doc-table :is(td, th).doc-align-right { text-align: right; }
+.doc-table :is(td, th).doc-valign-top { vertical-align: top; }
+.doc-table :is(td, th).doc-valign-middle { vertical-align: middle; }
+.doc-table :is(td, th).doc-valign-bottom { vertical-align: bottom; }
+
+/* A sortable header's control (sort.js): a small button after the header's words, holding no text and of
+   width 0, so its words stay its own. Its arrow hangs in the cell's right padding (5px off the words, 7px
+   of its own box, then 3px at least before the cell's line: the header with a control has 15px of right
+   padding where the other cells have 9, so a column whose width is its header's words is 6px wider and the arrow
+   never touches the line; the layout reads that padding from the cell, layout.js): two small triangles with round
+   corners (the disclosure's arrow's shape), one above the other, when the rows are in no order of
+   its (data-doc-sort-arrow="none"), the upward one alone for an ascending sort ("asc") and the downward
+   one alone for a descending one ("desc", sort.js). It shows while the pointer is over the header,
+   light gray, darker under the pointer and on the column the rows are sorted by (which always shows
+   it). Only a press on it, a little around the arrow, sorts: not one on the header's words. */
+.doc-table th:has(> .doc-table-sort-button) { padding-right: 15px; }
+.doc-table-sort-button {
+  position: relative;
+  display: inline-block;
+  width: 0;
+  height: var(--doc-table-line-height);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  vertical-align: top;
+  background: transparent;
+  cursor: pointer;
+}
+/* Where a press takes: around the arrow, as tall as the line. */
+.doc-table-sort-button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 15px;
+  height: 100%;
+  border-radius: 4px;
+}
+.doc-table-sort-button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 5px;
+  width: 7px;
+  height: 11.2px;
+  background: var(--doc-table-sort-arrow);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M2 5.75h6L5 1.75zM2 10.25h6L5 14.25z' fill='black' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 100ms ease, background-color 100ms ease;
+}
+.doc-table-sort-button[data-doc-sort-arrow="asc"]::after { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M2 5.75h6L5 1.75z' fill='black' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.doc-table-sort-button[data-doc-sort-arrow="desc"]::after { mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 16'%3E%3Cpath d='M2 10.25h6L5 14.25z' fill='black' stroke='black' stroke-width='1.8' stroke-linejoin='round'/%3E%3C/svg%3E"); }
+.doc-table-sort-button:focus-visible { outline: none; }
+.doc-table-sort-button:focus-visible::before { outline: 2px solid var(--doc-accent); }
+
+.doc-table th:hover > .doc-table-sort-button::after,
+.doc-table th:is([aria-sort="ascending"], [aria-sort="descending"]) > .doc-table-sort-button::after,
+.doc-table-sort-button:focus-visible::after { opacity: 1; }
+.doc-table th:is([aria-sort="ascending"], [aria-sort="descending"]) > .doc-table-sort-button::after,
+.doc-table-sort-button:hover::after { background: var(--doc-table-sort-arrow-active); }
+/* Where nothing hovers (a phone, a tablet): every sortable column shows its arrow, the light one at rest, and a
+   finger's target around it is 24px wide (it reaches 6px over the header's last character there alone, so the
+   words stay to be pressed into on a desktop). */
+@media (hover: none) {
+  .doc-table-sort-button::after { opacity: 1; }
+  .doc-table-sort-button::before { left: -6px; top: -2px; width: 24px; height: calc(100% + 4px); }
+}
+
+/* A table's scope line, as older files write it right above the frame (a new report writes small
+   text, p.doc-note, its unit after a span.doc-tab): read as small text, its words, code and
+   bold in one line. After a plain span (no class: <span>scope</span><span>unit</span>, or the unit
+   bold, <strong>unit</strong>) the last plain element stands at the line's right end, as small text's
+   tab does, and plain spans between keep 18px apart. */
+.doc-table-meta {
+  display: flow-root;
+  margin: 8px 0 12px;
+  color: var(--doc-muted);
+  font-size: var(--doc-note-font-size);
+  line-height: var(--doc-note-line-height);
+}
+
+.doc-table-meta > span:not([class]) + span:not([class]):not(:last-child) { margin-inline-start: 18px; }
+.doc-table-meta > span:not([class]) + :not([class]):last-child { float: right; margin-inline-start: 18px; white-space: nowrap; }
+.doc-table-meta + .doc-table-wrap { margin-top: 0; }
+
+@media (max-width: 760px) {
+  /* A table with a width of its own is at least as wide as the reading width. */
+  :where(.doc-table-wrap) { --doc-span-width: calc(max(var(--doc-span), 1) * 100%); }
+}
+
+/* On paper a table is whole: no scroll area, nothing clipped, no scrollbars or fading edge (a height
+   written on a frame shown whole too). */
+@media print {
+  .doc-table-wrap, .doc-table-wrap[data-doc-whole] { max-height: none; overflow: visible; }
+  /* A frame placed past the text on screen (宽表格, tables/across.js: its width and margin written on it)
+     stands in the paper's column as every other. */
+  .doc-table-wrap[data-doc-across] { width: 100% !important; max-width: 100% !important; margin-left: 0 !important; }
+  .doc-scrollbars { display: none; }
+  .doc-table-wrap:has(> .doc-scrollbars) { outline-color: var(--doc-table-frame); }
+}
+
+@media (max-width: 640px) {
+  /* The unit on a line of its own under the scope; the words of the line stay one text. */
+  .doc-table-meta > span:not([class]) + :not([class]):last-child { display: block; float: none; margin: 4px 0 0; }
+}

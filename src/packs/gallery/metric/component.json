@@ -1,0 +1,22 @@
+{
+  "id": "gallery/metric",
+  "apiVersion": 1,
+  "version": "1.3.0",
+  "name": { "zh": "指标", "en": "Metric" },
+  "description": { "zh": "表格的视图：一列的计数、合计或平均，表格一改就跟着变", "en": "A view of a table: a count, sum or average of a column, following each edit of the table" },
+  "words": "zhibiao shuzi metric number kpi count sum average total 指标 数字 合计 平均 计数 统计 视图 view",
+  "parts": {
+    "settings": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-metric-face"] },
+  "places": ["document"],
+  "settings": [
+    { "key": "op", "label": { "zh": "计算", "en": "Calculate" }, "type": "select", "options": ["count", "sum", "average"], "default": "count" },
+    { "key": "column", "label": { "zh": "列", "en": "Column" }, "type": "text", "default": "" },
+    { "key": "where", "label": { "zh": "只算这一列", "en": "Only where column" }, "type": "text", "default": "" },
+    { "key": "is", "label": { "zh": "等于", "en": "is" }, "type": "text", "default": "" },
+    { "key": "title", "label": { "zh": "名称", "en": "Name" }, "type": "text", "default": "" },
+    { "key": "unit", "label": { "zh": "单位", "en": "Unit" }, "type": "text", "default": "" }
+  ],
+  "needs": ["tables"]
+}

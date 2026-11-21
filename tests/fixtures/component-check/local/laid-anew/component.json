@@ -1,0 +1,14 @@
+{
+  "id": "local/laid-anew",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "摊开", "en": "Laid anew" },
+  "description": { "zh": "写回时把数据重新排了版", "en": "Its write lays its data out anew" },
+  "words": "tankai laid",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "picks": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [".laid-drawn"] },
+  "markdown": "parts"
+}

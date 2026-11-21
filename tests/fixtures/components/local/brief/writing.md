@@ -1,0 +1,1 @@
+The title goes in the `h3`. What the card says goes in `<div class="brief-body" data-doc-slot="body">`: write it as ordinary blocks (paragraphs, lists, tables, formulas, a chart card), as anywhere in the document. The count under it is drawn by the component.

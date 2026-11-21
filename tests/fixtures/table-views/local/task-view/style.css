@@ -1,0 +1,25 @@
+/* The fixture view's groups side by side, each a short list. Every selector starts at the instance. */
+[data-doc-component="local/task-view"] .tv-board {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  overflow-x: auto;
+}
+[data-doc-component="local/task-view"] .tv-group {
+  flex: 1 1 0;
+  min-width: 140px;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--doc-hover);
+}
+[data-doc-component="local/task-view"] .tv-group h4 {
+  margin: 0 0 4px;
+}
+[data-doc-component="local/task-view"] .tv-group ol {
+  margin: 0;
+  padding-left: 20px;
+}
+[data-doc-component="local/task-view"] .tv-card button {
+  margin-left: 4px;
+  font-size: 12px;
+}

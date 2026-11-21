@@ -1,0 +1,68 @@
+{
+  "document": "语雀文档块样本",
+  "url": "https://yuque.example.com/example.user/book01/sampledoc0000001",
+  "captured_on": "2026-11-09",
+  "environment": "macOS / Google Chrome，语雀阅读页，浏览器 paste 事件",
+  "captures": [
+    {
+      "method": "顶栏「复制为 Markdown 格式」",
+      "directory": "01-toolbar-markdown",
+      "entries": [
+        {
+          "index": 0,
+          "kind": "string",
+          "type": "text/plain",
+          "file": "text-plain.md",
+          "utf8_bytes": 3523,
+          "sha256": "97d8eec89f77b4ab0ac412a53b48704a764007124384ea49acc049c81fbd5466"
+        },
+        {
+          "index": 1,
+          "kind": "string",
+          "type": "text/html",
+          "file": "text-html.html",
+          "utf8_bytes": 4512,
+          "sha256": "cf4a124aa9ae1eb5d6d178930009484df6a45dbbadd9bf3f0be5ec5282840a07"
+        }
+      ]
+    },
+    {
+      "method": "点击正文，⌘A 全选，⌘C 复制",
+      "directory": "02-select-all",
+      "entries": [
+        {
+          "index": 0,
+          "kind": "string",
+          "type": "text/plain",
+          "file": "text-plain.txt",
+          "utf8_bytes": 2491,
+          "sha256": "fb60ad4f3defedbda17639eb7e4681ab1fb418ba89aa18ac86cd056bb6aa72f0"
+        },
+        {
+          "index": 1,
+          "kind": "string",
+          "type": "text/html",
+          "file": "text-html.html",
+          "utf8_bytes": 65721,
+          "sha256": "52d131d8674cbaadcb08d475f6926f36cc108848a7f4d5e9361ad1c596139dfc"
+        },
+        {
+          "index": 2,
+          "kind": "string",
+          "type": "text/lake",
+          "file": "text-lake.lake",
+          "utf8_bytes": 21929,
+          "sha256": "7f7f1d44036b8e9367f131b1fa21367c14ef683a4f3c21e96f15c4eebc32e756"
+        },
+        {
+          "index": 3,
+          "kind": "string",
+          "type": "text/ne-inode",
+          "file": "text-ne-inode.json",
+          "utf8_bytes": 24611,
+          "sha256": "4d898bd41e5c61d2bc2192990202bc17fac72e6132333d75b99509d8a0032ce3"
+        }
+      ]
+    }
+  ]
+}

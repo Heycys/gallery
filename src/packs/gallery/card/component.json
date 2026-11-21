@@ -1,0 +1,15 @@
+{
+  "id": "gallery/card",
+  "apiVersion": 1,
+  "version": "1.3.0",
+  "name": { "zh": "卡片", "en": "Card" },
+  "description": { "zh": "带标题的卡片，里面放任意内容", "en": "A card with a title, any blocks inside it" },
+  "words": "kapian card 卡片 框 frame box",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "body": { "edit": "flow" }
+  },
+  "places": ["document"],
+  "listed": false,
+  "markdown": "parts"
+}

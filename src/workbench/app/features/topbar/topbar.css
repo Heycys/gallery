@@ -1,0 +1,113 @@
+.topbar { flex: none; height: var(--topbar-h, 44px); display: flex; align-items: center; gap: 8px; padding: 0 12px; background: var(--bacPri); position: relative; z-index: 5; }
+/* 页面往下滚过了：顶栏下面一条细线（侧栏头部滚动后的那一条同样的线），回到顶上就淡掉（Topbar.tsx usePageScrolled）。
+   线是整物理像素粗（--hairline，Topbar.tsx 给：125%、150% 下 1 个物理像素），贴着取整过的顶栏底边，不带毛边。用渐变画在 1px 的盒子里：
+   盒子本身的边在 125% 下落在半个物理像素上，Chrome 会在线上面多描一行淡淡的毛边（把盒子改成 0.8px 高也一样，2026-11-17 量过），渐变的分界落在整像素上 */
+.topbar::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: linear-gradient(to top, var(--borSec) var(--hairline, 1px), transparent 0); opacity: 0; pointer-events: none; transition: opacity .15s ease-out; }
+.topbar.scrolled::after { opacity: 1; }
+/* 自定义页的顶栏是页面自己的底色（kit 的 --gallery-page-fill），和下面的卡片底连成一片，不是白条压在灰底上 */
+.topbar.tb-page { background: var(--galleryPageBac); }
+.tb-left { flex: 1; min-width: 0; display: flex; align-items: center; }
+/* 侧栏收起后的展开按钮：和侧栏里的开关同一处（13px 起，中线 27px，对着侧栏各行图标的中线；sidebar.css .sb-top）。
+   侧栏展开时它收成 0 宽（不是一下子没了）：和侧栏的滑动同一个钟（--sbDur 280ms、--easeSheet）收起、展开，后面的面包屑跟着平平地挪，不跳一下；
+   收着时看不见也点不到（visibility，键盘也走不到） */
+.topbar .tb-menu {
+  display: inline-flex; width: 0; margin: 0; opacity: 0; visibility: hidden; overflow: hidden; color: var(--icoPri);
+  transition: width var(--sbDur) var(--easeSheet), margin var(--sbDur) var(--easeSheet), opacity var(--sbDur) var(--easeSheet), visibility var(--sbDur), background-color var(--hoverOut) ease-out;
+}
+/* 悬停、键盘走到时的灰底立刻出现（base.css 的悬停规则；它自己的过渡列表里还有宽度，不能整个去掉） */
+.topbar .tb-menu:is(:hover, :active, :focus-visible) { transition: width var(--sbDur) var(--easeSheet), margin var(--sbDur) var(--easeSheet), opacity var(--sbDur) var(--easeSheet), visibility var(--sbDur), background-color 0s; }
+.app.sb-collapsed .tb-menu { width: 28px; margin: 0 4px 0 1px; opacity: 1; visibility: visible; }
+
+/* 面包屑：层级超过 4 级时中间折叠成 … ；窄屏只显示当前页 */
+.crumbs { display: flex; align-items: center; min-width: 0; overflow: hidden; }
+.crumb-wrap { display: contents; }
+.crumb {
+  min-width: 0; max-width: 220px; height: 24px; display: inline-flex; align-items: center; gap: 6px;
+  padding: 2px 6px; border-radius: var(--r-ctl); font-size: 14px; white-space: nowrap; color: var(--texPri);
+}
+.crumb:hover { background: var(--fillQuiet); }
+body:not(.dragging) .crumb:active { background: var(--fillStrong); }
+/* 最后一个（打开着的这页）有地方就多给：一个人在面包屑里时窗口里有几百 px 空着，标题不该在 220px 处就被切 */
+.crumb-wrap:last-child .crumb { max-width: min(480px, 45vw); }
+.crumb .t { overflow: hidden; text-overflow: ellipsis; }
+.crumb .emoji { font-size: 14px; line-height: 1; }
+/* 自定义页的标题在改名时（⋯ › 重命名）：标题处是改名框（侧栏改名框的样子，sidebar.css .row-rename），宽按面包屑的上限 */
+.crumb.crumb-rename { padding: 0; width: 220px; }
+.crumb-rename .row-rename { margin: 0; }
+.crumb-sep { flex: none; font-size: 13px; color: var(--crumbSep); margin: 0 1px; user-select: none; }
+
+/* 面包屑的页面浮层（CrumbPopup.tsx；宽 180（用户要的，原来的 240 收窄四分之一）、条目高 28、分组名 12px/500）。
+   卡片和菜单一样（components.css .menu，2026-11-17）：圆角 14、四边留 5、行圆角 9、行与行贴着，移上 7%、按下 10%，同样的影子和出现的方式；
+   行里的图标也和菜单一样（components.css .mi-icon 那一条：格子 20px，Lucide 画 18px，线都约 1.25） */
+.crumb-pop {
+  position: fixed; left: 0; top: 0; z-index: 1000;
+  width: 180px; max-height: calc(100vh - 16px); overflow-y: auto; padding: var(--pad-card);
+  display: flex; flex-direction: column;
+  background: var(--popBac); border-radius: var(--r-card); box-shadow: var(--shadowCard);
+  font-size: 14px; line-height: 1.2; user-select: none;
+  scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent;
+  animation: menu-in var(--menuIn) var(--easeOut);
+}
+.crumb-pop-head { flex: none; margin: 8px 0 4px; padding: 0 9px; font-size: 12px; font-weight: 500; color: var(--texSec); white-space: nowrap; }
+.crumb-pop-item {
+  flex: none; height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 9px 0 6px;
+  border-radius: var(--r-row); cursor: pointer; color: var(--texPri);
+}
+.crumb-pop-item:hover, .crumb-pop-item.open, .crumb-pop-item.trigger { background: var(--fill); }
+.crumb-pop-item:active { background: var(--fillStrong); }
+/* 打开着的这一页：灰底（选中的 7%），和别处选中的一样（侧栏的行、写作偏好的标签），不用蓝 */
+.crumb-pop-item.current, .crumb-pop-item.current:hover { background: var(--fill); }
+.crumb-pop-item .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.crumb-pop-item.more { padding-left: 9px; color: var(--texSec); }
+.crumb-pop-arrow { flex: none; width: 20px; height: 20px; margin-right: -3px; color: var(--texTer); }
+.crumb-pop-arrow svg { stroke-width: 1; }
+
+.tb-right { flex: none; display: flex; align-items: center; gap: 2px; }
+.tb-right .icon-btn { color: var(--icoPri); }
+.tb-right .icon-btn.on { color: var(--star); }
+/* 菜单开着时它的按钮：选中的灰（7%） */
+.tb-right .icon-btn.menu-open { background: var(--fill); }
+.edited { font-size: 14px; color: var(--texTer); margin-right: 8px; white-space: nowrap; }
+@media (max-width: 1000px) { .edited { display: none; } }
+
+/* 常规保存状态只显示文字。离线和冲突另加圆点。 */
+.session-badge { flex: none; display: inline-flex; align-items: center; gap: 6px; margin-left: 10px; font-size: 12px; line-height: 20px; white-space: nowrap; }
+.session-badge.warn::before, .session-badge.danger::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; }
+.session-badge.muted { color: var(--texTer); animation: fade-in 60ms ease-out; }
+.session-badge.warn { color: var(--texAcc); }
+.session-badge.warn::before { background: var(--ora-tx); }
+.session-badge.danger { color: var(--texAcc); }
+.session-badge.danger::before { background: var(--red); }
+
+/* 字体与布局（LookMenu.tsx，「更多」的子菜单）：宽 224（用户 2026-11-07：原来的 300 宽了约四分之一）、四栏。
+   字体是三个大按钮：上面 24px 的“Ag”用各自的字体，下面 12px 的名字；字体大小、正文宽度、正文间距是三个文字按钮，
+   高 28，没有边框和底色。都是指针在上面时才有灰底，当前的那个蓝色（大按钮是“Ag”，文字按钮是字） */
+.menu.look-menu { width: 224px; max-width: none; padding-bottom: 8px; }
+.look-fonts, .look-row { display: flex; gap: 4px; padding: 0 3px; }
+.look-fonts { margin-bottom: 4px; }
+.look-font, .look-option {
+  flex: 1 1 0; min-width: 0; border: 0; border-radius: var(--r-ctl); background: none; color: var(--texPri);
+  font: inherit; cursor: pointer;
+}
+.look-font { display: flex; flex-direction: column; align-items: center; padding: 8px 4px 6px; }
+.look-glyph { height: 30px; font-size: 24px; line-height: 30px; white-space: nowrap; }
+.look-caption { margin-top: 2px; font-size: 12px; line-height: 16px; color: var(--texSec); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.look-option { display: flex; align-items: center; justify-content: center; height: 28px; padding: 0 4px; font-size: 14px; white-space: nowrap; }
+/* 卡片里的格子：移上 7%、按下 10%（和块菜单顶上的类型格子一样） */
+.look-font:hover, .look-option:hover { background: var(--fill); }
+.look-font:active, .look-option:active { background: var(--fillStrong); }
+/* 全宽开着时正文宽度那一栏淡下去（还能点：选的宽度记着，关掉全宽后用） */
+.look-row.look-off .look-option { opacity: var(--off); }
+.look-font.on .look-glyph, .look-option.on { color: var(--blueTex); }
+.look-font:focus-visible, .look-option:focus-visible { outline: none; background: var(--fill); }
+/* 最下面的「应用到全部文档」：隔一条线，同样的文字按钮占满一行，不标蓝 */
+.look-menu .menu-sep { margin: 8px 9px 4px; }
+
+/* 网页链接（Topbar.tsx）：它的面包屑带着图标，点了没反应；右边「在浏览器中打开」是带字的按钮 */
+.link-crumb { cursor: default; }
+.link-crumb:hover { background: none; }
+.link-crumb .pg-icon { flex: none; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+.link-crumb .pg-icon svg, .link-crumb .pg-icon img { width: 16px; height: 16px; }
+.tb-open { color: var(--texSec); margin-right: 2px; }
+/* 键盘走到浮层的一行（CrumbPopup.tsx）：比悬停深一档的灰底，不描边 */
+.crumb-pop-item:focus-visible { outline: none; background: var(--fill); }

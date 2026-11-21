@@ -1,0 +1,17 @@
+{
+  "id": "local/djs",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "倒计时", "en": "Countdown" },
+  "description": { "zh": "数着离一个日子还有多少天；这句说明比它的图片宽，要在图片下面折成几行", "en": "Counts the days to a date; this line is wider than its picture and wraps under it" },
+  "words": "daojishi countdown",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "settings": { "at": ":scope > script", "edit": "data" }
+  },
+  "settings": [
+    { "key": "date", "label": { "zh": "日期", "en": "Date" }, "type": "text", "default": "" },
+    { "key": "unit", "label": { "zh": "单位", "en": "Unit" }, "type": "select", "options": ["天", "小时"], "default": "天" }
+  ],
+  "markdown": "parts"
+}

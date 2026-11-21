@@ -1,0 +1,193 @@
+/* 流程图: ol.doc-flow, a list whose items are the steps of a process (the page editor's 步骤流程图).
+   Each step is a node, a container as a highlight block is, drawn as a card: 8px round with a
+   hairline border on the surface's white, its number (the list's own count, from its start; a number
+   of three digits a pill) in a 20px grey circle on the middle of its first line, or its icon there
+   instead (a lead div.doc-icon, as a highlight block's: an emoji, an icon of a set in its color, a
+   picture; 20px), and its blocks: its first a paragraph, its title, bold as the file writes it
+   (<p><strong>…</strong></p>: the kit puts no weight on the paragraph itself, so a title the reader
+   un-bolded reads as body text), the blocks after it its content, ordinary blocks at the body's weight
+   (a heading its own) under the title as a list item's (flow.css: the list's gap above each; a
+   component 8px, and nothing under the last, the card's padding the room there): a paragraph, a
+   heading, a quote, a picture, a code block, a list of any kind, its markers the kit's, counted from
+   the first depth again (flow.css), a flowchart (cards in a card). A step written the short way, its
+   own words before its blocks (<li>收集数据<p>…</p></li>, until the editor rewrites it as a node), is
+   drawn the same: its own words its title at the title's weight, its blocks its content.
+   The steps stand in rows (runtime/flowchart.js works them out and writes them into a stylesheet of
+   its own, keyed by the list's data-doc-flow-key): each row fills the flowchart's width, a step's
+   share of it its weight among the row's (--doc-flow-ratio), 28px between two steps of a row and
+   34px between two rows; without the kit's rules, one step a row (the column below), which is also
+   what a flowchart of one step a row is. Its layout has no print rule of its own: printed, the kit
+   works the rows out again at the paper's width (runtime/flowchart.js, as the browser lays the page
+   out for paper; the workbench's PDF lays the page out at the paper's width before it prints), so a
+   flowchart prints as a screen as wide as the paper shows it. On paper the kit keeps a flowchart
+   that fits on a page on one, so no arrow from a row's end stands at a page's foot pointing at
+   nothing or is cut by its edge; one taller than a page breaks between its rows where it stands, and
+   printed by the browser the kit leaves out the arrow such a break parts from the row it leads to.
+   An arrow, a 1.5px line and an open chevron in a neutral grey, leads from each step to the next: a
+   step's ::after, a fill clipped (or masked) to the arrow's outline, never text, so nothing selects or
+   edits it. Down the number's column from a step to the one under it (the default here), across on
+   the titles' line to the next step of its row, or, from a row's last step, turning: down half the
+   gap between the rows, across, and down into the next row's first step, its corners 6px round (the
+   runtime's rules choose; the outlines are custom properties of the arrow). A word too long for
+   its card breaks inside it (overflow-wrap), whatever the layout. A step's color (颜色, as a list
+   item takes it): a background fills its card; a text color its words (its content's too), its
+   number and its border. Its margins have no weight (:where), so a container's own trim wins (the
+   first and last block of a highlight panel, flow.css's columns and disclosures), as for every text
+   block.
+   The page editor reads the corners of a step's card, and of the whole flowchart (its cards'), to
+   wrap its selection and frame around them (--doc-box-radius, base.css). */
+
+/* The middle of a step's first line from its words' top: worked out on the step (its own line
+   height), its number, its icon and its arrow across placed by it. */
+@property --doc-flow-mid { syntax: "<length>"; inherits: true; initial-value: 13px; }
+
+:where(ol.doc-flow) { margin: var(--doc-block-gap) 0; }
+/* Selected whole in the page editor, its fill has its cards' corners. */
+ol.doc-flow {
+  --doc-box-radius: 8px;
+  --doc-box-reach: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+  padding: 0;
+  list-style: none;
+}
+ol.doc-flow > li {
+  --doc-flow-mid: .5lh;
+  --doc-box-radius: 8px;
+  --doc-box-reach: 4px;
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  padding: 9px 13px 9px 41px;
+  border: 1px solid var(--doc-border);
+  border-radius: 8px;
+  background: var(--doc-surface);
+  box-shadow: none;
+  font-weight: 700; /* a step written the short way: its own words its title, bold as a <strong> is (flow.css) */
+  overflow-wrap: anywhere;
+  break-inside: avoid;
+}
+/* An empty step is a line high, as an empty item is (flow.css: its ::after is its arrow here), and so
+   is an empty title, its <strong> waiting for words (<p><strong></strong></p>: an empty paragraph is
+   a line high already, flow.css, but one holding an empty element would be none). */
+ol.doc-flow > li:empty { min-height: calc(1lh + 20px); }
+ol.doc-flow > li > p:has(> strong:only-child:empty)::after { content: "\200b"; }
+/* Its number: the ol's count (its start, an item's value), in a circle on the first line's middle, its
+   right edge 8px left of the words (a longer number a pill growing to the left). Its place and size
+   are its own wherever the flowchart stands (a list's markers, flow.css, never reach it). */
+ol.doc-flow > li::before {
+  content: counter(list-item);
+  position: absolute;
+  top: calc(9px + var(--doc-flow-mid) - 10px);
+  right: calc(100% - 33px);
+  left: auto;
+  box-sizing: border-box;
+  width: auto;
+  min-width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0 3px;
+  border-radius: 10px;
+  background: var(--doc-flow-badge);
+  color: var(--doc-muted);
+  font-size: 12px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  line-height: 20px;
+  text-align: center;
+  user-select: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+/* Taken off for a moment by the kit as items move, so the browser counts them again (runtime/flowchart.js). */
+ol.doc-flow[data-doc-flow-recount] > li::before { content: none; }
+/* Its icon, first in it (as a highlight block's), in its number's place: 20px on the first line's
+   middle, the number gone (an icon of the numbers, Tabler's, shows its own and is counted by
+   nothing). An emoji and a picture a little inside it, an icon of a set the whole of it. */
+ol.doc-flow > li:has(> .doc-icon)::before { content: none; }
+ol.doc-flow > li > .doc-icon {
+  position: absolute;
+  top: calc(9px + var(--doc-flow-mid) - 10px);
+  left: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  font-size: 16px;
+  line-height: 1;
+  user-select: none;
+}
+ol.doc-flow > li > .doc-icon > img { width: 18px; height: 18px; }
+ol.doc-flow > li > .doc-icon > svg,
+ol.doc-flow > li > .doc-icon > img[alt=""] { width: 20px; height: 20px; }
+ol.doc-flow > li > .doc-icon > img[alt=""] { border-radius: 3px; }
+ol.doc-flow > li > .doc-icon[data-icon]:empty { width: 20px; height: 20px; }
+/* The arrow to the next step: down from under this card to the one under it, the numbers' column, 4px
+   clear of each card (34px between them); its outline (a shaft 1.5px thick and an open chevron at
+   45°, its arms --doc-flow-arm long) is a polygon the ::after's fill is clipped to. Across and
+   turning: the kit's rules (runtime/flowchart.js), with the outlines below. */
+ol.doc-flow > li:has(~ li)::after {
+  /* The chevron's arms' length; the outlines of an arrow across (a polygon the box is clipped to: a
+     shaft 1.5px thick and an open chevron at 45°, its tip at the right) and of a turning one, which
+     the kit's rules give the arrows that go so (runtime/flowchart.js): down from the top right, a 6px
+     corner, across, a 6px corner, down to the tip at the bottom left, as two mask layers drawn in CSS
+     pixels (no viewBox: nothing in them scaled, so no piece lands a fraction of a pixel off another,
+     as pieces of fractional size did, their joints showing as breaks at the corners). The right one
+     is the box less its first 11px, its path held at its right edge (a nested svg at x 100%): the
+     line down, the corner and the whole line across, cut where the layer starts; the left one, 13px
+     wide, the line across from 1.5px past that cut, the corner, the line down a pixel into the
+     arrow's shaft and the arrow: every joint inside a stroke that covers it whole. */
+  --doc-flow-arm: 4px;
+  --doc-flow-right: polygon(0 calc(50% - .75px), calc(100% - 2.87px) calc(50% - .75px), calc(100% - 1.59px - var(--doc-flow-arm)) calc(50% - var(--doc-flow-arm) + .53px), calc(100% - .53px - var(--doc-flow-arm)) calc(50% - var(--doc-flow-arm) - .53px), 100% 50%, calc(100% - .53px - var(--doc-flow-arm)) calc(50% + var(--doc-flow-arm) + .53px), calc(100% - 1.59px - var(--doc-flow-arm)) calc(50% + var(--doc-flow-arm) - .53px), calc(100% - 2.87px) calc(50% + .75px), 0 calc(50% + .75px));
+  --doc-flow-turn:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Csvg x='100%25' overflow='visible'%3E%3Cpath d='M-5 0V7A6 6 0 0 1-11 13H-9999' fill='none' stroke='black' stroke-width='1.5'/%3E%3C/svg%3E%3C/svg%3E") right 0 top 0 / calc(100% - 11px) 26px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='26'%3E%3Cpath d='M12.5 13H11A6 6 0 0 0 5 19V20' fill='none' stroke='black' stroke-width='1.5'/%3E%3Cpath d='M4.25 19V23.13L1.53 20.41L.47 21.47L5 26L9.53 21.47L8.47 20.41L5.75 23.13V19z'/%3E%3C/svg%3E") left 0 top 0 / 13px 26px no-repeat;
+  content: "";
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 18px;
+  width: 10px;
+  height: 26px;
+  background: var(--doc-flow-line);
+  clip-path: polygon(calc(50% - .75px) 0, calc(50% - .75px) calc(100% - 2.87px), calc(50% - var(--doc-flow-arm) + .53px) calc(100% - 1.59px - var(--doc-flow-arm)), calc(50% - var(--doc-flow-arm) - .53px) calc(100% - .53px - var(--doc-flow-arm)), 50% 100%, calc(50% + var(--doc-flow-arm) + .53px) calc(100% - .53px - var(--doc-flow-arm)), calc(50% + var(--doc-flow-arm) - .53px) calc(100% - 1.59px - var(--doc-flow-arm)), calc(50% + .75px) calc(100% - 2.87px), calc(50% + .75px) 0);
+  pointer-events: none;
+  user-select: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+/* A turning arrow as an outline the box is clipped to, as the arrows across and down are, where the
+   browser takes shape() (its corners arcs, its line across as long as the box): a mask image is
+   resampled where the box stands between pixels, its same ink spread over a row or two more, so the
+   turn read heavier than the arrow across beside it (the user, 2026-10-26: the same colour, measured,
+   only drawn softer). The line down from the top right (its centre 5px in), a 6px corner, the line
+   across 13px down, a 6px corner, the line down 5px in from the left and the arrow's chevron at the
+   bottom, 1.5px thick: the outer edge down and round, the inner edge back. The kit's rules give it to
+   the arrows that turn (runtime/flowchart.js), the mask above staying where shape() is not taken. */
+@supports (clip-path: shape(from 0 0, line to 1px 1px)) {
+  ol.doc-flow > li:has(~ li)::after {
+    --doc-flow-turn-mask: none;
+    --doc-flow-turn-shape: shape(from calc(100% - 4.25px) 0, line to calc(100% - 4.25px) 7px, arc to calc(100% - 11px) 13.75px of 6.75px cw, line to 11px 13.75px, arc to 5.75px 19px of 5.25px ccw, line to 5.75px calc(100% - 2.87px), line to calc(5px + var(--doc-flow-arm) - .53px) calc(100% - 1.59px - var(--doc-flow-arm)), line to calc(5px + var(--doc-flow-arm) + .53px) calc(100% - .53px - var(--doc-flow-arm)), line to 5px 100%, line to calc(5px - var(--doc-flow-arm) - .53px) calc(100% - .53px - var(--doc-flow-arm)), line to calc(5px - var(--doc-flow-arm) + .53px) calc(100% - 1.59px - var(--doc-flow-arm)), line to 4.25px calc(100% - 2.87px), line to 4.25px 19px, arc to 11px 12.25px of 6.75px cw, line to calc(100% - 11px) 12.25px, arc to calc(100% - 5.75px) 7px of 5.25px ccw, line to calc(100% - 5.75px) 0, close);
+  }
+}
+/* Its blocks: its title first (no gap above it, after its icon too: on the number's line), then its
+   content, at the body's weight (a heading its own, a title's <strong> bold: flow.css), spaced as a
+   list item's blocks are (flow.css); a component in it (a picture, a table, code, a callout, a
+   disclosure, a formula block, a flowchart) 8px under what comes before it and none below, whatever
+   its own margins, and its last block, whatever it is, none below it: the card's padding is the
+   room under its content, as a highlight panel's is. (Written the short way, its first block is its
+   content's, under its own words: the kit's rules give it the list's gap above it again.) */
+ol.doc-flow > li > :where(p, ul, ol, div, figure, blockquote, details, table, pre) { font-weight: 400; }
+ol.doc-flow > li > :where(:first-child, .doc-icon + *) { margin-top: 0; }
+ol.doc-flow > li > :is(div:not(.doc-icon), figure, details, table, pre, ol.doc-flow) { margin-top: 8px; margin-bottom: 0; }
+ol.doc-flow > li > :where(:last-child) { margin-bottom: 0; }
+
+/* A step's color (颜色 in the page editor's block menu, base.css's classes): a background fills its
+   card; a text color its words (its content's, a block's own color still its own), its number (a
+   tint of it behind) and its border (a lighter shade). */
+ol.doc-flow > li:is(@highlight-colors) { background: var(--doc-fill); }
+ol.doc-flow > li:is(@text-colors) { border-color: color-mix(in srgb, var(--doc-ink) 35%, transparent); }
+ol.doc-flow > li:is(@text-colors)::before { background: color-mix(in srgb, var(--doc-ink) 14%, transparent); color: var(--doc-ink); }

@@ -1,0 +1,186 @@
+/* 柔光风格's static card has no script: what its content holds, any HTML, is what a reader sees. Its content
+   (the instance's one div) is the card's face: on a custom page it is taken out over the card's padding and
+   given the soft frame's, by the card's size (the instance is a container of it: 16px at the sides of a card
+   one cell high, its line in the middle; 18px on a 2 × 2 card; 24px on one 3 cells high or more; else 20px),
+   with a faint wash of the accent from the card's top over whatever fill the card has (the board's, or one
+   the page gives it). It gives the HTML the soft cards' reading look: a heading it starts with, where more
+   follows, is drawn as the cards' head row (a chip of lines in the accent's soft tint, the title; small words
+   in it its quiet meta at the end); a list a dot an item, an item that is one link a row like the sidebar's
+   (a small square with a link's picture before it, small words in it at its end), a paragraph that is one
+   link the accent's with an arrow out after it; a table of hairlines, its first column words and the others
+   numbers at the right; on a 2 × 2 card what follows the heading at the bottom; on a card one cell high its
+   line in the middle, a link there after a chip of a page and before an arrow out, a first small span (an
+   emoji) on a chip. Each rule weighs nothing (:where()), so that the page's own <style> and an inline style
+   win. Its colors are a share of the color it stands in (currentColor), but the chips', the links' and the
+   wash's, so that the page may color a card. The grip's corner: the first thing in it keeps its end clear.
+   Nothing in it: the cards' empty face. Every selector stands in the instance. */
+[data-doc-component="gallery-soft/static"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-ink: light-dark(#356cb3, #98bee9);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-pad: 20px;
+  --soft-grip-room: 0px;
+  --soft-lines: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7h14M5 12h14M5 17h8.5'/%3E%3C/svg%3E");
+  --soft-link: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1'/%3E%3Cpath d='M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1'/%3E%3C/svg%3E");
+  --soft-doc: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3.5h6.8L18 7.7V20.5H7z'/%3E%3Cpath d='M13.5 3.5V8H18'/%3E%3C/svg%3E");
+  --soft-out: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 16L16.5 7.5'/%3E%3Cpath d='M9.5 7.5h7v7'/%3E%3C/svg%3E");
+  > div {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    font: 13.5px/1.5 var(--soft-font);
+    overflow-wrap: break-word;
+    text-wrap: pretty;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+/* On a custom page: the content over the card's whole room, its padding the soft frame's by the card's size
+   (the board's line takes the first pixel of it). (:first-child: the board's rule that takes the outer margins
+   off an instance's first and last child weighs as much as a class more.) */
+.gallery-card > [data-doc-component="gallery-soft/static"] { height: 100%; container-type: size; }
+.gallery-card > [data-doc-component="gallery-soft/static"] > div:first-child {
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  padding: calc(var(--soft-pad) - 1px);
+  overflow: hidden;
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  background: var(--soft-wash);
+}
+@container (min-height: 141px) {
+  .gallery-card > [data-doc-component="gallery-soft/static"] > div:first-child { --soft-pad: 24px; }
+}
+@container (min-height: 61px) and (max-height: 140px) and (max-width: 140px) {
+  .gallery-card > [data-doc-component="gallery-soft/static"] > div:first-child { --soft-pad: 18px; }
+}
+@container (max-height: 60px) {
+  .gallery-card > [data-doc-component="gallery-soft/static"] > div:first-child { --soft-pad: 16px; padding-block: 0; justify-content: center; }
+}
+/* Its HTML's look. In the instance's scope, each rule as light as its elements (a page's own rule of a class wins
+   over it, and it wins over the kit's rules of an element alone, by the scope's nearness). */
+@scope ([data-doc-component="gallery-soft/static"]) {
+  :where(:scope > div > *) { flex: none; margin: 0; }
+  :where(:scope > div > :first-child) { padding-inline-end: var(--soft-grip-room); }
+  h1, h2, h3, h4, h5, h6 { margin: 10px 0 4px; font-size: 15px; line-height: 1.4; font-weight: 600; }
+  :is(p, ul, ol, dl, blockquote, table, figure, pre) + :is(p, ul, ol, dl, blockquote, table, figure, pre) { margin-top: 8px; }
+  a { color: var(--soft-accent-ink); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  small { font-size: 12px; color: color-mix(in srgb, currentColor 62%, transparent); }
+  img, svg, video { max-width: 100%; align-self: flex-start; }
+  img, video { height: auto; }
+  code { padding: 0 4px; border-radius: 4px; background: color-mix(in srgb, currentColor 6%, transparent); font-family: var(--doc-mono); font-size: .9em; }
+  blockquote { padding-inline-start: 12px; border-inline-start: 3px solid color-mix(in srgb, currentColor 18%, transparent); color: color-mix(in srgb, currentColor 65%, transparent); }
+  hr { margin: 10px 0; border: 0; border-top: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+  /* The heading it starts with, where more follows: the cards' head row, a chip of lines before it, small words in it its quiet meta at the end. */
+  :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-height: 28px;
+    margin: 0;
+    font-size: 14px;
+    line-height: 20px;
+    font-weight: 600;
+  }
+  :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child)::before { content: ""; flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--soft-accent-soft); }
+  :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 6px;
+    width: 16px;
+    height: 16px;
+    margin-top: -8px;
+    background: var(--soft-accent);
+    -webkit-mask: var(--soft-lines) center / contain no-repeat;
+    mask: var(--soft-lines) center / contain no-repeat;
+  }
+  :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child) > small { margin-left: auto; margin-inline-end: calc(-1 * var(--soft-grip-room)); font-weight: 400; white-space: nowrap; opacity: calc(1 - var(--gallery-grip-shown, 0)); transition: opacity .12s ease-out; }
+  :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child) + * { margin-top: 10px; }
+  /* Its subtitle: a paragraph of small words alone under the head; what follows it a little apart. */
+  :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child + p:has(> small:only-child) { margin-top: 6px; }
+  p:has(> small:only-child) > small { font-size: 13px; }
+  p:has(> small:only-child) + * { margin-top: 10px; }
+  /* A list: a dot an item. */
+  ul { display: flex; flex-direction: column; gap: 8px; padding: 0; list-style: none; }
+  ul > li { display: flex; gap: 10px; align-items: baseline; }
+  ul > li::before { content: ""; flex: none; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .38; transform: translateY(-2px); }
+  ol { padding-inline-start: 1.4em; }
+  /* An item that is one link: a row like the sidebar's, a link's picture on a soft square before it, its small words at its end. */
+  ul:has(> li > a:only-child) { gap: 0; }
+  ul > li:has(> a:only-child)::before { display: none; }
+  li > a:only-child { position: relative; display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; height: 30px; margin: 0 -6px; padding: 0 6px; border-radius: 6px; color: inherit; }
+  li > a:only-child:hover { text-decoration: none; background: color-mix(in srgb, currentColor 6%, transparent); }
+  li > a:only-child::before { content: ""; flex: none; width: 18px; height: 18px; border-radius: 5px; background: color-mix(in srgb, currentColor 7%, transparent); }
+  li > a:only-child::after { content: ""; position: absolute; top: 50%; left: 9px; width: 12px; height: 12px; margin-top: -6px; background: color-mix(in srgb, currentColor 55%, transparent); -webkit-mask: var(--soft-link) center / contain no-repeat; mask: var(--soft-link) center / contain no-repeat; }
+  /* one to a page of the workspace (no scheme: ../<slug>/doc.html, #…, /…) a page's picture */
+  li > a:only-child:not([href*=":"])::after { -webkit-mask-image: var(--soft-doc); mask-image: var(--soft-doc); }
+  li > a:only-child > small { margin-left: auto; font: 11.5px var(--soft-num); color: color-mix(in srgb, currentColor 45%, transparent); white-space: nowrap; }
+  /* A paragraph that is one link: the accent's, an arrow out after it; the last such at the card's bottom. */
+  p > a:only-child { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; }
+  p > a:only-child::after { content: ""; width: 13px; height: 13px; background: currentColor; -webkit-mask: var(--soft-out) center / contain no-repeat; mask: var(--soft-out) center / contain no-repeat; }
+  :scope > div > p:last-child:not(:first-child):has(> a:only-child) { margin-top: auto; padding-top: 8px; }
+  /* A table: hairlines between the rows, its head small and muted, its columns after the first numbers at the right. */
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { padding: 0 0 4px; text-align: left; font-size: 11.5px; font-weight: 500; color: color-mix(in srgb, currentColor 62%, transparent); }
+  td { padding: 3px 0; text-align: left; box-shadow: inset 0 1px 0 color-mix(in srgb, currentColor 7%, transparent); }
+  :is(th, td):not(:first-child) { text-align: right; font-family: var(--soft-num); }
+}
+/* A 2 × 2 card: what follows the heading at the bottom, the head and the rows a size smaller. */
+@container (min-height: 61px) and (max-height: 140px) and (max-width: 140px) {
+  @scope ([data-doc-component="gallery-soft/static"]) {
+    :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child) { gap: 8px; min-height: 24px; font-size: 13px; }
+    :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child)::before { width: 24px; height: 24px; border-radius: 7px; }
+    :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child)::after { left: 5px; width: 14px; height: 14px; margin-top: -7px; }
+    :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child) + * { margin-top: auto; }
+    li > a:only-child { gap: 8px; height: 26px; font-size: 13px; }
+  }
+}
+/* A card 2 cells high and wider than 2: a list of link rows a size closer (26px) and nearer the head, so that three rows fit above the padding. */
+@container (min-height: 61px) and (max-height: 140px) and (min-width: 141px) {
+  @scope ([data-doc-component="gallery-soft/static"]) {
+    :scope > div > :is(h1, h2, h3, h4, h5, h6):first-child:not(:last-child) + ul:has(> li > a:only-child) { margin-top: 4px; }
+    li > a:only-child { height: 26px; }
+  }
+}
+/* A card one cell high: its one line in the middle, a link after a chip of a page and before an arrow out, a first small span on a chip. */
+@container (max-height: 60px) {
+  @scope ([data-doc-component="gallery-soft/static"]) {
+    :scope > div > p { display: flex; align-items: center; gap: 10px; min-width: 0; overflow: hidden; white-space: nowrap; }
+    :scope > div > p > span:first-child { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 7px; background: var(--soft-accent-soft); font-size: 14px; }
+    :scope > div > p:has(> a:only-child)::before { content: ""; flex: none; width: 26px; height: 26px; border-radius: 7px; background: var(--soft-accent-soft); }
+    :scope > div > p > a:only-child { position: relative; display: flex; flex: 1; gap: 10px; min-width: 0; font-size: 13.5px; color: inherit; }
+    :scope > div > p > a:only-child::before { content: ""; position: absolute; top: 50%; left: -30px; width: 14px; height: 14px; margin-top: -7px; background: var(--soft-accent); -webkit-mask: var(--soft-doc) center / contain no-repeat; mask: var(--soft-doc) center / contain no-repeat; }
+    /* its arrow out at the card's end, in the grip's room, faded while the grip shows */
+    :scope > div > p > a:only-child::after { position: absolute; top: 50%; right: calc(-1 * var(--soft-grip-room)); width: 14px; height: 14px; margin-top: -7px; background: color-mix(in srgb, currentColor 40%, transparent); opacity: calc(1 - var(--gallery-grip-shown, 0)); transition: opacity .12s ease-out; }
+  }
+}
+/* Nothing in it: the cards' empty face, in the middle of the card, a share of its color as all else of it: a
+   soft disc with lines in it (the instance's ::before, one mask, over the content), then a short line (还没有
+   内容) over what to do, muted (the content's ::before and ::after). */
+[data-doc-component="gallery-soft/static"]:has(> div:empty) { position: relative; }
+[data-doc-component="gallery-soft/static"]:has(> div:empty)::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: calc(50% - 48px);
+  left: calc(50% - 22px);
+  width: 44px;
+  height: 44px;
+  background: color-mix(in srgb, currentColor 55%, transparent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='22' fill-opacity='.13'/%3E%3Cg transform='translate(12 12) scale(.8333)' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7h14M5 12h14M5 17h8.5'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Ccircle cx='22' cy='22' r='22' fill-opacity='.13'/%3E%3Cg transform='translate(12 12) scale(.8333)' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 7h14M5 12h14M5 17h8.5'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+}
+[data-doc-component="gallery-soft/static"] > div:empty { align-items: center; justify-content: center; gap: 4px; min-height: 120px; padding-top: 74px; text-align: center; }
+.gallery-card > [data-doc-component="gallery-soft/static"] > div:first-child:empty { min-height: 0; padding-top: 74px; }
+[data-doc-component="gallery-soft/static"] > div:empty::before { content: "还没有内容"; font-size: 13px; }
+[data-doc-component="gallery-soft/static"] > div:empty::after { content: "跟 Agent 说要在这里放什么"; font-size: 12px; color: color-mix(in srgb, currentColor 62%, transparent); }
+:root[data-ge-language="en"] [data-doc-component="gallery-soft/static"] > div:empty::before,
+:root:not([data-ge-language])[lang|="en" i] [data-doc-component="gallery-soft/static"] > div:empty::before { content: "Nothing here yet"; }
+:root[data-ge-language="en"] [data-doc-component="gallery-soft/static"] > div:empty::after,
+:root:not([data-ge-language])[lang|="en" i] [data-doc-component="gallery-soft/static"] > div:empty::after { content: "Tell your Agent what this card should show"; }

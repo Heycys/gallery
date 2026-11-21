@@ -1,0 +1,4 @@
+/* A package's look, each rule a step at a time (>): none reaches into the slot, whose blocks read as the page's. */
+[data-doc-component="local/brief"] { padding: 12px 16px; border: 1px solid var(--doc-border); border-radius: 8px; }
+[data-doc-component="local/brief"] > h3 { margin: 0 0 8px; }
+[data-doc-component="local/brief"] > .brief-count { margin-top: 8px; color: var(--doc-muted); font-size: 12px; }

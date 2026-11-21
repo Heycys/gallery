@@ -1,0 +1,53 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page or the table in the slot, which reads as the page's. The frame is
+   gallery/card's (the kit's card's, .doc-figure), 10px under its title as there; the bars the script draws
+   take the kit's series colors, which follow the theme, and are laid out in percents of the card's width,
+   as gallery/chart-view draws its own (a bar 16px high, 4px corners; two series or more 12px each, one
+   under another). Where the drawing is narrow (a phone, a column of a row), each name stands over its bars
+   and the bars take its width: the drawing is a container of its own (the instance is none, so that
+   nothing of the slot's table, which is the page's, is held to it). */
+[data-doc-component="gallery/chart-card"] {
+  --doc-surface: var(--doc-figure-ground, var(--doc-bg));
+  margin: var(--doc-component-gap) 0;
+  padding: 14px 18px 8px;
+  border: 1px solid var(--doc-border);
+  border-radius: 12px;
+  background: var(--doc-surface);
+  > h3 { margin: 0 0 10px; font-size: var(--doc-card-title-font-size); line-height: var(--doc-card-title-line-height); font-weight: 700; letter-spacing: 0; }
+  > .gallery-chart-card-bars {
+    container-type: inline-size;
+    display: grid;
+    grid-template-columns: fit-content(40%) minmax(0, 1fr);
+    gap: 8px 12px;
+    align-items: center;
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--doc-text);
+    > .gallery-chart-card-legend {
+      grid-column: 1 / -1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px 16px;
+      font-size: 12px;
+      color: var(--doc-muted);
+      > .gallery-chart-card-key { display: inline-flex; align-items: center; gap: 6px; }
+      > .gallery-chart-card-key > .gallery-chart-card-swatch { width: 10px; height: 10px; border-radius: 3px; }
+    }
+    > .gallery-chart-card-row { display: contents; }
+    > .gallery-chart-card-row > .gallery-chart-card-label { text-align: right; overflow-wrap: anywhere; }
+    > .gallery-chart-card-row > .gallery-chart-card-lanes { display: flex; flex-direction: column; gap: 2px; margin-right: 4em; }
+    > .gallery-chart-card-row > .gallery-chart-card-lanes > .gallery-chart-card-lane { position: relative; height: 16px; }
+    &.gallery-chart-card-many > .gallery-chart-card-row > .gallery-chart-card-lanes > .gallery-chart-card-lane { height: 12px; }
+    &.gallery-chart-card-below > .gallery-chart-card-row > .gallery-chart-card-lanes { margin-left: 4em; }
+    &.gallery-chart-card-below > .gallery-chart-card-row > .gallery-chart-card-lanes > .gallery-chart-card-lane { background: linear-gradient(var(--doc-grid), var(--doc-grid)) var(--gallery-chart-card-zero) 0 / 1px 100% no-repeat; }
+    > .gallery-chart-card-row > .gallery-chart-card-lanes > .gallery-chart-card-lane > .gallery-chart-card-bar { position: absolute; top: 0; bottom: 0; min-width: 2px; border-radius: 4px; }
+    &.gallery-chart-card-many > .gallery-chart-card-row > .gallery-chart-card-lanes > .gallery-chart-card-lane > .gallery-chart-card-bar { border-radius: 3px; }
+    > .gallery-chart-card-row > .gallery-chart-card-lanes > .gallery-chart-card-lane > .gallery-chart-card-value { position: absolute; top: 50%; transform: translateY(-50%); font-size: 12px; line-height: 1; color: var(--doc-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    > .gallery-chart-card-empty { grid-column: 1 / -1; margin: 0; font-size: 13px; line-height: 20px; color: var(--doc-muted); }
+    @container (max-width: 360px) {
+      > .gallery-chart-card-row > .gallery-chart-card-label { grid-column: 1 / -1; margin-bottom: -4px; text-align: left; }
+      > .gallery-chart-card-row > .gallery-chart-card-lanes { grid-column: 1 / -1; }
+    }
+  }
+}

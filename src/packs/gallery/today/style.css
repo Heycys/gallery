@@ -1,0 +1,149 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. The face in the kit's card tokens, a grid laid out by
+   the card's cells (the face's data-layout, which the script sets from context.size): "full" (4 × 2, the
+   default) a head of the chip, the date (600) and the number of the week after it (the head's quiet meta),
+   the greeting large under it and the week at the bottom, seven days of 38px, the days gone fainter,
+   today the one solid square of the accent; "narrow" (2 wide) a page of a desk calendar, the greeting
+   the head's title, today's day of the month large at the bottom, its weekday and month under it;
+   "line" (one cell high) the chip, the greeting and the date on one line. The chip is the sun's warm
+   color by day and the accent's pale blue in the evening, and so is the soft glow at the card's top left
+   (the face's data-sky), drawn from the card's edges: the face taken out over the card's padding and
+   given it back. Its head keeps clear of the card's grip. Light and dark. */
+[data-doc-component="gallery/today"] {
+  --gallery-today-glow: light-dark(rgb(255 183 77 / 20%), rgb(255 170 60 / 8.5%));
+  --gallery-today-glow-evening: light-dark(rgb(64 132 207 / 13%), rgb(80 143 214 / 15%));
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-today-face {
+    display: grid;
+    grid-template-columns: auto minmax(0, max-content) auto minmax(var(--gallery-grip-room, 0px), 1fr);
+    grid-template-rows: 20px auto 1fr;
+    grid-template-areas: "chip date meta ." "greeting greeting greeting greeting" "week week week week";
+    column-gap: 8px;
+    box-sizing: border-box;
+    min-height: 0;
+  }
+  > .gallery-today-face > .gallery-today-chip {
+    grid-area: chip;
+    align-self: center;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-warm-soft);
+    color: var(--gallery-warm);
+  }
+  > .gallery-today-face > .gallery-today-chip[data-sky="moon"] { background: var(--gallery-accent-soft); color: var(--gallery-accent-ink); }
+  > .gallery-today-face > .gallery-today-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  > .gallery-today-face > .gallery-today-date {
+    grid-area: date;
+    align-self: center;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: var(--gallery-title-size);
+    line-height: var(--gallery-title-line);
+    font-weight: 600;
+    color: var(--gallery-text);
+  }
+  > .gallery-today-face > .gallery-today-meta {
+    grid-area: meta;
+    align-self: center;
+    font-size: var(--gallery-meta-size);
+    line-height: var(--gallery-title-line);
+    color: var(--gallery-faint);
+    white-space: nowrap;
+  }
+  > .gallery-today-face > .gallery-today-greeting {
+    grid-area: greeting;
+    margin: 8px 0 0;
+    font-size: 28px;
+    line-height: 34px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--gallery-text-strong);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  > .gallery-today-face > .gallery-today-week {
+    grid-area: week;
+    align-self: end;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  > .gallery-today-face > .gallery-today-week > .gallery-today-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 38px;
+    border-radius: 9px;
+  }
+  > .gallery-today-face > .gallery-today-week > .gallery-today-day > .gallery-today-initial { font-size: 10.5px; line-height: 14px; color: var(--gallery-faint); }
+  > .gallery-today-face > .gallery-today-week > .gallery-today-day > .gallery-today-number { font-size: 13px; line-height: 17px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--gallery-text); }
+  > .gallery-today-face > .gallery-today-week > .gallery-today-past > .gallery-today-number { font-weight: 500; color: var(--gallery-faint); }
+  > .gallery-today-face > .gallery-today-week > .gallery-today-now { background: var(--gallery-accent-fill); }
+  > .gallery-today-face > .gallery-today-week > .gallery-today-now > .gallery-today-initial { color: #fff; }
+  > .gallery-today-face > .gallery-today-week > .gallery-today-now > .gallery-today-number { color: #fff; }
+  > .gallery-today-face > :is(.gallery-today-big, .gallery-today-foot) { display: none; }
+  > .gallery-today-face > .gallery-today-big {
+    grid-area: big;
+    align-self: end;
+    font-size: 56px;
+    line-height: 1;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: -.04em;
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-today-face > .gallery-today-foot { grid-area: foot; margin-top: 8px; font-size: 12.5px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; }
+  > .gallery-today-face > .gallery-today-foot > .gallery-today-dot { margin: 0 5px; color: var(--gallery-faintest); }
+
+  /* A narrow card: a page of a desk calendar. */
+  > .gallery-today-face[data-layout="narrow"] {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 20px 1fr auto;
+    grid-template-areas: "chip greeting" "big big" "foot foot";
+  }
+  > .gallery-today-face[data-layout="narrow"] > :is(.gallery-today-date, .gallery-today-meta, .gallery-today-week) { display: none; }
+  > .gallery-today-face[data-layout="narrow"] > :is(.gallery-today-big, .gallery-today-foot) { display: block; }
+  > .gallery-today-face[data-layout="narrow"] > .gallery-today-greeting {
+    align-self: center;
+    margin: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+    font-size: var(--gallery-title-size);
+    line-height: var(--gallery-title-line);
+    letter-spacing: 0;
+    color: var(--gallery-text);
+  }
+  /* A card one cell high: a line. */
+  > .gallery-today-face[data-layout="line"] {
+    grid-template-columns: auto auto minmax(0, 1fr);
+    grid-template-rows: 1fr;
+    grid-template-areas: "chip greeting date";
+    align-items: center;
+  }
+  > .gallery-today-face[data-layout="line"] > :is(.gallery-today-meta, .gallery-today-week) { display: none; }
+  > .gallery-today-face[data-layout="line"] > .gallery-today-greeting { margin: 0; font-size: 15px; line-height: 20px; letter-spacing: 0; }
+  > .gallery-today-face[data-layout="line"] > .gallery-today-date { margin-inline-start: 4px; padding-inline-end: var(--gallery-grip-room, 0px); font-weight: 400; color: var(--gallery-muted); }
+}
+/* On a custom page the face is the card's: as high as what the card holds inside its padding, and its glow
+   the whole card's, from its edges (the face taken out over the card's padding and given it back). */
+.gallery-card > [data-doc-component="gallery/today"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/today"] > .gallery-today-face {
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  padding: var(--gallery-card-pad);
+  border-radius: var(--gallery-card-radius);
+  background: radial-gradient(110% 100% at 0% 0%, var(--gallery-today-glow), transparent 62%);
+}
+.gallery-card > [data-doc-component="gallery/today"] > .gallery-today-face[data-sky="moon"] { background: radial-gradient(110% 100% at 0% 0%, var(--gallery-today-glow-evening), transparent 62%); }

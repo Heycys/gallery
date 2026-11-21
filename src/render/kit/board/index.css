@@ -1,0 +1,5 @@
+/* /kit/board.css: a custom page's own stylesheet (docs/render.md, "A custom page"), loaded by every
+   custom page and by no document (assets.mjs, `page`), after the kit's report.css, whose tokens it
+   reads. These files joined in this order, as they are (src/render/kit-build.mjs). */
+
+@import "./board.css";

@@ -1,0 +1,13 @@
+{
+  "id": "gallery-soft/note",
+  "apiVersion": 1,
+  "version": "0.0.1",
+  "name": { "zh": "便签", "en": "Note" },
+  "description": { "zh": "柔光风格的便签（测试用的替身）", "en": "A note in the soft style (a stand-in for the tests)" },
+  "words": "bianqian note",
+  "parts": {
+    "text": { "at": ":scope > p", "edit": "none" }
+  },
+  "places": ["page"],
+  "card": { "w": 4, "h": 2 }
+}

@@ -1,0 +1,112 @@
+/* 图片放大 (runtime/zoom.js): a picture opened large over the page, as in the page
+   editor's viewer (editor/components/image/viewer.mjs): the page dimmed under a dark veil in either theme,
+   the picture in the middle at the size the runtime works out (fitted to the window, never past its
+   own), its caption under it in light gray, a close button at the top right drawn as the viewer's bar
+   is (a dark square, a white cross, a lighter fill under the pointer; once Tab reaches it, the kit's
+   focus ring, base.css). The page under it keeps still (html.doc-zoom-open), its scrollbar's room kept where it
+   had one (.doc-zoom-gutter). A picture that opens shows the zoom-in cursor
+   (html.doc-zoom-hover, set while the pointer is on one). It fades in, the picture growing a
+   little, not with reduced motion; it never prints. A picture that opens is a tab stop while the page
+   is read, its focus ring the kit's. */
+
+:root.doc-zoom-hover .doc-page img:hover { cursor: zoom-in; }
+
+/* A picture that opens, reached from the keyboard (the runtime's data-doc-zoom: a tab stop while the
+   page is read): the kit's focus ring (base.css), as a disclosure's summary has; none from the pointer. */
+
+@media screen {
+  :root.doc-zoom-open { overflow: hidden; }
+  :root.doc-zoom-open.doc-zoom-gutter { scrollbar-gutter: stable; }
+}
+
+/* The whole window, the veil its own background (a click on it closes the viewer: a click on the
+   ::backdrop of a dialog as large as the window never comes). */
+.doc-zoom {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  color: rgb(255 255 255 / 80%);
+  background: rgb(15 15 15 / 80%);
+  overscroll-behavior: contain;
+}
+.doc-zoom::backdrop { background: transparent; }
+.doc-zoom:focus { outline: none; } /* it takes the focus as it opens: no ring around the window */
+
+.doc-zoom[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  animation: doc-zoom-fade 0.15s ease-out;
+}
+
+.doc-zoom-picture {
+  display: block;
+  max-width: none;
+  flex: none;
+  object-fit: contain;
+  border-radius: 2px;
+  user-select: none;
+  animation: doc-zoom-grow 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* The caption's words as the page shows them (its marks, formulas, links), on one line or a few. */
+.doc-zoom-caption {
+  max-width: min(var(--doc-content-max-width), calc(100vw - 32px));
+  flex: none;
+  font: var(--doc-note-font-size) / var(--doc-note-line-height) var(--doc-font);
+  text-align: center;
+  overflow-wrap: break-word;
+}
+.doc-zoom-caption a { color: inherit; text-decoration: underline; }
+
+.doc-zoom-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--doc-radius-control);
+  color: #fff;
+  background: rgb(0 0 0 / 62%);
+  font-size: 0;
+  cursor: pointer;
+  transition: background-color 100ms ease-out;
+}
+.doc-zoom-close::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='m11 11 10 10M21 11 11 21'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' fill='none' stroke='black' stroke-width='1.6' stroke-linecap='round'%3E%3Cpath d='m11 11 10 10M21 11 11 21'/%3E%3C/svg%3E") 0 0 / 100% 100% no-repeat;
+}
+.doc-zoom-close:hover { background: rgb(40 40 40 / 80%); transition: none; }
+.doc-zoom-close:active { background: rgb(20 20 20 / 88%); transition: none; }
+.doc-zoom-close:focus:not(:focus-visible) { outline: none; }
+
+@keyframes doc-zoom-fade {
+  from { opacity: 0; }
+}
+
+@keyframes doc-zoom-grow {
+  from { transform: scale(0.96); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doc-zoom[open], .doc-zoom-picture { animation: none; }
+}
+
+@media print {
+  .doc-zoom { display: none !important; }
+}

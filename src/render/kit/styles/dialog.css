@@ -1,0 +1,214 @@
+/* 详情卡片 (dialogs.js): a link that opens a detail card, and the card: a modal dialog whose content
+   region is a flow, the page's text at the page's width. */
+
+/* The link reads as a button in the text: a rounded fill around the words, which keep the text's
+   color, and a small open icon after them; its line breaks keep the fill on each piece. */
+.doc-dialog-trigger {
+  display: inline;
+  margin: 0 1px;
+  padding: 1px 5px 1px 6px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  text-align: inherit;
+  text-decoration: none;
+  vertical-align: baseline;
+  cursor: pointer;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-color 0.12s ease;
+}
+
+/* The icon never stands alone on a line, apart from the last word (found testing the skill with
+   Agents, 2026-10-28: a link ending at the line's end at 1024px put it on the next): an inline box,
+   not an inline-block (a line may break before one), holding a word joiner (U+2060, no break on
+   either side of it), its 0.72em of room its padding, the icon a mask of that size at its right. */
+.doc-dialog-trigger::after {
+  content: "\2060";
+  display: inline;
+  margin-left: 0.3em;
+  padding-left: 0.72em;
+  background: currentColor;
+  opacity: 0.45;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9'/%3E%3C/svg%3E") right center / 0.72em 0.72em no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9'/%3E%3C/svg%3E") right center / 0.72em 0.72em no-repeat;
+}
+
+.doc-dialog-trigger:hover { background: color-mix(in srgb, currentColor 13%, transparent); }
+.doc-dialog-trigger:hover::after { opacity: 0.75; }
+
+/* The page under it keeps still (html.doc-dialog-open): nothing on it moves as a card opens or
+   closes. Where it had a scrollbar (.doc-dialog-gutter), the room the scrollbar took is the page's
+   padding on its right meanwhile (dialogs.js says how wide in a sheet the document adopts, as
+   --doc-page-bar, so none of it is in the markup), not kept as the scrollbar's (scrollbar-gutter):
+   kept, it is outside the window the backdrop covers, and a strip of the page's color stood bright
+   beside the dimmed page at the window's right edge (the user's 2026-11-13). The window under the card
+   is the whole window, the backdrop to its edge; what is fixed against its right side (the editor's
+   outline, the display button) stands that much further in, where it was. A browser with no
+   constructed sheets keeps the scrollbar's room, as here. */
+@media screen {
+  :root.doc-dialog-open { overflow: hidden; }
+  :root.doc-dialog-open.doc-dialog-gutter { scrollbar-gutter: stable; }
+}
+
+/* The card is the workbench's settings dialogs' (组件列表, 写作偏好: a centred dialog), a
+   little smaller: 760 wide and 80% of the window high (at most 760), at least 24px clear of the
+   window's sides (12px on a phone), whatever it holds, centred (a modal dialog is fixed with inset 0
+   and margin auto); what it holds scrolls inside it. Across, it is sized and centred in the window
+   less the page's scrollbar room (100% less --doc-page-bar), as the page is. The same while the page
+   is edited. No header, no line, no close button. A shell's corners (16, as the workbench's dialogs' since
+   2026-11-17), and the shadow of a window that takes the screen (a modal's, light
+   and dark: deeper than a menu's, so that the card keeps an edge on the dimmed page). A card (figure.css) in it
+   takes its surface for the page's color it takes elsewhere. */
+.doc-dialog {
+  --doc-figure-ground: var(--doc-surface);
+  width: min(var(--doc-dialog-width), calc(100% - var(--doc-page-bar, 0px) - (2 * var(--doc-dialog-margin))));
+  height: min(var(--doc-dialog-height), calc(100dvh - (2 * var(--doc-dialog-margin))));
+  min-width: 0;
+  max-width: none;
+  min-height: 0;
+  max-height: none;
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--doc-radius-shell);
+  color: var(--doc-text);
+  background: var(--doc-surface);
+  box-shadow: 0 24px 48px rgb(25 25 25 / 24%), 0 4px 12px rgb(25 25 25 / 14%), 0 0 0 1px rgb(42 28 0 / 7%);
+}
+:root[data-doc-theme="dark"] .doc-dialog { box-shadow: 0 0 0 1px #383836, 0 24px 48px rgb(25 25 25 / 64%), 0 4px 12px rgb(25 25 25 / 56%); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-doc-theme="light"]) .doc-dialog { box-shadow: 0 0 0 1px #383836, 0 24px 48px rgb(25 25 25 / 64%), 0 4px 12px rgb(25 25 25 / 56%); }
+}
+
+/* Its middle is the middle of the window it stands in. In a workbench the page is a frame right of
+   the sidebar and under the top bar, and the workbench's window is the one (the workbench covers its
+   own bars, the frame's backdrop the rest: features/report/cards.ts); the editor's session gives
+   where that window's middle falls in the page's (--doc-dialog-centre-x and -y, from the frame's
+   place: src/editor/page/session.mjs), and the card goes that far from the frame's middle, as far as
+   the frame lets it stay 24px clear of the frame's sides (never cut off): where the frame is too
+   narrow or low for that, it stands nearer the frame's middle, in it where the frame has no more room
+   than the card needs. Moved by its insets, a box as wide as the frame, never by a transform, which
+   would make the card the containing block of the editor's fixed tools in it. Unsaid (a page on its
+   own, an export), its middle is the page's window's. Across, the box is the frame less the page's
+   scrollbar room (--doc-dialog-across: its right inset that room more), as the page is. The same while
+   it fades out once closed (:not([open]), below): it is no :modal then, and a card that was moved (a
+   wide workbench) jumped back to the frame's middle at full opacity and faded there (2026-11-17); shut,
+   it is not shown at all. */
+.doc-dialog:is(:modal, :not([open])) {
+  position: fixed;
+  --doc-dialog-across: calc(100% - var(--doc-page-bar, 0px));
+  --doc-dialog-shift-x: clamp(-1 * var(--doc-dialog-room-x), calc(var(--doc-dialog-centre-x, calc(var(--doc-dialog-across) / 2)) - var(--doc-dialog-across) / 2), var(--doc-dialog-room-x));
+  --doc-dialog-shift-y: clamp(-1 * var(--doc-dialog-room-y), calc(var(--doc-dialog-centre-y, 50%) - 50%), var(--doc-dialog-room-y));
+  --doc-dialog-room-x: max(0px, calc((var(--doc-dialog-across) - min(var(--doc-dialog-width), calc(var(--doc-dialog-across) - (2 * var(--doc-dialog-margin))))) / 2 - var(--doc-dialog-margin)));
+  --doc-dialog-room-y: max(0px, calc((100% - min(var(--doc-dialog-height), calc(100% - (2 * var(--doc-dialog-margin))))) / 2 - var(--doc-dialog-margin)));
+  inset: var(--doc-dialog-shift-y) calc(var(--doc-page-bar, 0px) - var(--doc-dialog-shift-x)) calc(-1 * var(--doc-dialog-shift-y)) var(--doc-dialog-shift-x);
+}
+
+/* It comes and goes with its backdrop, the two one fade (a design review, 2026-11-17; the workbench's dialogs the
+   same): in over 180ms, out over 140ms, on a curve that moves at once and settles (--doc-ease-out), never
+   moved or scaled (at 125% a scaled card's text shimmers). Closed (Esc, a press outside, close()), it stays
+   in the top layer while it fades (display and overlay kept to the end: allow-discrete), the pointer passing
+   through it; a browser without that closes it at once. The backdrop is the settings' overlay's color
+   (light 60%, dark 80%; the workbench's underlay outside a frame is the same, its --overlay, which fades
+   with it: the workbench hears of a card from the page a frame or two after it opens, and the fade hides
+   that). Plain colors: a ::backdrop inherits from nothing in some browsers. */
+.doc-dialog,
+.doc-dialog::backdrop {
+  opacity: 0;
+  transition: opacity 140ms var(--doc-ease-out), display 140ms allow-discrete, overlay 140ms allow-discrete;
+}
+.doc-dialog:not([open]),
+.doc-dialog:not([open])::backdrop { pointer-events: none; }
+.doc-dialog[open],
+.doc-dialog[open]::backdrop {
+  opacity: 1;
+  transition-duration: 180ms;
+}
+@starting-style {
+  .doc-dialog[open],
+  .doc-dialog[open]::backdrop { opacity: 0; }
+}
+
+.doc-dialog[open] {
+  display: flex;
+  flex-direction: column;
+}
+
+.doc-dialog::backdrop { background: rgb(15 15 15 / 60%); }
+:root[data-doc-theme="dark"] .doc-dialog::backdrop { background: rgb(15 15 15 / 80%); }
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-doc-theme="light"]) .doc-dialog::backdrop { background: rgb(15 15 15 / 80%); }
+}
+
+/* Where motion is reduced it still fades, over the same times (base.css shortens every other transition): a fade
+   moves nothing, and the workbench's dialogs and every menu keep theirs so (docs/workbench.md "States"). */
+@media (prefers-reduced-motion: reduce) {
+  .doc-dialog, .doc-dialog::backdrop { transition-duration: 140ms !important; }
+  .doc-dialog[open], .doc-dialog[open]::backdrop { transition-duration: 180ms !important; }
+}
+
+.doc-dialog-panel {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+}
+
+/* Its text is the reading column, centred, at most 712px and at least --doc-dialog-pad (48px; 16px
+   on a phone) from the card's sides (--doc-dialog-inset). What is scrolled into view keeps the
+   content's padding clear of the card's edges (scroll-padding, which the browser's caret following
+   and scrollIntoView both keep): the caret in the last block, or a block made at the end, takes the
+   content to its very end, the padding under it shown, where the browser stopped with that block
+   against the card's bottom edge. 8px more below than the padding: the caret's box is its glyphs',
+   a few pixels short of its line (the scroll stops at the end all the same). */
+.doc-dialog-content {
+  --doc-dialog-inset: max(var(--doc-dialog-pad), calc((100% - var(--doc-content-max-width)) / 2));
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  flex: 1 1 auto;
+  padding: 32px var(--doc-dialog-inset) 40px;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-block: 32px 48px;
+}
+
+/* It takes the focus as it opens, to be scrolled by keys (dialogs.js); nothing to show for that. */
+.doc-dialog-content:focus { outline: 0; }
+
+/* A long card keeps its text's width: its scrollbar is of a known width and always has its room,
+   taken from the padding on its side, so the text is the same with it, without it and as a card
+   grows past the window's height. A touch screen's floats over the text and takes none. The page's
+   scrollbar color (base.css, inherited) is set back, or Chrome draws its own bar. */
+@media (hover: hover) and (pointer: fine) {
+  @supports selector(::-webkit-scrollbar) {
+    .doc-dialog-content {
+      padding-right: calc(var(--doc-dialog-inset) - var(--doc-dialog-scrollbar));
+      scrollbar-color: auto;
+      scrollbar-gutter: stable;
+    }
+    .doc-dialog-content::-webkit-scrollbar { width: var(--doc-dialog-scrollbar); background: transparent; }
+    .doc-dialog-content::-webkit-scrollbar-button { display: none; }
+    .doc-dialog-content::-webkit-scrollbar-thumb { border: 2px solid transparent; border-radius: 999px; background: var(--doc-scrollbar-thumb) padding-box; }
+    .doc-dialog-content::-webkit-scrollbar-thumb:hover { background-color: var(--doc-scrollbar-thumb-active); }
+  }
+}
+
+@media print {
+  /* At once: its fade would keep it shown (display) for the length of the transition. */
+  .doc-dialog, .doc-dialog[open], .doc-dialog::backdrop { display: none; transition: none; }
+}
+
+@media (max-width: 640px) {
+  .doc-dialog-content { padding-block: 20px 28px; scroll-padding-block: 20px 36px; }
+}

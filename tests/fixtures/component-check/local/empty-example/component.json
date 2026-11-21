@@ -1,0 +1,14 @@
+{
+  "id": "local/empty-example",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "空模板的例子", "en": "Empty example" },
+  "description": { "zh": "例子在空模板上什么也没改", "en": "Its example changes nothing on the empty template" },
+  "words": "kongmuban empty",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "entries": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [".ledger-drawn"] },
+  "markdown": "parts"
+}

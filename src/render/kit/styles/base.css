@@ -1,0 +1,255 @@
+/* The document itself: the body's type and colors, holding the first paint until the page is
+   ready, links and inline code, the inline text colors and highlights, the screen-reader-only
+   helper, and reduced motion. */
+
+* { box-sizing: border-box; }
+
+/* The corner radius of the box a block draws inside itself (a file's row, a bookmark's card, an
+   embed's frame), which the page editor's selection wraps, and how far past it the selection lies
+   (a file's row 4px; a callout's square box 6px, its selection round by as much); not passed down
+   to what is in the block. */
+@property --doc-box-radius { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --doc-box-reach { syntax: "<length>"; inherits: false; initial-value: 0px; }
+
+/* Scrollbars: a thumb on a transparent track, in either theme (Chrome's dark default
+   drew a gray track). Inherited, so every scrolling part of the page has it unless it says otherwise.
+   The page has no sideways to scroll, what is wide scrolling in itself: a touchpad going sideways
+   moves nothing and goes on to the browser, for its swipe back and forward. Past its top or end the
+   page springs back. */
+html { background: var(--doc-bg); scrollbar-color: var(--doc-code-scrollbar) transparent; }
+@media screen { html { overflow-x: hidden; } }
+
+body {
+  min-width: 320px;
+  margin: 0;
+  color: var(--doc-text);
+  background: var(--doc-bg);
+  font-family: var(--doc-font);
+  font-size: var(--doc-body-font-size);
+  line-height: var(--doc-body-line-height);
+}
+/* On an Apple platform (runtime/index.js) the type is smoothed as the system's own apps' is; the workbench's frame has it, a document in its iframe does not inherit it. */
+:root[data-doc-platform="mac"] body { -webkit-font-smoothing: antialiased; }
+
+/* Hold the first paint until ui.js marks the page ready: by then the reader's theme and width
+   are applied and the report's scripts have set up Sheets, charts, tables and formulas, so the
+   page never flashes an intermediate state. If that never happens, reveal it anyway. A custom page
+   (main.gallery-page) is held the same way, until its board has placed its cards (board/). */
+:root:not([data-doc-ready]) body:has(> :is(.doc-page, .gallery-page)) {
+  visibility: hidden;
+  animation: doc-reveal 0s linear 1.2s forwards;
+}
+@keyframes doc-reveal { to { visibility: visible; } }
+
+button, input, select, textarea { font: inherit; }
+
+/* The kit's one focus ring (the keys' focus, :focus-visible), in a document, a card and an exported file: 2px of
+   the accent, 2px off the control (4.41:1 on white, 7.57:1 dark), on every control of the kit a reader reaches with
+   the keys and on links (and a code block's frame, which the keys scroll, while the page is read). Where the control's
+   container clips what lies past it (a table's frame, a strip of tabs that scrolls, a code block's frame) the ring
+   lies 2px inside it instead, written where that control is (table.css, sheets.css, code.css). It
+   weighs nothing, so a block's own rule wins. The two menus (the display menu's rows, a choice's rows) show the
+   row the keys are on by its fill, as every menu of the product does, and take none. */
+:where(a[href], select, .doc-button, .doc-display-button, .doc-sheet-tab, .doc-details > summary, .doc-dialog-trigger,
+  .doc-state-field, .doc-filter-button, .doc-net-consent-allow, .doc-code-fold, .doc-code-copy, .doc-code-wrap,
+  .doc-code-line-fold, .doc-code-line-more, .doc-table-wrap, img[data-doc-zoom], .doc-zoom-close,
+  :root:not([data-ge-editing]) :is(.doc-code > pre, .doc-diff-body)):focus-visible {
+  outline: 2px solid var(--doc-accent);
+  outline-offset: 2px;
+}
+
+/* Selected text: Gallery's pale blue, the words keeping their color (the page editor's
+   --ge-select), in a document, a card and an exported file, never the browser's white on saturated blue. The
+   page editor's own rule for a block being edited weighs more and stands. */
+::selection { background: light-dark(rgb(35 131 226 / 28%), rgb(35 131 226 / 45%)); }
+
+/* A link is the palette's blue with no line under it, a thin one (1px, clear of Chinese characters) only while the
+   pointer is on it. The pointer's rule weighs what `a` weighs, so a link of a look of its own (a bookmark, a file,
+   a detail card's, one shown with its icon: their classes) never takes the line from it. */
+a { color: var(--doc-link); text-decoration: none; text-underline-offset: .2em; }
+a:where(:hover) { text-decoration: underline 1px var(--doc-link-line); }
+/* Underlined text: the line clear of Chinese characters, in inline code's red. */
+u { text-decoration: underline 2px var(--doc-code-inline); text-underline-offset: .3em; text-decoration-skip-ink: none; }
+/* An underline's line in another color than the red, or thinner or heavier than its 2px (the page
+   editor's format bar sets them; "plain" is the text's own color). */
+.doc-underline-orange { text-decoration-color: light-dark(#d27b2d, #e0955a); }
+.doc-underline-blue { text-decoration-color: light-dark(#337ea9, #6ea8d8); }
+.doc-underline-purple { text-decoration-color: light-dark(#9065b0, #b28ad6); }
+.doc-underline-plain { text-decoration-color: currentColor; }
+.doc-underline-thin { text-decoration-thickness: 1px; }
+.doc-underline-thick { text-decoration-thickness: 3px; }
+
+/* Inline code: no margin of its own, the text's own spaces part it from the words
+   beside it (the editor types one there, as between Chinese and Latin text). The code of a code
+   block or a diff is none (code.css draws it); the exclusion weighs nothing, so inline code keeps the
+   weight of a bare `code`. */
+code:where(:not(:is(.doc-code > pre, .doc-diff-body) code)) {
+  position: relative;
+  margin: 0;
+  bottom: .065em;
+  padding: .2em .4em;
+  border-radius: 4px;
+  color: var(--doc-code-inline);
+  background: var(--doc-code-inline-fill);
+  font-family: var(--doc-mono);
+  font-size: 85%;
+  line-height: normal;
+}
+
+/* A number range (3–13, 1–3B, 22.8%–23.7%) is one word: the line never breaks at its dash
+   (runtime/spacing.js holds it in this span as the page renders). */
+.doc-range { white-space: nowrap; }
+
+/* A long run (a path, a URL, a long identifier: more than 20 characters with no place to break inside
+   it, src/shared/long-runs.mjs) breaks where its line ends, an ordinary word staying whole:
+   runtime/spacing.js holds it in this span as the page renders (the page editor marks a block
+   holding one: editor/page/long-runs.mjs). Punctuation keeps its rules (no line starts with ，。）). */
+.doc-long-run { word-break: break-all; }
+
+/* Inline text colors and highlights (<span class="doc-text-red">): nine colors,
+   each a text and a background color, light and dark. The page editor's selection toolbar writes
+   these classes; both follow the light/dark theme. A text color is also --doc-ink, for a
+   component that takes it over (a code block's plain text, a list item's marker, a formula block).
+   A background is --doc-fill, and its deep shade --doc-fill-deep (its color's text color),
+   for a line a component draws along its fill (a callout's). Words in a line (a span: the format
+   bar's 背景颜色, an Agent's <mark>) take --doc-mark instead, a step deeper than a block's fill and
+   square: a fill on a few words reads fainter than the same fill under a whole block, and the user
+   found the words' fill too faint (2026-11-06). */
+/* The fill a color class sets is its host's own, not passed down to what stands in it: a table's cell
+   takes its own fill or the table's (table.css), never that of the panel or disclosure around it;
+   a callout without a color its own default's, never the line of the panel it stands in. */
+@property --doc-fill { syntax: "*"; inherits: false; }
+@property --doc-fill-deep { syntax: "*"; inherits: false; }
+@property --doc-mark { syntax: "*"; inherits: false; }
+.doc-text-gray { --doc-ink: var(--doc-muted); color: var(--doc-ink); }
+.doc-text-brown { --doc-ink: light-dark(#9f765a, #ba856f); color: var(--doc-ink); }
+.doc-text-orange { --doc-ink: light-dark(#d27b2d, #c77d48); color: var(--doc-ink); }
+.doc-text-yellow { --doc-ink: light-dark(#cb9434, #ca9849); color: var(--doc-ink); }
+.doc-text-green { --doc-ink: light-dark(#50946e, #529e72); color: var(--doc-ink); }
+.doc-text-blue { --doc-ink: light-dark(#387dc9, #5e87c9); color: var(--doc-ink); }
+.doc-text-purple { --doc-ink: light-dark(#9a6bb4, #9d68d3); color: var(--doc-ink); }
+.doc-text-pink { --doc-ink: light-dark(#c14c8a, #d15796); color: var(--doc-ink); }
+.doc-text-red { --doc-ink: light-dark(#cf5148, #df5452); color: var(--doc-ink); }
+/* What every host of a color class has: the fill, as its background. Its corners are its host's own, one declaration
+   each (a paragraph and heading below, a list item in flow.css, a card or a disclosure in its own
+   stylesheet); a span and a block that takes no corners are square, and say nothing. */
+:is(@highlight-colors) { background: var(--doc-fill); -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+/* Words in a line take the words' fill, deeper than a block's. */
+span:is(@highlight-colors) { background: var(--doc-mark); }
+.doc-highlight-gray { --doc-fill: light-dark(#f0efed, #2c2c2b); --doc-fill-deep: var(--doc-muted); --doc-mark: light-dark(#e0dfdd, #3a3a38); }
+.doc-highlight-brown { --doc-fill: light-dark(#f5ede9, #45362d); --doc-fill-deep: light-dark(#9f765a, #ba856f); --doc-mark: light-dark(#efdbce, #534034); }
+.doc-highlight-orange { --doc-fill: light-dark(#fbebde, #53361f); --doc-fill-deep: light-dark(#d27b2d, #c77d48); --doc-mark: light-dark(#fbddc5, #654025); }
+.doc-highlight-yellow { --doc-fill: light-dark(#f9f3dc, #504425); --doc-fill-deep: light-dark(#cb9434, #ca9849); --doc-mark: light-dark(#f8eab6, #614f26); }
+.doc-highlight-green { --doc-fill: light-dark(#e8f1ec, #263d30); --doc-fill-deep: light-dark(#50946e, #529e72); --doc-mark: light-dark(#cfead9, #2c4b3a); }
+.doc-highlight-blue { --doc-fill: light-dark(#e5f2fc, #233850); --doc-fill-deep: light-dark(#387dc9, #5e87c9); --doc-mark: light-dark(#cde5fb, #294564); }
+.doc-highlight-purple { --doc-fill: light-dark(#f3ebf9, #3c2d47); --doc-fill-deep: light-dark(#9a6bb4, #9d68d3); --doc-mark: light-dark(#ebdaf6, #4b3859); }
+.doc-highlight-pink { --doc-fill: light-dark(#fae9f1, #4e2b3c); --doc-fill-deep: light-dark(#c14c8a, #d15796); --doc-mark: light-dark(#f8d7e6, #5d3548); }
+.doc-highlight-red { --doc-fill: light-dark(#fce9e7, #502c29); --doc-fill-deep: light-dark(#cf5148, #df5452); --doc-mark: light-dark(#fed7d1, #663632); }
+
+/* A block's color (颜色 in the page editor's block menu): the same classes on
+   a paragraph or heading color its whole text, or put a background behind the whole block. The
+   background reaches 2px past the block, round by 4px, which is just where the editor's light blue
+   of a selected text block lies, and takes no room: nothing moves when a block is given
+   one (padding and margins once made a heading shift and a paragraph's fill outgrow its selection). */
+:is(p, h1, h2, h3, h4):is(@highlight-colors) { border-radius: 2px; box-shadow: 0 0 0 2px var(--doc-fill); }
+
+/* A component that failed to start or draw, told next to it to who writes the page (the kit's runtime;
+   never in an export or a presentation, nor on paper). */
+.doc-kit-error {
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: light-dark(#a1352b, #f19c92);
+  background: light-dark(#fce9e7, #3b2321);
+  font: 13px/1.5 var(--doc-mono);
+  white-space: pre-wrap;
+}
+@media print {
+  .doc-kit-error { display: none; }
+}
+
+/* A block online that waits for the reader's consent (the kit's runtime, net.js): a line and a button
+   after it in a document, over its card on a custom page (the card is the board's, position: relative),
+   its fill the card's so that what the block drew underneath does not show through. Never in a file,
+   an export or on paper (data-doc-dev). */
+.doc-net-consent {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--doc-muted);
+  background: var(--doc-surface);
+  font: 13px/1.5 var(--doc-font);
+}
+/* 允许 is the card's one action: a button with no line, the pale blue fill of a primary (the editor's look.mjs
+   BUTTONS and the workbench's, from the document's own accent), a deeper one under the pointer and pressed. */
+.doc-net-consent-allow {
+  padding: 4px 10px;
+  border: 0;
+  border-radius: var(--doc-radius-control);
+  color: color-mix(in srgb, var(--doc-accent) 80%, var(--doc-text));
+  background: color-mix(in srgb, var(--doc-accent) 14%, transparent);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+  transition: background-color 100ms ease-out;
+}
+.doc-net-consent-allow:is(:hover, :focus-visible) { background: color-mix(in srgb, var(--doc-accent) 22%, transparent); transition: none; }
+.doc-net-consent-allow:active { background: color-mix(in srgb, var(--doc-accent) 30%, transparent); transition: none; }
+/* The why's words, and the button's: in a document the why and 允许访问 <host>; on a card the from line and the short words too. */
+.doc-net-consent-words { display: contents; }
+.doc-net-consent-from, .doc-net-consent-short { display: none; }
+/* On a card of a custom page (the pack Gallery 风格's banner): over the card under its head row, on
+   the card's fill, so that the card still says whose it is: the why (13.5px, 600) over whose the data is
+   (faint) at the left, 允许访问 at the right, a pale primary with no line; the hosts in its tooltip (data-doc-tip, runtime/tip.js). */
+/* Its top, its room at the sides and foot, and its fill are the Gallery pack's (a card's 16px padding, the 20px head
+   row) unless the block says its own: --gallery-consent-top, --gallery-consent-pad and --gallery-consent-fill on its
+   instance (net.js carries them onto the banner, a sibling that inherits nothing of the instance) or on the card,
+   for a face of another padding and head (柔光风格's: 20px and a 28px head). */
+.gallery-card > .doc-net-consent {
+  position: absolute;
+  inset: var(--gallery-consent-top, calc(var(--gallery-card-pad, 16px) + 20px)) 0 0;
+  z-index: 1;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 0 var(--gallery-consent-pad, var(--gallery-card-pad, 16px)) var(--gallery-consent-pad, var(--gallery-card-pad, 16px));
+  border-radius: 0 0 var(--gallery-card-radius, 12px) var(--gallery-card-radius, 12px);
+  font: 13px/1.5 var(--gallery-font, var(--doc-font));
+  background: var(--gallery-consent-fill, var(--gallery-card-fill, var(--doc-surface)));
+}
+.gallery-card > .doc-net-consent > .doc-net-consent-words { display: flex; flex-direction: column; min-width: 0; }
+.gallery-card > .doc-net-consent .doc-net-consent-why { font-size: 13.5px; line-height: 20px; font-weight: 600; color: var(--gallery-text, var(--doc-text)); }
+.gallery-card > .doc-net-consent .doc-net-consent-from { display: block; overflow: hidden; font-size: 12px; line-height: 18px; color: var(--gallery-muted, var(--doc-muted)); white-space: nowrap; text-overflow: ellipsis; }
+.gallery-card > .doc-net-consent > .doc-net-consent-allow {
+  flex: none;
+  height: var(--gallery-button-height, 30px);
+  padding: 0 14px;
+  border-radius: var(--gallery-button-radius, 8px);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--gallery-accent-ink, var(--doc-accent));
+  background: var(--gallery-accent-soft, color-mix(in srgb, var(--doc-accent) 14%, transparent));
+}
+.gallery-card > .doc-net-consent > .doc-net-consent-allow:is(:hover, :focus-visible) { background: color-mix(in srgb, var(--gallery-accent, var(--doc-accent)) 18%, var(--gallery-accent-soft, transparent)); }
+.gallery-card > .doc-net-consent .doc-net-consent-long { display: none; }
+.gallery-card > .doc-net-consent .doc-net-consent-short { display: inline; }
+/* On a narrow card (data-doc-net-narrow: under 240px of content, net.js) the line just over the button, both at the card's
+   foot, the button as wide as the card, as a narrow habit card's streak and 打卡 are; the line 13px, three lines at
+   most, and whose the data is left to the button's tooltip, so that the banner fits a 2 × 2 card in either language. */
+.gallery-card > .doc-net-consent[data-doc-net-narrow] { flex-direction: column; align-items: stretch; justify-content: flex-end; gap: 8px; }
+.gallery-card > .doc-net-consent[data-doc-net-narrow] .doc-net-consent-why { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 13px; line-height: 17px; }
+.gallery-card > .doc-net-consent[data-doc-net-narrow] .doc-net-consent-from { display: none; }
+@media print {
+  .doc-net-consent { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}

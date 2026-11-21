@@ -1,0 +1,14 @@
+{
+  "id": "local/counter",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "计数器", "en": "Counter" },
+  "description": { "zh": "按一下就加一的计数", "en": "A count a press adds one to" },
+  "words": "jishuqi counter",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "count": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [".counter-drawn"] },
+  "markdown": "parts"
+}

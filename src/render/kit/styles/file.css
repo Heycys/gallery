@@ -1,0 +1,57 @@
+/* 文件 (a file block): one file of the report's folder as a row the reader clicks to save
+   it: a page-with-an-arrow icon, the file's name (cut with an ellipsis), its size in small
+   gray type and a download mark at the right end; the row lights up under the pointer. Its caption
+   under it as media.css has it. */
+/* Its name as far from the text around it as a line of text from the next (the row,
+   padding aside, is one line of text tall): the media gap less its row's own padding; its row 10px round as a
+   code block (--doc-box-radius: what the editor's selection wraps). */
+.doc-file {
+  --doc-box-radius: 10px;
+  --doc-box-reach: 4px; /* the editor's selection 4px past its row: two files' fills never meet */
+  min-width: 0;
+  margin: calc(var(--doc-media-gap) - 4px) 0;
+}
+
+.doc-file-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 2px;
+  border-radius: 10px;
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 20ms ease-in;
+}
+.doc-file-link:hover { background: var(--doc-hover); }
+.doc-file-link:active { background: var(--doc-press); }
+.doc-file-link::before,
+.doc-file-link::after {
+  content: "";
+  flex-shrink: 0;
+  background: currentColor;
+  mask: var(--doc-file-icon) center / 20px no-repeat;
+}
+.doc-file-link::before { --doc-file-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.25%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M6.25%202.75h4.5l4.5%204.5v8.5a1.5%201.5%200%200%201-1.5%201.5h-7.5a1.5%201.5%200%200%201-1.5-1.5v-11.5a1.5%201.5%200%200%201%201.5-1.5z%22%2F%3E%3Cpath%20d%3D%22M10.75%202.75v3a1.5%201.5%200%200%200%201.5%201.5h3%22%2F%3E%3Cpath%20d%3D%22M10%2014v-4.75M7.9%2011.1%2010%209l2.1%202.1%22%2F%3E%3C%2Fsvg%3E"); width: 22px; height: 22px; }
+.doc-file-link::after { --doc-file-icon: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2020%2020%22%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%221.25%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Ccircle%20cx%3D%2210%22%20cy%3D%2210%22%20r%3D%227.25%22%2F%3E%3Cpath%20d%3D%22M10%206.5v6.25M7.4%2010.2%2010%2012.8l2.6-2.6%22%2F%3E%3C%2Fsvg%3E"); width: 24px; height: 24px; margin-inline-start: auto; background: var(--doc-caption); }
+.doc-file-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.doc-file-size {
+  flex-shrink: 0;
+  margin-inline-start: 2px;
+  color: var(--doc-caption);
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+/* A file's color (颜色 in the page editor's block menu, base.css's classes): its background (the figure's, the caption in it), round as its row; its text the text color. */
+.doc-file:is(@highlight-colors) { border-radius: 10px; }
+
+@media print {
+  .doc-file-link::after { display: none; }
+}

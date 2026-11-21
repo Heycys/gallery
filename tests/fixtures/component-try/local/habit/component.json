@@ -1,0 +1,14 @@
+{
+  "id": "local/habit",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "习惯", "en": "Habit" },
+  "description": { "zh": "一个习惯：名字、单位和今天做了几次", "en": "A habit: its name, its unit and how often today" },
+  "words": "xiguan habit",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "habit": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [".habit-drawn"] },
+  "markdown": "parts"
+}

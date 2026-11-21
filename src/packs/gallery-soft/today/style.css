@@ -1,0 +1,178 @@
+/* 柔光风格's greeting card. Every selector starts at the instance and goes down a step at a time (>), so
+   that nothing here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark():
+   the page's color scheme, which follows its theme), then the face. On a custom page the face is the
+   card's whole room: it is taken out over the card's padding and given its own (the soft frame's: 20px, 18px
+   on a 2 × 2 card, by the face's data-pad), painted with the soft card's fill under a glow at its top left,
+   the sun's warm color by day, the accent's in the evening (data-sky); the board's line and radius stay
+   around it. Where no card is (a document, as gallery block check shows it) the face frames itself, at the
+   size of a 4 × 2 card. The script says the card's size (data-w, data-h): a 4 × 2 card sets the greeting
+   large after the sun, the date and the week's number under it, the week at the bottom, today on a disc
+   of the accent; a 2 × 2 card the month and the weekday at the top, the day of the month large, the
+   greeting at the bottom. */
+[data-doc-component="gallery-soft/today"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-faint: light-dark(#ababb0, #66666c);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-ink: light-dark(#356cb3, #98bee9);
+  --soft-on-accent: light-dark(#ffffff, #152436);
+  --soft-sun: light-dark(#f6b23c, #f2b046);
+  --soft-glow-day: light-dark(rgb(255 183 77 / 22%), rgb(255 196 92 / 5.5%));
+  --soft-glow-night: light-dark(rgb(62 122 198 / 16%), rgb(126 173 226 / 12%));
+  --soft-grip-room: 0px;
+  > .gallery-soft-today-face {
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 28px minmax(0, 1fr) auto;
+    grid-template-rows: 32px auto 1fr;
+    grid-template-areas: "sun greeting greeting" "date date meta" "week week week";
+    column-gap: 10px;
+    width: 304px;
+    max-width: 100%;
+    height: 144px;
+    --soft-pad: 20px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: radial-gradient(120% 120% at 0% 0%, var(--soft-glow-day), transparent 58%), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-today-face[data-sky="moon"] { background: radial-gradient(120% 120% at 0% 0%, var(--soft-glow-night), transparent 58%), var(--soft-card); }
+  > .gallery-soft-today-face[data-pad="s"] { --soft-pad: 18px; }
+  > .gallery-soft-today-face[data-pad="l"] { --soft-pad: 24px; }
+  > .gallery-soft-today-face > .gallery-soft-today-sun {
+    grid-area: sun;
+    align-self: center;
+    display: block;
+    width: 28px;
+    height: 28px;
+    color: var(--soft-sun);
+  }
+  > .gallery-soft-today-face[data-sky="moon"] > .gallery-soft-today-sun { color: var(--soft-accent); }
+  > .gallery-soft-today-face > .gallery-soft-today-sun > svg { display: block; width: 100%; height: 100%; }
+  > .gallery-soft-today-face > .gallery-soft-today-greeting {
+    grid-area: greeting;
+    align-self: center;
+    margin: 0;
+    padding-inline-end: var(--soft-grip-room);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 26px;
+    line-height: 32px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-today-face > .gallery-soft-today-date {
+    grid-area: date;
+    display: block;
+    min-width: 0;
+    margin-top: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    color: var(--soft-muted);
+  }
+  > .gallery-soft-today-face > .gallery-soft-today-meta {
+    grid-area: meta;
+    align-self: center;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+  }
+  > .gallery-soft-today-face > .gallery-soft-today-week {
+    grid-area: week;
+    align-self: end;
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  > .gallery-soft-today-face > .gallery-soft-today-week > .gallery-soft-today-date-of {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+  > .gallery-soft-today-face > .gallery-soft-today-week > .gallery-soft-today-date-of > .gallery-soft-today-initial { font-size: 11px; line-height: 14px; color: var(--soft-muted); }
+  > .gallery-soft-today-face > .gallery-soft-today-week > .gallery-soft-today-date-of > .gallery-soft-today-number {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font: 400 13px/1 var(--soft-num);
+    font-variant-numeric: tabular-nums;
+    color: var(--soft-text);
+  }
+  > .gallery-soft-today-face > .gallery-soft-today-week > .gallery-soft-today-past > .gallery-soft-today-number { color: var(--soft-faint); }
+  > .gallery-soft-today-face > .gallery-soft-today-week > .gallery-soft-today-now > .gallery-soft-today-initial { color: var(--soft-accent-ink); font-weight: 600; }
+  > .gallery-soft-today-face > .gallery-soft-today-week > .gallery-soft-today-now > .gallery-soft-today-number { background: var(--soft-accent); color: var(--soft-on-accent); font-weight: 600; }
+  > .gallery-soft-today-face > :is(.gallery-soft-today-month, .gallery-soft-today-day) { display: none; }
+  /* A 2 × 2 card: the month and the weekday beside the sun, the day of the month large, the greeting at the bottom. */
+  > .gallery-soft-today-face:is([data-w="1"], [data-w="2"]) {
+    grid-template-columns: 20px minmax(0, 1fr);
+    grid-template-rows: 24px auto 1fr;
+    grid-template-areas: "sun month" "day day" "greeting greeting";
+    column-gap: 6px;
+  }
+  > .gallery-soft-today-face:is([data-w="1"], [data-w="2"]) > :is(.gallery-soft-today-date, .gallery-soft-today-meta, .gallery-soft-today-week) { display: none; }
+  > .gallery-soft-today-face:is([data-w="1"], [data-w="2"]) > .gallery-soft-today-sun { width: 20px; height: 20px; }
+  > .gallery-soft-today-face:is([data-w="1"], [data-w="2"]) > .gallery-soft-today-month {
+    grid-area: month;
+    align-self: center;
+    display: block;
+    min-width: 0;
+    /* a quiet line: it may reach into the grip's corner, faded while the grip shows */
+    opacity: calc(1 - var(--gallery-grip-shown, 0));
+    transition: opacity .12s ease-out;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 12.5px;
+    color: var(--soft-muted);
+  }
+  > .gallery-soft-today-face:is([data-w="1"], [data-w="2"]) > .gallery-soft-today-day {
+    grid-area: day;
+    display: block;
+    margin-top: 10px;
+    font: 700 52px/1 var(--soft-num);
+    letter-spacing: -.03em;
+    font-variant-numeric: tabular-nums;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-today-face:is([data-w="1"], [data-w="2"]) > .gallery-soft-today-greeting {
+    align-self: end;
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 600;
+    letter-spacing: 0;
+    color: var(--soft-text);
+  }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it. */
+.gallery-card > [data-doc-component="gallery-soft/today"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/today"] > .gallery-soft-today-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}

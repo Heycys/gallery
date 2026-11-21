@@ -1,0 +1,76 @@
+/* A table of scores, each a row of dots, the totals last and the highest marked; past the width of
+   the page it scrolls in the block, never the page. Every selector starts at the instance. */
+[data-doc-component="local/scorecard"] .scorecard-drawn {
+  overflow-x: auto;
+}
+[data-doc-component="local/scorecard"] .scorecard-table {
+  border-collapse: collapse;
+  font-size: var(--doc-table-font-size);
+}
+[data-doc-component="local/scorecard"] :is(th, td) {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--doc-border);
+  text-align: start;
+  white-space: nowrap;
+}
+[data-doc-component="local/scorecard"] thead th {
+  color: var(--doc-muted);
+  font-weight: 600;
+}
+[data-doc-component="local/scorecard"] tbody th {
+  font-weight: 500;
+}
+[data-doc-component="local/scorecard"] .scorecard-weight {
+  font-weight: 400;
+}
+[data-doc-component="local/scorecard"] .scorecard-dots {
+  display: inline-flex;
+  gap: 2px;
+  vertical-align: middle;
+}
+[data-doc-component="local/scorecard"] .scorecard-dot {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+[data-doc-component="local/scorecard"] .scorecard-dot::before {
+  content: "";
+  display: block;
+  width: 10px;
+  height: 10px;
+  margin: 3px;
+  border: 1.5px solid var(--doc-muted);
+  border-radius: 50%;
+  box-sizing: border-box;
+}
+[data-doc-component="local/scorecard"] .scorecard-dot[data-on]::before {
+  border-color: var(--doc-accent);
+  background: var(--doc-accent);
+}
+[data-doc-component="local/scorecard"] .scorecard-dot:disabled {
+  cursor: default;
+}
+[data-doc-component="local/scorecard"] .scorecard-dot:focus-visible {
+  outline: 2px solid var(--doc-accent);
+  outline-offset: 1px;
+  border-radius: 50%;
+}
+[data-doc-component="local/scorecard"] .scorecard-total {
+  font-variant-numeric: tabular-nums;
+  text-align: end;
+}
+[data-doc-component="local/scorecard"] tr[data-best] .scorecard-total {
+  color: var(--doc-accent);
+  font-weight: 600;
+}
+[data-doc-component="local/scorecard"] .scorecard-best {
+  margin-inline-start: 6px;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--doc-accent-soft);
+  font-size: var(--doc-small-font-size);
+  font-weight: 500;
+}

@@ -1,0 +1,29 @@
+/* 嵌入 (an embed block): a web page, or an HTML or PDF file of the report's folder, in a frame
+   as wide as the text, --doc-embed-height tall (320px; a file's 500px, in a thin round
+   border). Its caption under it as media.css has it. */
+/* Set apart from the blocks around it as an image is; its frame 6px round, which the editor's
+   selection wraps (--doc-box-radius). */
+.doc-embed {
+  --doc-box-radius: 6px;
+  width: var(--doc-span-width, auto); /* sizes.css */
+  min-width: 0;
+  margin: var(--doc-media-gap) auto;
+}
+
+.doc-embed > .doc-embed-frame {
+  display: block;
+  width: 100%;
+  height: var(--doc-embed-height, 320px);
+  border: 0;
+  border-radius: 6px;
+  background: var(--doc-surface);
+}
+.doc-embed--file > .doc-embed-frame {
+  height: var(--doc-embed-height, 500px);
+  border: 1px solid var(--doc-hairline);
+  border-radius: 6px;
+}
+
+@media print {
+  .doc-embed { break-inside: avoid; }
+}

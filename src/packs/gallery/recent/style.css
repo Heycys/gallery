@@ -1,0 +1,85 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens: the head (the chip, a
+   clock, 最近编辑 and how many were edited today, faint), its end clear of the card's grip; rows like the
+   sidebar's (30px, out to the face's edges by 6px so that a row's hover fill has room), each its icon, its
+   title and its time at its end, faint; the groups' titles (今天, 昨天, 本周, 更早) small, faint and 600; and
+   under them how many more there are, faint. A short card (data-layout "short") lists three, no groups.
+   No document: the cards' empty face in the middle. A document's icon as the sidebar draws it (a picture,
+   a glyph masked in the faint color, or a page drawn here). Light and dark. */
+[data-doc-component="gallery/recent"] {
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-recent-face { display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; }
+  > .gallery-recent-face > .gallery-recent-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 20px;
+    min-width: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+  }
+  > .gallery-recent-face > .gallery-recent-head > .gallery-recent-chip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-fill);
+    color: var(--gallery-muted);
+  }
+  > .gallery-recent-face > .gallery-recent-head > .gallery-recent-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  > .gallery-recent-face > .gallery-recent-head > .gallery-recent-title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--gallery-title-size); line-height: var(--gallery-title-line); font-weight: 600; color: var(--gallery-text); }
+  > .gallery-recent-face > .gallery-recent-head > .gallery-recent-meta { flex: none; font-size: var(--gallery-meta-size); color: var(--gallery-muted); white-space: nowrap; }
+  > .gallery-recent-face > .gallery-recent-list { flex: 1 1 auto; min-height: 0; margin: 6px -6px 0; padding: 0; overflow: hidden; list-style: none; }
+  > .gallery-recent-face[data-layout="short"] > .gallery-recent-list { margin-top: 4px; }
+  > .gallery-recent-face > .gallery-recent-list[hidden] { display: none; }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-group { padding: 8px 6px 2px; font-size: 11.5px; line-height: 16px; font-weight: 600; color: var(--gallery-faint); }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    width: 100%;
+    height: 30px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document:hover { background: var(--gallery-hover); }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document:focus-visible { outline: 2px solid var(--gallery-accent); outline-offset: -2px; }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document > .gallery-recent-icon { flex: none; display: grid; place-items: center; width: 18px; height: 18px; }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document > .gallery-recent-picture > img { display: block; width: 15px; height: 15px; object-fit: contain; }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document > .gallery-recent-glyph::before { content: ""; width: 15px; height: 15px; background: var(--gallery-faint); -webkit-mask: var(--gallery-recent-icon) center / contain no-repeat; mask: var(--gallery-recent-icon) center / contain no-repeat; }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document > .gallery-recent-icon:empty::before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    background: var(--gallery-faint);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z'/%3E%3Cpath d='M13.5 3.5V8H18'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z'/%3E%3Cpath d='M13.5 3.5V8H18'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document > .gallery-recent-name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; color: var(--gallery-text); }
+  > .gallery-recent-face > .gallery-recent-list > .gallery-recent-item > .gallery-recent-document > .gallery-recent-when { flex: none; font-size: 12px; color: var(--gallery-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  > .gallery-recent-face > .gallery-recent-more { flex: none; margin: 0; padding-top: 6px; font-size: 12px; line-height: 18px; color: var(--gallery-muted); }
+  > .gallery-recent-face > .gallery-recent-more[hidden] { display: none; }
+  /* No document, or no workspace: the cards' empty face in the middle. The pack's one empty face: a card with no head row, or four cells high or more, centres it over a 28px chip; under a head row in a short card (4 × 2, 2 × 2) it is two lines at the left with no chip, there being no room for one. */
+  > .gallery-recent-face > .gallery-recent-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 0; text-align: center; }
+  > .gallery-recent-face > .gallery-recent-empty[hidden] { display: none; }
+  > .gallery-recent-face > .gallery-recent-empty > p { margin: 0; }
+  > .gallery-recent-face > .gallery-recent-empty > .gallery-recent-empty-picture { display: grid; place-items: center; width: 28px; height: 28px; margin-bottom: 6px; border-radius: 8px; background: var(--gallery-fill); color: var(--gallery-faint); }
+  > .gallery-recent-face > .gallery-recent-empty > .gallery-recent-empty-picture > svg { width: 16px; height: 16px; }
+  > .gallery-recent-face > .gallery-recent-empty > .gallery-recent-line { font-size: 13.5px; line-height: 20px; font-weight: 600; color: var(--gallery-text); }
+  > .gallery-recent-face > .gallery-recent-empty > .gallery-recent-hint { font-size: 12px; line-height: 18px; color: var(--gallery-muted); text-wrap: pretty; }
+}
+/* On a custom page the face fills the card the board frames. */
+.gallery-card > [data-doc-component="gallery/recent"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/recent"] > .gallery-recent-face { height: 100%; }

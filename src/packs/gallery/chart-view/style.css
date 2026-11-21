@@ -1,0 +1,131 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. A framed card of the kit's (gallery/chart-card's look, the kit's card's,
+   .doc-figure: its 1px line, 12px corners and insets, its title 14px below its top edge and the bars 10px
+   under the title, as there): its title, then horizontal bars from zero, each its name at its left and its
+   value at its end, in the kit's first series color, which follows the theme; laid out in percents of the
+   card's width, so that a width draws nothing again. Where the card is narrow (a phone, a column of a
+   row), each bar's name stands over it and the bar takes the card's width. The settings (⚙) stand at the
+   top right corner while the page edits, the strip they open under the title (a field a line in a narrow
+   card, side by side in a wide one). A muted line where there is nothing to draw or more than it draws. The
+   instance is a container for those widths. */
+[data-doc-component="gallery/chart-view"] {
+  --doc-surface: var(--doc-figure-ground, var(--doc-bg));
+  container-type: inline-size;
+  margin: var(--doc-component-gap) 0;
+  padding: 14px 18px 12px;
+  border: 1px solid var(--doc-border);
+  border-radius: 12px;
+  background: var(--doc-surface);
+  > .gallery-chart-view-face { position: relative; color: var(--doc-text); }
+  > .gallery-chart-view-face > .gallery-chart-view-head {
+    margin: 0 0 10px;
+    padding-right: 26px;
+    > .gallery-chart-view-title { display: block; font-size: var(--doc-card-title-font-size); line-height: var(--doc-card-title-line-height); font-weight: 700; letter-spacing: 0; overflow-wrap: anywhere; }
+    > .gallery-chart-view-title:empty:not(:focus) { display: none; }
+    > .gallery-chart-view-gear {
+      position: absolute;
+      top: -2px;
+      right: -6px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--doc-muted);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s, background-color .1s ease-out, color .1s ease-out;
+    }
+    > .gallery-chart-view-gear > svg { width: 16px; height: 16px; }
+    > .gallery-chart-view-gear:hover { background: var(--doc-hover); color: var(--doc-text); transition: opacity .12s; }
+    > .gallery-chart-view-gear:active { background: var(--doc-press); }
+    > .gallery-chart-view-gear:focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 1px; }
+    > .gallery-chart-view-gear[aria-expanded="true"] { background: var(--doc-hover); color: var(--doc-text); opacity: 1; }
+  }
+  /* A chart with no title (one it cannot draw, whose settings name none): no room for one. */
+  > .gallery-chart-view-face > .gallery-chart-view-head.gallery-chart-view-untitled { margin-bottom: 0; }
+  > .gallery-chart-view-face > .gallery-chart-view-head[hidden] { display: none; }
+  > .gallery-chart-view-face[data-writes] > .gallery-chart-view-head > .gallery-chart-view-gear { display: inline-flex; }
+  > .gallery-chart-view-face[data-writes]:hover > .gallery-chart-view-head > .gallery-chart-view-gear,
+  > .gallery-chart-view-face[data-writes]:focus-within > .gallery-chart-view-head > .gallery-chart-view-gear { opacity: 1; }
+  @media (hover: none) {
+    > .gallery-chart-view-face[data-writes] > .gallery-chart-view-head > .gallery-chart-view-gear { opacity: 1; }
+  }
+  /* The settings: a row that wraps where the card is wide; a grid of a name and its field a line where it is narrow.
+     A field is a white well on the strip's light fill, no line, as a select (a button that opens the kit's menu,
+     DocKit's choices, its chevron the kit's background image, so the fill is background-color and the right padding
+     leaves it room) and a text alike. */
+  > .gallery-chart-view-face > .gallery-chart-view-strip {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--doc-hover);
+    font-size: 12px;
+    > .gallery-chart-view-setting { display: inline-flex; align-items: center; gap: 6px; color: var(--doc-muted); }
+    > .gallery-chart-view-setting[hidden] { display: none; }
+    > .gallery-chart-view-setting > select,
+    > .gallery-chart-view-setting > input {
+      box-sizing: border-box;
+      min-width: 0;
+      max-width: 200px;
+      height: 26px;
+      padding: 2px 8px;
+      border: 0;
+      border-radius: 6px;
+      background-color: var(--doc-surface);
+      color: var(--doc-text);
+      font: inherit;
+    }
+    > .gallery-chart-view-setting > select { padding-right: 24px; cursor: pointer; }
+    > .gallery-chart-view-setting > input { width: 160px; }
+    > .gallery-chart-view-setting > :is(select, input):focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 0; }
+  }
+  > .gallery-chart-view-face > .gallery-chart-view-head.gallery-chart-view-untitled + .gallery-chart-view-strip { margin-top: 0; }
+  > .gallery-chart-view-face > .gallery-chart-view-strip[hidden] { display: none; }
+  > .gallery-chart-view-face > .gallery-chart-view-bars {
+    display: grid;
+    grid-template-columns: fit-content(40%) minmax(0, 1fr);
+    gap: 8px 12px;
+    align-items: center;
+    margin: 0 0 4px;
+    font-size: 13px;
+    line-height: 18px;
+    > .gallery-chart-view-row { display: contents; }
+    > .gallery-chart-view-row > .gallery-chart-view-label { text-align: right; overflow-wrap: anywhere; color: var(--doc-text); }
+    > .gallery-chart-view-row > .gallery-chart-view-lane { position: relative; height: 16px; margin-right: 4.5em; }
+    > .gallery-chart-view-row > .gallery-chart-view-lane > .gallery-chart-view-bar { position: absolute; top: 0; bottom: 0; min-width: 2px; border-radius: 4px; background: var(--doc-series-1); }
+    > .gallery-chart-view-row > .gallery-chart-view-lane > .gallery-chart-view-bar[hidden] { display: none; }
+    > .gallery-chart-view-row > .gallery-chart-view-lane > .gallery-chart-view-value { position: absolute; top: 50%; transform: translateY(-50%); font-size: 12px; line-height: 1; color: var(--doc-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+    &.gallery-chart-view-below > .gallery-chart-view-row > .gallery-chart-view-lane { margin-left: 4.5em; background: linear-gradient(var(--doc-grid), var(--doc-grid)) var(--gallery-chart-view-zero) 0 / 1px 100% no-repeat; }
+  }
+  /* A narrow card: each name over its bar, the bars the card's width (less the room of the longest value). */
+  @container (max-width: 360px) {
+    > .gallery-chart-view-face > .gallery-chart-view-strip {
+      display: grid;
+      grid-template-columns: max-content minmax(0, 1fr);
+      gap: 6px 10px;
+      > .gallery-chart-view-setting { display: contents; }
+      > .gallery-chart-view-setting[hidden] { display: none; }
+      > .gallery-chart-view-setting > :is(select, input) { justify-self: start; max-width: 100%; }
+      > .gallery-chart-view-setting > input { width: 100%; }
+    }
+    > .gallery-chart-view-face > .gallery-chart-view-bars {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+      > .gallery-chart-view-row > .gallery-chart-view-label { text-align: left; }
+      > .gallery-chart-view-row + .gallery-chart-view-row > .gallery-chart-view-label { margin-top: 6px; }
+    }
+  }
+  > .gallery-chart-view-face > .gallery-chart-view-bars[hidden] { display: none; }
+  > .gallery-chart-view-face > .gallery-chart-view-line { margin: 2px 0 2px; padding-right: 26px; font-size: 13px; line-height: 20px; color: var(--doc-muted); }
+  > .gallery-chart-view-face > .gallery-chart-view-bars:not([hidden]) + .gallery-chart-view-line { margin-top: 8px; padding-right: 0; }
+  > .gallery-chart-view-face > .gallery-chart-view-line[hidden] { display: none; }
+}

@@ -1,0 +1,143 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens, laid out by the card's cells
+   (the face's data-layout): "wide" (4 × 2) the head (the chip, a pin, the city, when, faint), the sky's
+   picture (50px) beside the temperature (46px, the hero) and the sky's words over today's lowest and
+   highest, and at the bottom how it feels, the humidity and the wind, each after a small picture; "narrow"
+   (2 × 2) the picture (40px) and the temperature (40px) at the bottom and one line under them; "tall" (4 ×
+   4) the picture larger (60px) and, at the bottom over a hairline, the next five days, each a row of its
+   weekday, its sky (22px), its lowest (faint), a bar of its span on the scale of all of them (the cold
+   blue to the warm orange) and its highest (600). The pictures have their own colors (the sun's orange, a
+   cloud's gray, the rain's blue), in light and dark. A state with nothing to show is the cards' empty face
+   under the head. Light and dark. */
+[data-doc-component="gallery/weather"] {
+  --gallery-weather-sun: light-dark(#f3a935, #f4b045);
+  --gallery-weather-cloud: light-dark(#dde2e9, #68717e);
+  --gallery-weather-cloud-2: light-dark(#c4cbd5, #4a515b);
+  --gallery-weather-rain: light-dark(#5e90d8, #70a1e2);
+  --gallery-weather-cool: light-dark(#88b2e3, #6b9bd7);
+  --gallery-weather-hot: light-dark(#f3b45a, #efa94a);
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-weather-face { display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; }
+  > .gallery-weather-face > .gallery-weather-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 20px;
+    min-width: 0;
+    margin: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+  }
+  > .gallery-weather-face > .gallery-weather-head > .gallery-weather-chip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-fill);
+    color: var(--gallery-muted);
+  }
+  > .gallery-weather-face > .gallery-weather-head > .gallery-weather-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  > .gallery-weather-face > .gallery-weather-head > .gallery-weather-city {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: var(--gallery-title-size);
+    line-height: var(--gallery-title-line);
+    font-weight: 600;
+    color: var(--gallery-text);
+  }
+  > .gallery-weather-face > .gallery-weather-head > .gallery-weather-at { display: inline-flex; align-items: center; gap: 4px; flex: none; font-size: var(--gallery-meta-size); color: var(--gallery-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  > .gallery-weather-face > .gallery-weather-head > .gallery-weather-at > .gallery-weather-stale { display: inline-flex; color: var(--gallery-warm); }
+  > .gallery-weather-face > .gallery-weather-head > .gallery-weather-at > .gallery-weather-stale > svg { width: 12px; height: 12px; stroke-width: 2; }
+  > .gallery-weather-face > .gallery-weather-now { display: flex; align-items: center; gap: 10px; flex: none; margin-top: 10px; }
+  > .gallery-weather-face > .gallery-weather-now > .gallery-weather-picture { flex: none; width: 50px; height: 50px; overflow: visible; }
+  > .gallery-weather-face > .gallery-weather-now > .gallery-weather-temperature {
+    font-size: var(--gallery-hero-size);
+    line-height: 1;
+    font-weight: 500;
+    letter-spacing: -.04em;
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-weather-face > .gallery-weather-now > .gallery-weather-words { display: flex; flex-direction: column; gap: 2px; margin-left: 6px; min-width: 0; }
+  > .gallery-weather-face > .gallery-weather-now > .gallery-weather-words > .gallery-weather-sky { font-size: 14px; line-height: 18px; font-weight: 600; color: var(--gallery-text); white-space: nowrap; }
+  > .gallery-weather-face > .gallery-weather-now > .gallery-weather-words > .gallery-weather-range { font-size: 12.5px; line-height: 16px; color: var(--gallery-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  > .gallery-weather-face > .gallery-weather-line { display: none; }
+  > .gallery-weather-face > .gallery-weather-more { display: flex; gap: 14px; flex: none; margin: auto 0 0; font-size: 12px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; overflow: hidden; }
+  > .gallery-weather-face > .gallery-weather-more > .gallery-weather-piece { display: inline-flex; align-items: center; gap: 4px; }
+  > .gallery-weather-face > .gallery-weather-more > .gallery-weather-piece > svg { flex: none; width: 13px; height: 13px; color: var(--gallery-faint); }
+  > .gallery-weather-face > .gallery-weather-days { display: none; }
+  /* The pictures' own colors. */
+  > .gallery-weather-face svg .gallery-weather-sun { fill: var(--gallery-weather-sun); stroke: var(--gallery-weather-sun); }
+  > .gallery-weather-face svg .gallery-weather-sun > circle { stroke: none; }
+  > .gallery-weather-face svg .gallery-weather-moon { fill: var(--gallery-weather-sun); }
+  > .gallery-weather-face svg .gallery-weather-cloud { fill: var(--gallery-weather-cloud); }
+  > .gallery-weather-face svg .gallery-weather-cloud-2 { fill: var(--gallery-weather-cloud-2); }
+  > .gallery-weather-face svg :is(.gallery-weather-rain, .gallery-weather-mist) { stroke: var(--gallery-weather-rain); }
+  > .gallery-weather-face svg .gallery-weather-mist { stroke: var(--gallery-weather-cloud-2); }
+  > .gallery-weather-face svg .gallery-weather-snow { fill: var(--gallery-weather-cool); }
+  > .gallery-weather-face svg .gallery-weather-bolt { fill: var(--gallery-weather-sun); }
+
+  /* A narrow card: the picture and the temperature at the bottom, one line under them. */
+  /* Its head the city alone, but for the sign of an answer kept from before the network went (its time in its title), so that yesterday's weather never reads as now's. */
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-head > .gallery-weather-at:not(:has(> .gallery-weather-stale)) { display: none; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-head > .gallery-weather-at > .gallery-weather-when { display: none; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-now { margin-top: auto; gap: 4px; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-now > .gallery-weather-picture { width: 40px; height: 40px; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-now > .gallery-weather-temperature { font-size: var(--gallery-hero-size); }
+  /* Beside the sky's picture a 2 × 2 card holds three characters of the hero (16°); −12° and 105° step down, −105° further, to stay in the card's room. */
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-now > .gallery-weather-temperature[data-length="4"] { font-size: 36px; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-now > .gallery-weather-temperature:is([data-length="5"], [data-length="6"]) { font-size: 28px; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-now > .gallery-weather-words,
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-more { display: none; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-line { display: block; margin: 6px 0 0; font-size: 12.5px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-line > b { font-weight: 600; color: var(--gallery-text); }
+  > .gallery-weather-face[data-layout="narrow"] > .gallery-weather-line > .gallery-weather-dot { margin: 0 5px; color: var(--gallery-faintest); }
+  /* A tall card: the five days ahead at the bottom. */
+  > .gallery-weather-face[data-layout="tall"] > .gallery-weather-now { margin-top: 14px; }
+  > .gallery-weather-face[data-layout="tall"] > .gallery-weather-now > .gallery-weather-picture { width: 60px; height: 60px; }
+  > .gallery-weather-face[data-layout="tall"] > .gallery-weather-more { margin-top: 12px; }
+  > .gallery-weather-face[data-layout="tall"] > .gallery-weather-days {
+    display: flex;
+    flex-direction: column;
+    margin: auto 0 0;
+    padding: 6px 0 0;
+    border-top: 1px solid var(--gallery-hair);
+    list-style: none;
+  }
+  > .gallery-weather-face > .gallery-weather-days > .gallery-weather-day {
+    display: grid;
+    grid-template-columns: 34px 24px 30px 1fr 30px;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  > .gallery-weather-face > .gallery-weather-days > .gallery-weather-day > .gallery-weather-weekday { color: var(--gallery-text); }
+  > .gallery-weather-face > .gallery-weather-days > .gallery-weather-day > .gallery-weather-picture { width: 22px; height: 22px; overflow: visible; }
+  > .gallery-weather-face > .gallery-weather-days > .gallery-weather-day > .gallery-weather-low { color: var(--gallery-faint); text-align: right; }
+  > .gallery-weather-face > .gallery-weather-days > .gallery-weather-day > .gallery-weather-high { color: var(--gallery-text); font-weight: 600; }
+  > .gallery-weather-face > .gallery-weather-days > .gallery-weather-day > .gallery-weather-bar { position: relative; height: 5px; border-radius: 3px; background: var(--gallery-fill); }
+  > .gallery-weather-face > .gallery-weather-days > .gallery-weather-day > .gallery-weather-bar > .gallery-weather-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 3px;
+    background-image: linear-gradient(90deg, var(--gallery-weather-cool), var(--gallery-weather-hot));
+  }
+  /* Nothing to show yet: the cards' empty face under the head. Under its head row in a short card (4 × 2, 2 × 2): two lines at the left with no chip, there being no room for one (the pack's other empty faces, with no head row, centre theirs over a 28px chip). */
+  > .gallery-weather-face > .gallery-weather-empty { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 4px; min-height: 0; }
+  > .gallery-weather-face > .gallery-weather-empty > p { margin: 0; }
+  > .gallery-weather-face > .gallery-weather-empty > .gallery-weather-note { font-size: 13.5px; line-height: 20px; font-weight: 600; color: var(--gallery-text); }
+  > .gallery-weather-face > .gallery-weather-empty > .gallery-weather-hint { font-size: 12px; line-height: 18px; color: var(--gallery-muted); text-wrap: pretty; }
+}
+/* On a custom page the face fills the card the board frames. */
+.gallery-card > [data-doc-component="gallery/weather"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/weather"] > .gallery-weather-face { height: 100%; }

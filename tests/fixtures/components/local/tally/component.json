@@ -1,0 +1,17 @@
+{
+  "id": "local/tally",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "计数条", "en": "Tally" },
+  "description": { "zh": "读得懂的数字和一个按下就加一的计数", "en": "Numbers to read and a count a press adds to" },
+  "words": "tally count 计数",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "caption": { "at": ":scope > .tally-caption", "edit": "text", "optional": true },
+    "metrics": { "at": ":scope > dl", "edit": "none", "optional": true },
+    "rows": { "at": ":scope > table", "edit": "none", "optional": true }
+  },
+  "runtime": { "generated": [".tally-count"], "attrs": { ":scope": ["data-refreshed"] } },
+  "assets": ["dialogs", "tick.svg"],
+  "markdown": "parts"
+}

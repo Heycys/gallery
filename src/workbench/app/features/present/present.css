@@ -1,0 +1,41 @@
+/* 演示：报告铺满整个窗口（全屏），上面一层画布接笔迹；画布只在激光笔、画笔、荧光笔时接指针，指针时点到的是报告 */
+.present { position: fixed; inset: 0; z-index: 2000; background: var(--bacPri); }
+.present-frame { position: absolute; left: 0; top: 0; width: 100%; height: 100%; border: 0; background: var(--pageBac); transform-origin: 0 0; } /* zoomed: 1/zoom as wide, scaled up (Presentation.tsx) */
+.present-ink { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; touch-action: none; }
+.present:is([data-tool="laser"], [data-tool="pen"], [data-tool="marker"], [data-tool="eraser"]) .present-ink { pointer-events: auto; }
+.present[data-tool="laser"] .present-ink { cursor: none; }
+/* Round cursors, each where its ink goes: the pen a red dot, the highlighter a soft yellow square, the eraser a gray circle as big as what it takes. */
+.present[data-tool="pen"] .present-ink { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Ccircle cx='8' cy='8' r='4' fill='%23e03e3e' stroke='white' stroke-width='1.5'/%3E%3C/svg%3E") 8 8, crosshair; }
+.present[data-tool="marker"] .present-ink { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='22' height='22'%3E%3Crect x='3' y='3' width='16' height='16' rx='5' fill='rgba(255,204,0,.55)' stroke='rgba(120,90,0,.55)' stroke-width='1'/%3E%3C/svg%3E") 11 11, crosshair; }
+.present[data-tool="eraser"] .present-ink { cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Ccircle cx='12' cy='12' r='10' fill='rgba(140,140,140,.28)' stroke='rgba(110,110,110,.9)' stroke-width='1.5'/%3E%3C/svg%3E") 12 12, default; }
+
+/* 页面要说的一句话（链接到的页面不在了）：样子和工作台的提示条一样，提示条在演示时不显示 */
+.present-notice { position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 8px 14px; background: var(--tipBg); color: var(--tipTex); border-radius: 8px; box-shadow: var(--shaOutLg); font-size: 14px; white-space: nowrap; pointer-events: none; }
+
+/* 左下角的工具条：一排图标按钮，选中的是按下去的灰；指针停下一会儿淡下去，回来就亮 */
+.present-bar {
+  position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 2px; padding: 4px;
+  border-radius: var(--r-card); background: var(--popBac); box-shadow: var(--shadowBar); transition: opacity .12s ease-out;
+}
+/* 淡下去慢（指针停了一会儿），回来快：指针一到就答 */
+.present-bar.idle { opacity: .25; transition: opacity .3s ease; }
+.present-btn { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: var(--r-ctl); color: var(--icoPri); }
+.present-btn:hover { background: var(--bacIntTra); }
+.present-btn[aria-pressed="true"] { background: var(--bacTerTra); color: var(--texPri); }
+.present-btn:active:not(:disabled) { background: var(--bacPre); }
+.present-btn:disabled { opacity: var(--off); pointer-events: none; }
+.present-btn svg { width: 18px; height: 18px; }
+.present-sep { flex: none; width: 1px; height: 18px; margin: 0 4px; background: var(--borSec); }
+/* The zoom: its percentage between − and +, in the middle of its box; a click back to 100%, the wheel over it a step */
+.present-zoom { flex: none; min-width: 48px; height: 32px; padding: 0 4px; border-radius: var(--r-ctl); color: var(--texPri); font-size: 13px; font-variant-numeric: tabular-nums; text-align: center; }
+.present-zoom:hover { background: var(--bacIntTra); }
+.present-zoom:active { background: var(--bacPre); }
+
+/* 笔迹和报告叠在一起：浅色上相乘（荧光笔下的字还是原来的黑），深色上滤色（荧光笔像亮起来，不发灰） */
+.present-ink { mix-blend-mode: multiply; }
+:root[data-theme="dark"] .present-ink { mix-blend-mode: screen; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .present-ink { mix-blend-mode: screen; }
+}
+/* 演示时工作台的提示条不出来（报告页存好了之类的话） */
+body:has(.present) .toast { display: none; }

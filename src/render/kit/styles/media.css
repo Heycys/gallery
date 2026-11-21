@@ -1,0 +1,15 @@
+/* The media blocks (图片 image.css, 文件 file.css, 网页书签 bookmark.css, 嵌入 embed.css): each a
+   figure with its content and a caption under it, which they share: the caption is 14px, gray, close
+   to the block (6px above and below, 2px in from the left)
+   and shown only with text (an empty <figcaption> is always written), and a figure left empty (the
+   page editor's placeholder, kept in the file) is nothing to readers. An image's caption is centered
+   (image.css). A new media block is one more name in these lists. */
+:is(.doc-image, .doc-file, .doc-bookmark, .doc-embed) > figcaption {
+  padding: 6px 0 6px 2px;
+  color: var(--doc-caption);
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: break-word;
+}
+:is(.doc-image, .doc-file, .doc-bookmark, .doc-embed) > figcaption:empty { display: none; }
+figure:is(.doc-image, .doc-file, .doc-bookmark, .doc-embed):not(:has(> *)) { display: none; }

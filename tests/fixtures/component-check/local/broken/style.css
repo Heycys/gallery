@@ -1,0 +1,3 @@
+/* The first rule stays in the instance; the second does not. */
+[data-doc-component="local/broken"] h3 { margin: 0; }
+body { margin: 0; }

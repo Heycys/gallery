@@ -1,0 +1,80 @@
+/* A board of columns side by side, each a list of cards, four of them in the width of the page; past
+   that the columns scroll in the board, never the page. Every selector starts at the instance. */
+[data-doc-component="local/kanban"] .kanban-bar {
+  display: flex;
+  margin: 8px 0;
+}
+[data-doc-component="local/kanban"] .kanban-filter {
+  flex: 0 1 240px;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--doc-border);
+  border-radius: 6px;
+  background: var(--doc-surface);
+  color: var(--doc-text);
+  font: inherit;
+  font-size: var(--doc-small-font-size);
+  line-height: var(--doc-small-line-height);
+}
+[data-doc-component="local/kanban"] .kanban-columns {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(170px, 1fr);
+  gap: 8px;
+  overflow-x: auto;
+}
+[data-doc-component="local/kanban"] .kanban-column {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--doc-hover);
+}
+[data-doc-component="local/kanban"] .kanban-column-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 2px 8px;
+  color: var(--doc-muted);
+  font-size: var(--doc-small-font-size);
+  font-weight: 600;
+}
+[data-doc-component="local/kanban"] .kanban-cards {
+  display: grid;
+  gap: 6px;
+  min-height: 36px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+[data-doc-component="local/kanban"] .kanban-card {
+  padding: 8px 10px;
+  border: 1px solid var(--doc-border);
+  border-radius: 6px;
+  background: var(--doc-surface);
+  overflow-wrap: break-word;
+}
+[data-doc-component="local/kanban"] .kanban-card[hidden] {
+  display: none;
+}
+[data-doc-component="local/kanban"] .kanban-board[data-writes] .kanban-card {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+[data-doc-component="local/kanban"] .kanban-card.doc-dragging {
+  opacity: 0.45;
+}
+[data-doc-component="local/kanban"] .kanban-card-title {
+  display: block;
+}
+[data-doc-component="local/kanban"] .kanban-card-meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--doc-muted);
+  font-size: var(--doc-small-font-size);
+}
+[data-doc-component="local/kanban"] .kanban-drop {
+  height: 2px;
+  border-radius: 1px;
+  background: var(--doc-accent);
+}

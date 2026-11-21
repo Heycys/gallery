@@ -1,0 +1,305 @@
+/* 代码块 (code.js): div.doc-code, a soft panel holding a
+   header (the kit's fold arrow, the block's title, an excerpt's range of lines, the kit's toolbar
+   shown while the pointer is over the block: its language, copy and wrap) above its code (the pre),
+   its lines numbered and its long lines wrapped. Folded (doc-code--folded) it shows its header
+   alone; doc-code--nowrap scrolls its long lines instead. A diff (.doc-diff) looks the same,
+   its lines drawn in .doc-diff-body, its header showing its counts. The code's frame height is a
+   size (--doc-code-height, sizes.css). */
+
+:is(.doc-code, .doc-diff) {
+  position: relative;
+  display: grid;
+  /* The arrow, the title (as wide as its text, cut first, when a range follows it), the range, the
+     room left (12px at least: the header's right edge), the toolbar. */
+  grid-template-columns: 28px minmax(0, max-content) auto minmax(12px, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+  margin: var(--doc-block-gap) 0;
+  border-radius: 10px;
+  color: var(--doc-code-foreground);
+  background: var(--doc-code-background);
+  /* A line number's size, and the room around it (the editor's gutter reads the same ones). */
+  --doc-code-number-size: 12px;
+  --doc-code-number-inset: 6px;
+  --doc-code-number-gap: 12px;
+  /* A line's height, and the least a line takes (the editor's gutter and open code read it too). */
+  --doc-code-line-height: 20px;
+}
+/* Code blocks often come several together: a group gap apart, as disclosures (details.css). */
+:is(.doc-code, .doc-diff):has(+ :is(.doc-code, .doc-diff)) { margin-bottom: var(--doc-group-gap); }
+:is(.doc-code, .doc-diff) + :is(.doc-code, .doc-diff) { margin-top: var(--doc-group-gap); }
+
+/* The header: the arrow (no fill under the pointer, a short one while pressed), the
+   title, the toolbar. */
+.doc-code-fold {
+  grid-area: 1 / 1;
+  justify-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--doc-code-chrome);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .2s ease;
+}
+.doc-code-fold svg { width: 12px; height: 12px; fill: currentColor; transition: transform .2s ease-out; }
+.doc-code-fold:active { background: var(--doc-code-pressed); }
+:is(.doc-code, .doc-diff):hover > .doc-code-fold,
+.doc-code-fold:focus-visible,
+.doc-code--folded > .doc-code-fold { opacity: 1; }
+.doc-code--folded > .doc-code-fold svg { transform: rotate(-90deg); }
+
+/* The title takes the header's room up to the toolbar (the place to click into it in the page editor),
+   or, beside a range, as much as its words: body text's size and line (a disclosure's title too,
+   details.css). */
+.doc-code-title {
+  grid-area: 1 / 2 / 2 / 5;
+  min-width: 0;
+  min-height: var(--doc-body-line-height);
+  padding: var(--doc-block-title-padding) 0;
+  overflow: hidden;
+  color: var(--doc-caption);
+  font-family: var(--doc-font);
+  font-size: var(--doc-body-font-size);
+  line-height: var(--doc-body-line-height);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+/* An empty title shows the kit's word for a code block, 代码块 or Code (words.js: the UI's language in
+   Gallery, the page's lang in a file of its own; tokens.css holds it). */
+.doc-code-title:empty::before { content: var(--doc-word-code-title); }
+.doc-code:has(> .doc-code-range) > .doc-code-title { grid-column-end: 3; }
+
+/* An excerpt's lines (data-line-start), beside its title: 第 120–139 行 (code.js, from its first
+   line's number and its count), after a dot, in its line numbers' color, never cut: the title's
+   size and line, one line of one size. */
+.doc-code-range {
+  grid-area: 1 / 3;
+  padding: var(--doc-block-title-padding) 0;
+  color: var(--doc-code-line-number);
+  font-family: var(--doc-font);
+  font-size: var(--doc-body-font-size);
+  line-height: var(--doc-body-line-height);
+  white-space: nowrap;
+}
+.doc-code-range::before { content: "·"; margin: 0 6px; }
+
+/* The toolbar shows only while the pointer is over the block or the focus is in it,
+   folded or not; a diff's counts always (what changed, not a control: its copy shows
+   under the pointer, below). */
+.doc-code-tools {
+  grid-area: 1 / 5;
+  display: flex;
+  padding: 0 6px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease;
+}
+:is(.doc-code, .doc-diff):hover > .doc-code-tools,
+.doc-code-tools:focus-within,
+.doc-diff > .doc-code-tools { opacity: 1; pointer-events: auto; }
+.doc-code-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 6px;
+  background: var(--doc-surface);
+  box-shadow: var(--doc-code-toolbar-shadow);
+}
+.doc-code-language,
+.doc-diff-stats {
+  padding: 0 6px;
+  color: var(--doc-code-chrome);
+  font-family: var(--doc-font);
+  font-size: 12px;
+  line-height: 24px;
+  white-space: nowrap;
+}
+.doc-code-separator { width: 1px; height: 16px; margin: 0 4px; border-radius: 2px; background: var(--doc-code-separator); }
+:is(.doc-code-copy, .doc-code-wrap) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--doc-code-chrome);
+  background: transparent;
+  cursor: pointer;
+  transition: background .1s ease-in-out;
+}
+:is(.doc-code-copy, .doc-code-wrap) svg { display: block; width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+:is(.doc-code-copy, .doc-code-wrap):hover { background: var(--doc-hover); }
+
+/* Folded, its toolbar is its language and copy alone, with no bar (its language is
+   not picked then), shown under the pointer as an open block's. */
+.doc-code--folded .doc-code-toolbar { background: none; box-shadow: none; }
+.doc-code--folded :is(.doc-code-separator, .doc-code-wrap) { display: none; }
+
+/* The code: the monospace at 85%, lines numbered in a gutter of their own. */
+.doc-code > pre,
+.doc-diff-body {
+  grid-area: 2 / 1 / 3 / -1;
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  /* Its frame's height, set on the block, else 40 lines (with its padding): past it the code scrolls,
+     its padding below the last line kept as when it does not (the room to edit that line). */
+  max-height: var(--doc-code-height, calc(40 * var(--doc-code-line-height) + 20px));
+  margin: 0;
+  overflow: auto;
+  border: 0;
+  border-radius: 0 0 10px 10px;
+  color: inherit;
+  background: transparent;
+  font-family: var(--doc-code-font);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: var(--doc-code-line-height);
+  tab-size: 2;
+  scrollbar-color: var(--doc-code-scrollbar) transparent;
+  scrollbar-width: thin;
+}
+/* Its padding: a code block's, and a diff's (whose lines hold the right one, so that their fills reach its edge).
+   What scrolls into view in a frame that scrolls keeps that room clear of its edges (scroll-padding, as
+   a detail card's content: dialog.css): the caret on the last line takes the code to its very end, the
+   room under that line shown, where the browser stopped with the line against the frame's bottom edge
+   (4px more: the caret's box is a little short of its line). */
+.doc-code > pre { padding: 2px 22px 18px 6px; scroll-padding-block: 2px 22px; }
+.doc-diff-body { padding: 0 0 12px; scroll-padding-block: 0 16px; }
+.doc-code--folded > :is(pre, .doc-diff-body) { display: none; }
+/* Its code is in the block's font, not the browser's monospace for a code element. */
+:is(.doc-code > pre, .doc-diff-body) code { font: inherit; }
+
+/* A frame the keys scroll (the browser makes it a tab stop) takes the kit's focus ring inside its rounded edge
+   while the page is read (base.css); the page editor's open code is its own. */
+:root:not([data-ge-editing]) :is(.doc-code > pre, .doc-diff-body):focus-visible { outline-offset: -2px; }
+
+.doc-code-lines { display: block; min-width: 100%; white-space: normal; }
+.doc-code-line { display: flex; min-height: var(--doc-code-line-height); }
+.doc-code-line[data-line-number]::before {
+  content: attr(data-line-number);
+  box-sizing: content-box;
+  flex-shrink: 0;
+  color: var(--doc-code-line-number);
+  font-size: var(--doc-code-number-size);
+  font-variant-numeric: tabular-nums;
+  user-select: none;
+}
+.doc-code-content { flex: 1; min-width: 0; padding-inline: 2px; white-space: pre-wrap; word-break: break-word; }
+.doc-code--nowrap .doc-code-lines { width: max-content; }
+.doc-code--nowrap .doc-code-content { white-space: pre; }
+
+/* Folding a line's structure: a code block's lines keep a column left of their numbers,
+   under the block's own fold arrow (their centers 14px from its edge, as the header's), for the
+   arrows of the lines that start one: rounded, faint (fainter than the block's own arrow), shown while
+   the pointer is over the block (a folded one always, turned); no fill under the pointer, a short
+   one while pressed. A folded line's structure is hidden and "…" follows it. */
+.doc-code > pre .doc-code-line { position: relative; padding-left: 16px; }
+/* Its numbers left-aligned on the line its title's text starts on (28px from its edge), as wide as
+   its last one (--doc-code-digits, code.js), 12px from the code; without numbers, the code there.
+   A diff's are right-aligned in 3 digits (below). */
+.doc-code > pre .doc-code-line[data-line-number]::before { min-width: calc(var(--doc-code-digits, 1) * 1ch); padding: 0 var(--doc-code-number-gap) 0 var(--doc-code-number-inset); text-align: left; }
+.doc-code[data-line-numbers="false"] > pre .doc-code-line { padding-left: 20px; }
+.doc-code-line-fold {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  color: var(--doc-code-line-fold);
+  background: transparent;
+  cursor: pointer;
+  visibility: hidden;
+}
+.doc-code-line-fold svg { width: 10px; height: 10px; fill: currentColor; transition: transform .2s ease-out; }
+.doc-code-line-fold:active { background: var(--doc-code-pressed); }
+.doc-code:hover .doc-code-line-fold,
+.doc-code-line-fold:focus-visible,
+.doc-code-line--folded > .doc-code-line-fold { visibility: visible; }
+.doc-code-line--folded > .doc-code-line-fold svg { transform: rotate(-90deg); }
+.doc-code-line--hidden { display: none; }
+.doc-code-line--folded > .doc-code-content { flex: 0 1 auto; }
+.doc-code-line-more {
+  flex: none;
+  width: 24px;
+  height: 16px;
+  margin: 2px 0 0 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: @fold-dots center / 12px 2px no-repeat, var(--doc-code-fold-more);
+  cursor: pointer;
+}
+.doc-code-line-more:hover { background-color: var(--doc-code-fold-more-hover); }
+
+/* A diff: its counts always in its header, as plain text; copying under the pointer; its lines'
+   fills soft, a thin strip at their left. */
+.doc-diff .doc-code-toolbar { background: none; box-shadow: none; }
+.doc-diff .doc-code-separator { display: none; }
+.doc-diff .doc-code-copy { opacity: 0; transition: opacity .2s ease, background .1s ease-in-out; }
+.doc-diff:hover .doc-code-copy, .doc-diff .doc-code-copy:focus-visible { opacity: 1; }
+.doc-code-line.has-accent { border-left: 2px solid transparent; }
+.doc-code-line--added { background: var(--doc-diff-added-fill); }
+.doc-code-line--removed { background: var(--doc-diff-removed-fill); }
+.doc-code-line--added.has-accent { border-left-color: var(--doc-diff-added-strip); }
+.doc-code-line--removed.has-accent { border-left-color: var(--doc-diff-removed-strip); }
+.doc-code-line--added.has-colored-number::before, .doc-diff-added { color: var(--doc-diff-added); }
+.doc-code-line--removed.has-colored-number::before, .doc-diff-removed { color: var(--doc-diff-removed); }
+.doc-diff-body > .doc-code-lines { box-sizing: border-box; }
+.doc-diff-body .doc-code-line { box-sizing: border-box; padding-right: 22px; }
+.doc-diff-body .doc-code-line[data-line-number]::before { min-width: 3ch; padding: 0 12px 0 8px; text-align: right; }
+.doc-diff-stats { display: inline-flex; gap: 6px; font-variant-numeric: tabular-nums; }
+.doc-diff-stats[hidden] { display: none; }
+.doc-diff-stats[hidden] + .doc-code-separator { display: none; }
+
+/* Where nothing hovers (a phone, a tablet), the controls the pointer shows elsewhere stand there all the time:
+   the fold arrow, the toolbar (language, copy, wrap) and a diff's copy. */
+@media (hover: none) {
+  .doc-code-fold, .doc-code-tools, .doc-diff .doc-code-copy { opacity: 1; pointer-events: auto; }
+}
+
+/* A narrow screen (the kit's narrowest breakpoint): a code block shows its code whole, its lines
+   wrapped (a frame height of its own, a size, still holds: sizes.css), its title wraps rather than
+   being cut, and where a pointer shows the toolbar (over the block or the focus in it) it lies over the
+   header's right end, taking no room from the title; where nothing hovers it stands in the row, always
+   shown, and the title wraps before it. */
+@media (max-width: 420px) {
+  .doc-code > pre { max-height: var(--doc-code-height, none); }
+  .doc-code-title { white-space: normal; overflow-wrap: anywhere; text-overflow: clip; }
+}
+@media (max-width: 420px) and (hover: hover) {
+  .doc-code > .doc-code-tools { position: absolute; top: 4px; right: 0; }
+}
+
+/* A code block's color (颜色 in the page editor's block menu, base.css's classes): its background, or
+   the color of the code the highlighter leaves plain. */
+.doc-code:is(@highlight-colors) { --doc-code-background: var(--doc-fill); }
+.doc-code:is(@text-colors) { --doc-code-foreground: var(--doc-ink); }
+
+/* On paper a code block is whole, as a table is: no frame of 40 lines (nor of a height the author set) scrolling
+   the rest away, its long lines wrapped where it scrolled them, and a folded block open. */
+@media print {
+  .doc-code > pre, .doc-diff-body { max-height: none; overflow: visible; }
+  .doc-code--nowrap .doc-code-lines { width: auto; }
+  .doc-code--nowrap .doc-code-content { white-space: pre-wrap; }
+  .doc-code--folded > :is(pre, .doc-diff-body) { display: block; }
+}

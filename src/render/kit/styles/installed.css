@@ -1,0 +1,142 @@
+/* An instance of a component package stands apart from what is around it as a block set apart does,
+   whatever state it is in. One with no package here (src/shared/components/installed.mjs) shows what
+   it holds as it stands, the kit marking it (data-doc-fallback). Its component's styles are not
+   there, so this is all the look it has, and what reads by itself reads: a title, paragraphs, lists,
+   a table, what a script of data holds as the kit draws it (doc-component-data: a table, keys beside
+   their values, a list), what is wider than the page scrolling in it. In the preview a note above it
+   says why, to who writes the page (data-doc-dev: no export takes it, nor a presentation or paper).
+   What its slots hold (data-doc-slot) is the document's blocks, which read as in any flow (flow.css)
+   whatever state it is in: this look stops at a slot (@scope … to; a browser without @scope shows
+   it with none of this look, what it holds all there). */
+
+[data-doc-component] {
+  margin: var(--doc-block-gap) 0;
+}
+/* [hidden] hides what is in an instance whatever display a block's style gave it: a control a block
+   hides where nothing is written (an export: form.hidden = !context.canEdit()) stays hidden though its
+   own rule says display: flex, which an author's rule on the class would otherwise win over the
+   browser's [hidden] { display: none }. What a slot holds is the document's blocks, which keep their
+   own rules (a Sheet panel, an empty figure the editor shows), so the rule stops at a slot. */
+@scope ([data-doc-component]) to ([data-doc-slot]) {
+  :scope [hidden] {
+    display: none !important;
+  }
+}
+/* Words a block draws that a reader types in where they stand (DocKit.text, runtime/gestures.js): while
+   they take the caret, the look the page editor gives a figure's or a layout's words (editor.mjs,
+   data-ge-framed): a text block's 3px corners, under the pointer and while typed in a light fill of the
+   accent (9%, inside them, no line), the caret's own focus and no ring; selectable though what holds
+   them is not (a card that drags). Empty, their gray words (data-doc-text-empty), never written. Where
+   they take no caret (an export, 演示视图, a table that takes no change) they are words as drawn. */
+[data-doc-text][contenteditable] {
+  border-radius: 3px;
+  outline: none;
+  cursor: text;
+  -webkit-user-select: text;
+  user-select: text;
+}
+[data-doc-text][contenteditable]:is(:hover, :focus) {
+  box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--doc-accent) 9%, transparent);
+}
+/* Emptied as they are typed in, still a line to hold the caret (a block's; one inline holds its own). */
+[data-doc-text][contenteditable]:empty {
+  min-width: 1em;
+  min-height: 1lh;
+}
+[data-doc-text][data-doc-text-empty]:empty::before {
+  content: attr(data-doc-text-empty);
+  color: var(--doc-muted);
+  font-weight: 400;
+  pointer-events: none;
+}
+/* A slot holds the document's blocks: they read as in any flow (flow.css), the first and the last flush with it. */
+[data-doc-slot] > :where(:first-child) {
+  margin-top: 0;
+}
+[data-doc-slot] > :where(:last-child) {
+  margin-bottom: 0;
+}
+[data-doc-fallback] {
+  overflow-x: auto;
+}
+@scope ([data-doc-fallback]) to ([data-doc-slot]) {
+  :scope :where(img, svg, video, iframe) {
+    max-width: 100%;
+  }
+  :scope :where(img, video) {
+    height: auto;
+  }
+  :scope :where(h1, h2, h3, h4) {
+    margin: 12px 0 6px;
+    color: var(--doc-text);
+    font-size: var(--doc-h4-font-size);
+    line-height: var(--doc-h4-line-height);
+    font-weight: 700;
+  }
+  :scope :where(p, ul, ol, dl, table) {
+    margin: 0 0 8px;
+  }
+  :scope :where(ul, ol) {
+    padding-inline-start: 1.625em;
+  }
+  :scope :where(table) {
+    border-collapse: collapse;
+  }
+  :scope :where(th, td) {
+    padding: 4px 8px;
+    border: 1px solid var(--doc-border);
+    text-align: start;
+  }
+}
+.doc-component-data :where(ul, dl, table) {
+  margin: 0;
+}
+.doc-component-data :where(dt, dd, td) {
+  overflow-wrap: break-word;
+}
+/* A head and a cell of a few words keep them on one line: what is wider than the page scrolls. */
+.doc-component-data :where(th, .doc-component-short) {
+  white-space: nowrap;
+}
+/* A value alone is itself, no item of a list; a list of values alone below the top a line of them. */
+ul.doc-component-one, .doc-component-data ul.doc-component-line {
+  padding: 0;
+  list-style: none;
+}
+.doc-component-data .doc-component-line > li {
+  display: inline;
+}
+.doc-component-data .doc-component-line > li + li::before {
+  content: " · ";
+  color: var(--doc-muted);
+}
+:where(dl.doc-component-data, .doc-component-data dl) {
+  display: grid;
+  grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
+  gap: 4px 16px;
+}
+.doc-component-data dt {
+  color: var(--doc-muted);
+}
+.doc-component-data dd {
+  margin: 0;
+}
+.doc-component-data .doc-component-more {
+  color: var(--doc-muted);
+  font-size: var(--doc-small-font-size);
+}
+.doc-component-data dl > .doc-component-more, dl.doc-component-data > .doc-component-more {
+  grid-column: 1 / -1;
+}
+.doc-component-note {
+  margin-bottom: 6px;
+  color: var(--doc-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* On paper what it holds is whole, as a table is (table.css). */
+@media print {
+  [data-doc-fallback] { overflow-x: visible; }
+  .doc-component-note { display: none; }
+}

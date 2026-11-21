@@ -1,0 +1,14 @@
+{
+  "id": "local/hidden-form",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "记账", "en": "Ledger form" },
+  "description": { "zh": "记一笔的表单，只在能写的时候显示", "en": "A form that adds an entry, shown only where something is written" },
+  "words": "jizhang ledger",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "entries": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [".ledger-drawn"] },
+  "markdown": "parts"
+}

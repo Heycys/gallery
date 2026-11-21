@@ -1,0 +1,10 @@
+{
+  "id": "local/piling",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "越叠越多", "en": "Piling" },
+  "description": { "zh": "读起来没错，运行起来才错", "en": "Nothing wrong to read, and wrong as it runs" },
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" }
+  }
+}

@@ -1,0 +1,76 @@
+/* 选项卡区块 (sheets.js): a frame 16px round (a 1px hairline) holding a row of
+   pill tabs and the panel shown, 16px in; or, with .doc-sheet-shell--plain, no frame and no room
+   inside it (the tabs and the panel at the flow's edge). A tab is a pill 32px high, its name 14px:
+   gray, a light fill under the pointer; the one shown in the text's color on that fill. Nothing
+   beside the page (no copy of the tabs at the window's edge). */
+
+.doc-sheet-shell {
+  margin: var(--doc-block-gap) 0;
+  border: 1px solid var(--doc-hairline);
+  border-radius: 16px;
+}
+.doc-sheet-shell--plain { border: 0; border-radius: 0; }
+
+.doc-sheet-tabs {
+  display: flex;
+  max-width: 100%;
+  gap: 4px;
+  margin: 16px 16px 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.doc-sheet-tabs::-webkit-scrollbar { display: none; }
+/* A row of tabs wider than its frame scrolls with no scrollbar: an 18px fade at an end where more than 10px of it
+   lies hidden past that end, so that the row says there is more. Driven by the row's own
+   scroll (a scroll timeline, nothing written on the row, which is the file's): the start's fade grows in over
+   the first 10px to 28px scrolled, the end's goes over the last 28px to 10px; a row that does not scroll has
+   none, and a browser without scroll timelines none either. sheets.js brings the chosen tab into view, clear
+   of them. */
+@property --doc-tabs-fade-start { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --doc-tabs-fade-end { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@keyframes doc-tabs-fade-start { from { --doc-tabs-fade-start: 0px; } to { --doc-tabs-fade-start: 18px; } }
+@keyframes doc-tabs-fade-end { from { --doc-tabs-fade-end: 18px; } to { --doc-tabs-fade-end: 0px; } }
+@supports (animation-timeline: scroll()) {
+  .doc-sheet-tabs {
+    mask-image: linear-gradient(to right, transparent, #000 var(--doc-tabs-fade-start), #000 calc(100% - var(--doc-tabs-fade-end)), transparent);
+    animation: doc-tabs-fade-start linear both, doc-tabs-fade-end linear both;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range: 10px 28px, calc(100% - 28px) calc(100% - 10px);
+  }
+}
+.doc-sheet-shell--plain > .doc-sheet-tabs { margin: 0 0 14px; }
+
+.doc-sheet-tab {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 9999px;
+  color: light-dark(#8e8b86, #9b9a97);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 100ms ease-in-out;
+}
+.doc-sheet-tab:hover { background: var(--doc-hover); }
+.doc-sheet-tab:active { background: var(--doc-press); }
+.doc-sheet-tab[aria-selected="true"] { color: var(--doc-text); background: var(--doc-hover); }
+.doc-sheet-tab[aria-selected="true"]:hover { background: light-dark(rgb(33 27 23 / 7.5%), rgb(255 255 255 / 8%)); }
+/* The kit's focus ring (base.css) inside the pill: the strip scrolls, and clips what lies past it. */
+.doc-sheet-tab:focus-visible { outline-offset: -2px; }
+
+.doc-sheet-shell > [data-doc-sheet] { padding: 0 16px 16px; }
+.doc-sheet-shell--plain > [data-doc-sheet] { padding: 0; }
+.doc-sheet-shell > [data-doc-sheet][hidden] { display: none; }
+
+/* A tab's emoji (data-tab-icon, the page editor's 编辑图标), before its name. */
+.doc-sheet-tab[data-tab-icon]::before { content: attr(data-tab-icon); margin-inline-end: 6px; font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif; }
+/* Its picture, as the page's icon and a highlight block's (Twemoji, never the system's font): the
+   preview, a build and an export give it as --doc-tab-icon (render/emoji.mjs). */
+.doc-sheet-tab[data-tab-icon][style*="--doc-tab-icon"]::before { content: ""; display: inline-block; flex: none; width: 1.125em; height: 1.125em; background: var(--doc-tab-icon) center / contain no-repeat; }

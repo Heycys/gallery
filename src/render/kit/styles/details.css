@@ -1,0 +1,79 @@
+/* 折叠列表: a disclosure, its title row with an arrow, and its content region, a flow. It is drawn
+   as a code block is (code.css), one design for the two: a soft panel 10px round, a header of the
+   arrow (the code block's triangle, in a 28px column, always shown: it is what opens the block) and
+   the title (body text's size and line, --doc-block-title-padding above and below, as the code
+   block's), the content under the title's start. The room around the title's words is the title's own (the
+   padding on the text one edits, its button alone opening and closing it), so in the page editor a
+   press there is in the title, as a press beside a code block's title is in that one. */
+
+.doc-details {
+  min-width: 0;
+  max-width: 100%;
+  margin-block: var(--doc-paragraph-gap); /* as a paragraph's: a disclosure stands among text */
+  border: 0;
+  border-radius: 10px;
+  background: var(--doc-code-background);
+}
+/* Disclosures often come several together: a group gap apart, a group rather than loose panels. */
+.doc-details:has(+ .doc-details) { margin-bottom: var(--doc-group-gap); }
+.doc-details + .doc-details { margin-top: var(--doc-group-gap); }
+
+.doc-details > summary {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: start;
+  margin: 0;
+  padding: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  background: transparent;
+  font-size: var(--doc-body-font-size);
+  font-weight: 500;
+  line-height: var(--doc-body-line-height);
+  list-style: none;
+  text-align: left;
+}
+
+.doc-details > summary::-webkit-details-marker { display: none; }
+/* Its words whole as the page's, a long run breaking anywhere (page.css); overflow-wrap: anywhere keeps a word from widening the title's column. */
+.doc-details-summary-label {
+  min-width: 0;
+  padding: var(--doc-block-title-padding) 16px var(--doc-block-title-padding) 0;
+  overflow-wrap: anywhere;
+}
+
+.doc-details-summary-label code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* The code block's fold arrow: a small filled triangle, pointing right while the block is closed,
+   in the middle of the title's first line (below the room above its words). */
+.doc-details > summary::before {
+  justify-self: center;
+  width: 12px;
+  height: 12px;
+  margin-top: calc(var(--doc-block-title-padding) + (var(--doc-body-line-height) - 12px) / 2);
+  content: "";
+  background: var(--doc-code-chrome);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3.25 4.5h5.5L6 8z' fill='black' stroke='black' stroke-width='1.6' stroke-linejoin='round'/%3E%3C/svg%3E") center / contain no-repeat;
+  transform: rotate(-90deg);
+  transition: transform .2s ease-out;
+}
+
+.doc-details[open] > summary::before { transform: rotate(0); }
+/* Its color (颜色 in the page editor's block menu: base.css's classes): a
+   background in place of its own panel's, or the text of its title and its blocks (they take it as
+   theirs, a heading's own color aside). */
+.doc-details:is(@highlight-colors) { background: var(--doc-fill); }
+.doc-details-content {
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  padding: 2px 16px 14px 28px;
+}
+.doc-details-content > *,
+.doc-details-content .doc-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+}

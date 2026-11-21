@@ -1,0 +1,253 @@
+/* 柔光风格's habit. Every selector starts at the instance and goes down a step at a time (>), so that nothing
+   here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark(): the page's
+   color scheme, which follows its theme), then the face: a faint wash of the accent from the card's top over
+   the soft card's fill; a head of a ringed check's warm chip, the habit's name (a field with no line of its own, its
+   placeholder faint) and the days in all at its end, fading while the card's grip shows; the streak the hero.
+   By the card's size (the face's data-w, data-h and data-pad, from the script): 4 × 2, the streak under its
+   label and the last seven days beside it, a disc each, the accent's with a check where done, today's the
+   button (a ring of the accent with a plus, filled once pressed); 2 × 2, 连续 and the streak over a button as
+   wide as the card; 4 × 4, the streak, the longest in a gray pill and the button over the last four weeks, a
+   small disc a day, tinted where done, today ringed, the days to come faint. Buttons have no line: a primary
+   one pale blue, done pale green, a shade deeper under the pointer. On a custom page the face is the card's
+   whole room, taken out over the card's padding and given the soft frame's, the board's line around it;
+   where no card is (a document, as gallery block check shows it) the face frames itself at a 4 × 2 card's size. */
+[data-doc-component="gallery-soft/habit"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-faint: light-dark(#ababb0, #66666c);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-ink: light-dark(#356cb3, #98bee9);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-accent-tint: light-dark(#d8e6f6, #2b3c52);
+  --soft-on-tint: light-dark(#356cb3, #f1f1f2);
+  --soft-on-accent: light-dark(#ffffff, #152436);
+  --soft-track: light-dark(rgb(28 28 32 / 7%), rgb(255 255 255 / 8%));
+  --soft-good: light-dark(#23874f, #6fcf97);
+  --soft-good-soft: light-dark(#e6f4ec, rgb(111 207 151 / 14%));
+  --soft-warm: light-dark(#e59a2c, #f0b257);
+  --soft-warm-soft: light-dark(#fdf1df, rgb(240 178 87 / 14%));
+  --soft-grip-room: 0px;
+  > .gallery-soft-habit-face {
+    --soft-pad: 20px;
+    position: relative;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: 28px 1fr auto;
+    grid-template-areas: "head head" ". ." "top week";
+    column-gap: 14px;
+    min-width: 0;
+    width: 304px;
+    max-width: 100%;
+    height: 144px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-wash), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-habit-face[data-pad="s"] { --soft-pad: 18px; }
+  > .gallery-soft-habit-face[data-pad="l"] { --soft-pad: 24px; }
+  /* The head: the warm chip, the name's field, the days in all at its end. */
+  > .gallery-soft-habit-face > .gallery-soft-habit-head {
+    grid-area: head;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding-inline-end: var(--soft-grip-room);
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-chip {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--soft-warm-soft);
+    color: var(--soft-warm);
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-chip > svg { display: block; width: 16px; height: 16px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-name {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    font: 600 14px/20px var(--soft-font);
+    color: var(--soft-strong);
+    text-overflow: ellipsis;
+  }
+  /* Where the name ends the head (a 2 × 2 card, or no day in all yet), it reaches into the grip's corner as far
+     as the padding, its end faded out under the grip while the grip shows (a mask, so that the name stays). */
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-head > .gallery-soft-habit-name,
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-name:has(+ .gallery-soft-habit-total:empty) {
+    margin-inline-end: calc(-1 * var(--soft-grip-room));
+    -webkit-mask-image: linear-gradient(to left, transparent calc(var(--gallery-grip-shown, 0) * var(--soft-grip-room)), #000 calc(var(--gallery-grip-shown, 0) * (var(--soft-grip-room) + 14px)));
+    mask-image: linear-gradient(to left, transparent calc(var(--gallery-grip-shown, 0) * var(--soft-grip-room)), #000 calc(var(--gallery-grip-shown, 0) * (var(--soft-grip-room) + 14px)));
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-name::placeholder { color: var(--soft-faint); font-weight: 500; opacity: 1; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-name:read-only { cursor: default; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-total:empty { display: none; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-head > .gallery-soft-habit-total {
+    flex: none;
+    margin-inline-end: calc(-1 * var(--soft-grip-room));
+    font-size: 12px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+    opacity: calc(1 - var(--gallery-grip-shown, 0));
+    transition: opacity .12s ease-out;
+  }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-head { gap: 8px; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-head > .gallery-soft-habit-chip { width: 24px; height: 24px; border-radius: 7px; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-head > .gallery-soft-habit-chip > svg { width: 14px; height: 14px; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-head > .gallery-soft-habit-name { font-size: 13px; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-head > .gallery-soft-habit-total { display: none; }
+  /* The streak: its label over the count, the count large, its unit muted. */
+  > .gallery-soft-habit-face > .gallery-soft-habit-top { grid-area: top; align-self: end; min-width: 0; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row { display: flex; align-items: baseline; gap: 10px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure {
+    margin: 0;
+    white-space: nowrap;
+    font: 700 36px/1 var(--soft-num);
+    letter-spacing: -.025em;
+    font-variant-numeric: tabular-nums;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure > .gallery-soft-habit-count { font-weight: inherit; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure > :is(.gallery-soft-habit-before, .gallery-soft-habit-unit) {
+    font: 500 13px/1 var(--soft-font);
+    letter-spacing: 0;
+    color: var(--soft-muted);
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure > .gallery-soft-habit-before { display: none; margin-right: 6px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure > .gallery-soft-habit-unit { margin-left: 4px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-longest {
+    display: none;
+    align-items: center;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 6px;
+    background: var(--soft-track);
+    color: var(--soft-muted);
+    font: 600 11.5px/20px var(--soft-num);
+    white-space: nowrap;
+  }
+  /* Never checked in: a line inviting the first, where the streak stands. */
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-fresh { display: none; max-width: 100px; margin: 0; font-size: 12px; line-height: 1.55; color: var(--soft-text); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-fresh > span { display: block; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-fresh > .gallery-soft-habit-fresh-how { color: var(--soft-muted); }
+  > .gallery-soft-habit-face[data-fresh] > .gallery-soft-habit-top > .gallery-soft-habit-streak { display: none; }
+  > .gallery-soft-habit-face[data-fresh] > .gallery-soft-habit-top > .gallery-soft-habit-fresh { display: block; }
+  /* The button: no line, pale; done pale green; read-only a plain line. */
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-check {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex: none;
+    height: 28px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--soft-accent-soft);
+    color: var(--soft-accent-ink);
+    font: 500 12.5px/1 var(--soft-font);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 20ms ease-in;
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-check > svg { display: block; width: 14px; height: 14px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-check:focus-visible { outline: 2px solid var(--soft-accent); outline-offset: 2px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-check:is(:hover, :focus-visible):not(:disabled) { background: color-mix(in srgb, var(--soft-accent) 20%, var(--soft-card)); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-check.gallery-soft-habit-done { background: var(--soft-good-soft); color: var(--soft-good); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-check.gallery-soft-habit-done:is(:hover, :focus-visible):not(:disabled) { background: color-mix(in srgb, var(--soft-good) 20%, var(--soft-card)); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-top > .gallery-soft-habit-check:disabled { background: transparent; color: var(--soft-muted); cursor: default; }
+  /* The last seven days: a disc each, today's the button; where the words beside them leave less room than
+     the week takes (a long word in English), the discs a little smaller, never past the padding. */
+  > .gallery-soft-habit-face > .gallery-soft-habit-week { grid-area: week; align-self: end; display: flex; justify-content: flex-end; gap: 5px; min-width: 0; margin: 0; padding: 0; list-style: none; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day { display: flex; flex: 0 1 22px; flex-direction: column; align-items: center; gap: 4px; min-width: 0; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day > :is(.gallery-soft-habit-dot, .gallery-soft-habit-today-press) {
+    display: grid;
+    place-items: center;
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 22px;
+    height: auto;
+    aspect-ratio: 1;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--soft-track);
+    color: transparent;
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day > :is(.gallery-soft-habit-dot, .gallery-soft-habit-today-press) > svg { display: block; width: 12px; height: 12px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-kept > .gallery-soft-habit-dot { background: var(--soft-accent); color: var(--soft-on-accent); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day > .gallery-soft-habit-today-press { background: transparent; box-shadow: inset 0 0 0 1.5px var(--soft-accent); color: var(--soft-accent); cursor: pointer; transition: background-color 20ms ease-in; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day > .gallery-soft-habit-today-press:focus-visible { outline: 2px solid var(--soft-accent); outline-offset: 2px; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day > .gallery-soft-habit-today-press:is(:hover, :focus-visible):not(:disabled) { background: var(--soft-accent-soft); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-kept > .gallery-soft-habit-today-press,
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-kept > .gallery-soft-habit-today-press:is(:hover, :focus-visible):not(:disabled) { background: var(--soft-accent); box-shadow: none; color: var(--soft-on-accent); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day > .gallery-soft-habit-today-press:disabled { cursor: default; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-day > .gallery-soft-habit-weekday { font-size: 10.5px; line-height: 12px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-week > .gallery-soft-habit-today > .gallery-soft-habit-weekday { color: var(--soft-accent-ink); font-weight: 600; }
+  /* The last four weeks (a tall card's). */
+  > .gallery-soft-habit-face > .gallery-soft-habit-calendar { grid-area: calendar; display: none; grid-template-columns: repeat(7, 1fr); row-gap: 7px; justify-items: center; align-self: end; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-calendar > .gallery-soft-habit-initial { font-size: 11px; line-height: 14px; color: var(--soft-muted); }
+  > .gallery-soft-habit-face > .gallery-soft-habit-calendar > .gallery-soft-habit-date {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--soft-track);
+    color: var(--soft-muted);
+    font: 500 10.5px/1 var(--soft-num);
+  }
+  > .gallery-soft-habit-face > .gallery-soft-habit-calendar > .gallery-soft-habit-on { background: var(--soft-accent-tint); color: var(--soft-on-tint); font-weight: 600; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-calendar > .gallery-soft-habit-now { background: transparent; box-shadow: inset 0 0 0 1.5px var(--soft-accent); color: var(--soft-accent-ink); font-weight: 600; }
+  > .gallery-soft-habit-face > .gallery-soft-habit-calendar > .gallery-soft-habit-future { background: transparent; color: var(--soft-faint); }
+  /* 2 × 2: 连续 and the streak over a button as wide as the card. */
+  > .gallery-soft-habit-face[data-pad="s"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: 24px 1fr auto; grid-template-areas: "head" "." "top"; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-week { display: none; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-label { display: none; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure { font-size: 30px; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure > .gallery-soft-habit-before { display: inline; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-top > .gallery-soft-habit-fresh { max-width: none; line-height: 1.5; }
+  > .gallery-soft-habit-face[data-pad="s"] > .gallery-soft-habit-top > .gallery-soft-habit-check { display: flex; width: 100%; margin-top: 10px; }
+  /* 4 × 4: the streak, the longest and the button over the last four weeks. */
+  > .gallery-soft-habit-face[data-pad="l"] { grid-template-columns: minmax(0, 1fr); grid-template-rows: 28px auto 1fr auto; grid-template-areas: "head" "top" "." "calendar"; }
+  > .gallery-soft-habit-face[data-pad="l"] > .gallery-soft-habit-week { display: none; }
+  > .gallery-soft-habit-face[data-pad="l"] > .gallery-soft-habit-top { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-top: 18px; }
+  > .gallery-soft-habit-face[data-pad="l"] > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-figure { font-size: 40px; }
+  > .gallery-soft-habit-face[data-pad="l"] > .gallery-soft-habit-top > .gallery-soft-habit-streak > .gallery-soft-habit-row > .gallery-soft-habit-longest { display: inline-flex; }
+  > .gallery-soft-habit-face[data-pad="l"] > .gallery-soft-habit-top > .gallery-soft-habit-fresh { max-width: none; line-height: 1.6; }
+  > .gallery-soft-habit-face[data-pad="l"] > .gallery-soft-habit-top > .gallery-soft-habit-check { display: flex; }
+  > .gallery-soft-habit-face[data-pad="l"] > .gallery-soft-habit-calendar { display: grid; }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it; the head's end kept clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/habit"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/habit"] > .gallery-soft-habit-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}

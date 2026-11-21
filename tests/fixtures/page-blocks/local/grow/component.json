@@ -1,0 +1,14 @@
+{
+  "id": "local/grow",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "加长的列表", "en": "Growing list" },
+  "description": { "zh": "按一下多一行，卡片随内容变高", "en": "A press adds a line; the card grows with it" },
+  "words": "liebiao grow list",
+  "parts": {
+    "items": { "at": ":scope > script.grow-items", "edit": "data" }
+  },
+  "runtime": { "generated": [".grow-list", ".grow-add"] },
+  "places": ["page"],
+  "card": { "w": 4, "h": 1, "fit": "content" }
+}

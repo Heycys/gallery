@@ -1,0 +1,43 @@
+/* The kit's stylesheet, one file per part (docs/render.md, "The kit"). /kit/report.css is these
+   files joined in this order, as they are (src/render/kit-build.mjs): reports load and export that
+   one file, never these.
+
+   Order matters only where rules of the same weight reach the same element, so a file goes after
+   the ones it must win over:
+     code, math   before highlight: a panel's first and last blocks lose their outer margin
+     highlight    before flow: small text (.doc-note) in a panel keeps its own margins
+     highlight    before columns, figure, table, callout and details: a component in a panel
+                  keeps its own margins (a column's, a disclosure's and a detail card's edges
+                  take none whatever the block: flow.css)
+     table        before details: a table in a disclosure fits it
+   The rules for narrow widths and print stand at the end of each file, after what they override. */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./page.css";
+@import "./controls.css";
+@import "./choice.css";
+@import "./sheets.css";
+@import "./state.css";
+@import "./math.css";
+@import "./mention.css";
+@import "./code.css";
+@import "./highlight.css";
+@import "./flow.css";
+@import "./todo.css";
+@import "./flowchart.css";
+@import "./sizes.css";
+@import "./columns.css";
+@import "./figure.css";
+@import "./media.css";
+@import "./image.css";
+@import "./file.css";
+@import "./bookmark.css";
+@import "./embed.css";
+@import "./chart.css";
+@import "./dialog.css";
+@import "./zoom.css";
+@import "./table.css";
+@import "./callout.css";
+@import "./details.css";
+@import "./installed.css";

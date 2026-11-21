@@ -1,0 +1,13 @@
+{
+  "id": "gallery/recent",
+  "apiVersion": 1,
+  "version": "2.0.0",
+  "name": { "zh": "最近编辑", "en": "Recently edited" },
+  "description": { "zh": "最近改过的文档，点一篇就打开它", "en": "The documents edited last: click one to open it" },
+  "words": "zuijinbianji zuijin bianji recent recently edited documents 最近 最近编辑 文档 改过",
+  "parts": {},
+  "runtime": { "generated": [":scope > .gallery-recent-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[4, 4], [4, 2], [4, 6]], "min": { "w": 4, "h": 2 }, "max": { "w": 4, "h": 8 }, "resize": true },
+  "needs": ["workspace"]
+}

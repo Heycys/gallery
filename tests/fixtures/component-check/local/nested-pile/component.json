@@ -1,0 +1,10 @@
+{
+  "id": "local/nested-pile",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "嵌套堆叠", "en": "Nested pile" },
+  "description": { "zh": "画出的一层节点没写进 runtime", "en": "What it draws, a node holding others, is named nowhere" },
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" }
+  }
+}

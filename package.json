@@ -1,0 +1,44 @@
+{
+  "name": "@heycys/gallery",
+  "version": "0.3.1",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "gallery": "src/cli/bin.mjs"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "kit:check": "node tests/unit/run.mjs",
+    "test:browser": "node tests/browser/run.mjs",
+    "test:fuzz": "node tests/browser/fuzz.mjs",
+    "skill:package": "npm run kit:check && node src/cli/package-skill.mjs",
+    "release:build": "node src/cli/release-build.mjs",
+    "test:release": "node tests/release/smoke.mjs",
+    "dev": "npm run dev:local",
+    "predev:local": "node src/cli/build-kit.mjs",
+    "dev:local": "vite --config src/vite.config.ts --host 127.0.0.1 --port 8080 --strictPort"
+  },
+  "devDependencies": {
+    "@types/d3": "^7.4.3",
+    "@types/node": "22.19.19",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "esbuild": "0.28.2",
+    "jsdom": "^29.1.1",
+    "parse5": "8.0.1",
+    "pdfjs-dist": "6.4.299",
+    "puppeteer-core": "25.12.0",
+    "shiki": "4.4.3",
+    "typescript": "5.9.3",
+    "vite": "^8.2.2"
+  },
+  "dependencies": {
+    "d3": "7.9.0",
+    "katex": "0.18.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  }
+}

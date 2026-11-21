@@ -1,0 +1,14 @@
+{
+  "id": "local/memo",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "便条", "en": "Memo" },
+  "description": { "zh": "写几行字，存在页面里", "en": "A few lines, kept in the page" },
+  "words": "biantiao memo note",
+  "parts": {
+    "note": { "at": ":scope > script.memo-data", "edit": "data" }
+  },
+  "runtime": { "generated": [".memo-field"], "attrs": { ":scope": ["data-size", "data-layouts"] } },
+  "places": ["page"],
+  "card": { "sizes": [[4, 2], [4, 4], [6, 4]], "resize": true }
+}

@@ -1,0 +1,13 @@
+{
+  "id": "gallery/tile",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "小方块", "en": "Tile" },
+  "description": { "zh": "测试用的自带块：一个 2×2 的方块", "en": "A test's block of Gallery's own: a 2×2 tile" },
+  "words": "fangkuai tile",
+  "parts": {
+    "text": { "at": ":scope > p", "edit": "none" }
+  },
+  "places": ["page"],
+  "card": { "w": 2, "h": 2 }
+}

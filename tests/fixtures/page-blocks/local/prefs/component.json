@@ -1,0 +1,22 @@
+{
+  "id": "local/prefs",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "设置示例", "en": "Settings sample" },
+  "description": { "zh": "每种设置项各一个，显示成一行字", "en": "One setting of each kind, shown as a line" },
+  "words": "shezhi settings prefs",
+  "parts": {
+    "settings": { "at": ":scope > script.prefs-settings", "edit": "data" }
+  },
+  "runtime": { "generated": [".prefs-shown"] },
+  "places": ["page"],
+  "card": { "w": 4, "h": 2 },
+  "settings": [
+    { "key": "title", "label": { "zh": "标题", "en": "Title" }, "type": "text", "default": "默认标题" },
+    { "key": "count", "label": { "zh": "数量", "en": "Count" }, "type": "number", "default": 3 },
+    { "key": "mode", "label": { "zh": "样式", "en": "Style" }, "type": "select", "options": ["简洁", "详细"], "default": "简洁" },
+    { "key": "day", "label": { "zh": "日期", "en": "Date" }, "type": "date" },
+    { "key": "framed", "label": { "zh": "显示边框", "en": "Show a border" }, "type": "switch", "default": false },
+    { "key": "doc", "label": { "zh": "文档", "en": "Document" }, "type": "document" }
+  ]
+}

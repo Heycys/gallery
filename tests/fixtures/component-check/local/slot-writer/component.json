@@ -1,0 +1,12 @@
+{
+  "id": "local/slot-writer",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "写插槽", "en": "Slot writer" },
+  "description": { "zh": "读起来没错，运行时往插槽里写", "en": "Nothing wrong to read, and it writes in its slot as it runs" },
+  "words": "xiechacao slot",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "body": { "edit": "flow" }
+  }
+}

@@ -1,0 +1,57 @@
+/* 写作偏好：多份偏好文档。只在标题栏下面加一排标签，编辑区仍然占满整个宽度。
+   外壳和编辑区沿用 .pref-dialog / .pref-head / .pref-save / .pref-note / .pref-body；
+   开关、菜单、输入框用 Gallery 已有的 .mi-switch / .menu / .pop-input。
+   选中的标签和侧栏里选中的一行一样：灰色底（--bacIntTra），悬停再深一点（--bacTerTra）。 */
+.wp-dialog { container-type: inline-size; }
+/* 菜单挂在 body，需位于偏好窗口（1500）之上。 */
+.menu.wp-menu { z-index: 1600; }
+
+.wp-tabs { flex: none; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; border-bottom: 1px solid var(--borSec); }
+.wp-strip { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; height: 100%; padding: 0 4px; margin: 0 -4px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+.wp-strip::-webkit-scrollbar { display: none; }
+
+.wp-tab { flex: none; display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px; border-radius: var(--r-ctl); color: var(--texSec); font-size: 14px; white-space: nowrap; cursor: pointer; user-select: none; outline: none; }
+.wp-tab:hover { background: var(--bacIntTra); }
+.wp-tab[aria-selected="true"] { background: var(--bacIntTra); color: var(--texPri); font-weight: 500; }
+.wp-tab[aria-selected="true"]:hover { background: var(--bacTerTra); }
+.wp-tab:active:not(.wp-dragging) { background: var(--bacPre); }
+.wp-tab-off .wp-tab-name { color: var(--texTer); }
+.wp-tag { color: var(--texTer); font-size: 12px; font-weight: 400; }
+.wp-tab .pop-input { width: 8em; height: 24px; margin: 0 -6px; padding: 0 6px; font-size: 14px; font-weight: 400; }
+.wp-tab.wp-dragging { opacity: .4; }
+
+.wp-new { flex: none; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-ctl); color: var(--icoSec); cursor: pointer; }
+.wp-new:hover { background: var(--bacIntTra); }
+.wp-new:active { background: var(--bacPre); }
+.wp-new svg { width: 16px; height: 16px; stroke-width: 1.6px; }
+
+.wp-enable { flex: none; display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 4px 0 8px; border-radius: var(--r-ctl); color: var(--texSec); font: inherit; font-size: 13px; cursor: pointer; }
+.wp-enable:hover { background: var(--bacIntTra); }
+.wp-enable:active { background: var(--bacPre); }
+.wp-enable .mi-switch { margin: 0; }
+
+@container (max-width: 520px) { .wp-enable-label { display: none; } }
+
+.wp-editor { flex:1; min-height:0; display:flex; flex-direction:column; }
+.wp-editor[hidden] { display:none; }
+.wp-tab { position:relative; }
+.wp-tab[data-drop]::after { content:""; position:absolute; top:0; bottom:0; width:2px; background:var(--blue); }
+.wp-tab[data-drop="before"]::after { left:-1px; }
+.wp-tab[data-drop="after"]::after { right:-1px; }
+
+/* 第一次打开时的说明（用户 2026-11-13）：标题栏和标签之间，样子同首页第一次打开时的说明（editor/page/board/hint.mjs
+   .ge-home-hint-box）：淡灰底、10px 圆角、没有边线，右上角一个 ×（关掉就不再出现）。两个示例按钮平的：没有边线、
+   平时没有底色，指针移上去灰一点（底已经是灰的，所以比它深一档：--bacTerTra），并排。 */
+.wp-hint { position: relative; flex: none; margin: 12px 12px 0; padding: 14px 44px 12px 16px; border-radius: 10px; background: var(--bacIntTra); color: var(--texPri); font-size: 14px; line-height: 1.6; }
+.wp-hint p { margin: 0; }
+.wp-hint p + p { margin-top: 4px; }
+.wp-hint .wp-hint-title { font-weight: 600; }
+.wp-hint .wp-hint-ask { margin-top: 10px; color: var(--texSec); }
+.wp-hint-act { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 0 -8px; }
+.wp-hint-example { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 10px 0 8px; border-radius: var(--r-ctl); color: var(--texPri); font-size: 14px; white-space: nowrap; }
+.wp-hint-example svg { width: 16px; height: 16px; color: var(--icoSec); stroke-width: 1.6px; }
+.wp-hint-example:hover:not(:disabled), .wp-hint-close:hover:not(:disabled) { background: var(--bacTerTra); }
+.wp-hint-example:active:not(:disabled), .wp-hint-close:active:not(:disabled) { background: var(--bacPre); }
+.wp-hint-example:disabled, .wp-hint-close:disabled { opacity: var(--off); cursor: default; }
+.wp-hint-close { position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: var(--r-small); color: var(--icoSec); }
+.wp-hint-close svg { width: 16px; height: 16px; }

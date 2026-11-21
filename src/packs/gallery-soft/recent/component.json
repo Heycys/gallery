@@ -1,0 +1,13 @@
+{
+  "id": "gallery-soft/recent",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "最近编辑", "en": "Recently edited" },
+  "description": { "zh": "最近改过的文档，像侧栏一样一行一篇，点一篇就打开它", "en": "The documents edited last, a row each as in the sidebar: click one to open it" },
+  "words": "zuijinbianji zuijin bianji recent recently edited documents 最近 最近编辑 文档 改过",
+  "parts": {},
+  "runtime": { "generated": [":scope > .gallery-soft-recent-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[4, 4], [4, 2], [4, 6]], "min": { "w": 4, "h": 2 }, "max": { "w": 4, "h": 8 }, "resize": true },
+  "needs": ["workspace"]
+}

@@ -1,0 +1,14 @@
+{
+  "id": "local/brief",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "要点卡", "en": "Brief" },
+  "description": { "zh": "一个标题，下面放任意内容，底部数字数", "en": "A title over any blocks, its words counted below" },
+  "words": "yaodianka brief card 要点 卡片",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "body": { "edit": "flow" }
+  },
+  "runtime": { "generated": [".brief-count"] },
+  "markdown": "parts"
+}

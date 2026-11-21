@@ -1,0 +1,2 @@
+/* What must not end an inline copy, in a comment: </style> <!-- <script>. A comment's url(tick.svg) names no file. */
+[data-doc-component="local/tally"] .tally-count { display: inline-block; min-width: 20px; padding-left: 20px; background: url(tick.svg) left center / 16px no-repeat; color: rgb(1, 2, 3); }

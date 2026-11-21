@@ -1,0 +1,186 @@
+/* =========================================================
+   设计变量，明暗两套；
+   --icoPri（图标的墨色 #5c5a55）、--sidBac（侧栏的暖灰底 #f3f2ef）是 2026-11-06 用户为侧栏与图标定的
+   ========================================================= */
+:root {
+  --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Helvetica, "PingFang SC", "Microsoft YaHei", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --mono: "SFMono-Regular", Menlo, Consolas, "PT Mono", "Liberation Mono", Courier, monospace;
+  --sb-w: 270px;
+
+  --texPri: #2c2c2b; --texSec: #7d7a75; --texTer: #a19e99; --texAcc: #5f5e59; --texDis: #bcbab6;
+  --icoPri: #5c5a55; --icoSec: #8e8b86; --sidIco: #91918e;
+  --borPri: #e6e5e3; --borSec: #f0efed; --borPriTra: rgba(28,19,1,.11); --borStrTra: rgba(27,21,0,.19);
+  --crumbSep: #d4d3cf;
+  --bacPri: #ffffff; --bacSec: #f9f8f7; --bacEle: #ffffff; --popBac: #ffffff;
+  /* 侧栏底色（一层暖灰）；侧栏与编辑区之间不画线。深色是 #242423，比页面略亮
+     （2026-11-17：原来的 #141413 比页面还暗，用户要它稍微白一点） */
+  --sidBac: #f3f2ef;
+  /* 页面自己的底色（kit 的 --doc-bg）：垫在页面的 iframe 后面，触控板滚过顶部或底部时露出来的就是它 */
+  --pageBac: #ffffff;
+  /* 自定义页的底色（kit 的 --gallery-page-fill）：它的顶栏用 */
+  --galleryPageBac: #ffffff;
+  --bacIntTra: rgba(33,27,23,.05); --bacTerTra: rgba(42,28,0,.07);
+  /* 按下去的一瞬：悬停底色的两倍（编辑器的 --ge-bac-pre 同值）；
+     打开着的那一行（--bacSelTra）比悬停深一点：所在的位置排在指针所在的前面 */
+  --bacPre: rgba(33,27,23,.10); --bacSelTra: rgba(33,27,23,.09);
+  /* 输入框平时的样子（编辑器的 --ge-field 同值）；--inputBac 只剩改名框的底 */
+  --fieldBac: rgba(66,35,3,.03);
+  --inputBac: rgba(242,241,238,.6);
+  --codeBg: #f9f8f7;
+  --blue: #2383e2; --blueLine: rgba(35,131,226,.57); --blueBg: rgba(35,131,226,.14);
+  /* 蓝色用作文字时（选中的字体、「选择文件」）：浅色同 --blue，深色另有一个看得清的蓝（编辑器的 --ge-accent-text） */
+  --blueTex: #2383e2;
+  /* 侧栏里别人（Agent）刚改了、读者还没看的页面的圆点（sidebar.css .row-new）：常见的「有新的」蓝；绿是文档里 Agent 加的字，不用 */
+  --newDot: #2383e2;
+  /* 当前页面那一项（面包屑浮层）：极淡的蓝底 */
+  --bluBacIntTra: rgba(0,121,228,.075);
+  /* 框选矩形与选中遮罩共用同一个颜色 */
+  --select: rgba(35,131,226,.14);
+  --red: #eb5757; --star: #cb912f;
+  /* 主按钮（添加、确认、保存、导出）：淡蓝底常显、蓝字，指针在上面时深一点；危险的主按钮（永久删除）同样的淡红。
+     不用实心的蓝（--blue）和白字：用户要按钮平、淡（2026-11-09 又说了一次：界面是扁平的，按钮不带边框线） */
+  --btnPriBg: rgba(35,131,226,.14); --btnPriBgHi: rgba(35,131,226,.22); --btnPriBgPre: rgba(35,131,226,.30); --btnPriTex: #1a69bd;
+  --btnDanBg: rgba(235,87,87,.14); --btnDanBgHi: rgba(235,87,87,.22); --btnDanBgPre: rgba(235,87,87,.30); --btnDanTex: #c4403c;
+  /* 警告的字（已保存旁的「离线」「待处理」）：橙色底上看得清的橙（4.86:1）；--ora-tx 只配做色块里的色 */
+  --warnTex: #9d5410;
+  /* 不能按、用不了时的淡：一个值 */
+  --off: .4;
+  --overlay: rgba(15,15,15,.6);
+  /* 压在另一个对话框上的确认的遮罩：下面那个已经有自己的遮罩了，这一层只淡淡地再压一下（components.css .dialog-overlay） */
+  --overlayNested: rgba(15,15,15,.3);
+  /* 提示条的底（和编辑器的页面提示条同一个值）：文字的墨色，不比它更黑；气泡提示另有自己的底（明暗相同） */
+  --tipBg: #2c2c2b; --tipTex: #f0efed; --tipSub: #a19e99;
+  --tooltipBg: #2c2c2b; --tooltipSub: #ada9a3;
+  --scrollThumb: rgba(42,28,0,.14);
+  --floatOutline: rgba(42,28,0,.07);
+  /* 三档高度：跟着指针的小块（Md）、菜单和浮层（Lg）、占满视线的对话框（Scr：60% 的遮罩上才看得出边） */
+  --shaOutMd: 0px 8px 12px 0px rgba(25,25,25,.027), 0px 2px 6px 0px rgba(25,25,25,.027), 0px 0px 0px 1px var(--floatOutline);
+  --shaOutLg: 0px 20px 24px 0px rgba(25,25,25,.05), 0px 5px 8px 0px rgba(25,25,25,.027), 0px 0px 0px 1px var(--floatOutline);
+  --shaOutScr: 0px 24px 48px 0px rgba(25,25,25,.24), 0px 4px 12px 0px rgba(25,25,25,.14), 0px 0px 0px 1px var(--floatOutline);
+
+  /* ── 质感（用户 2026-11-17 定的；编辑器、套件各有一份同样的值）──
+     圆角：控件（按钮、图标按钮、输入框、下拉、对话框里的标签和列表行）8；浮出来的卡片（菜单、浮层）14，卡片里的行 9，卡片四边留 5；
+     对话框、搜索面板的外壳 16；行尾的小按钮 6。首页卡片、气泡提示、提示条不动 */
+  --r-ctl: 8px; --r-card: 14px; --r-row: 9px; --r-shell: 16px; --r-small: 6px; --pad-card: 5px;
+  /* 三档灰底，还是现在的暖灰：浅（5%，普通按钮和侧栏行的悬停）、中（7%，选中；浮出卡片里的行的悬停）、深（10%，按下） */
+  --fillQuiet: var(--bacIntTra); --fill: var(--bacTerTra); --fillStrong: var(--bacPre);
+  /* 开关打开、复选框勾上：同一种平静的蓝（有颜色、不那么鲜艳）；开关关着的底 */
+  --ctlBlue: #4A81D4; --swTrack: rgba(0,0,0,.16);
+  /* 菜单里危险的一行（移至回收区、删除）指针移上：淡红底、红字（--btnDanTex） */
+  --danTint: rgba(235,87,87,.10);
+  /* 顶栏「已保存」前面的点 */
+  --okDot: #448361;
+  /* 搜索结果里找到的字：黄底 */
+  --find: rgba(255,204,0,.42);
+  /* 浮层的影子：卡片（菜单、浮层）一档，贴着内容的条一档轻的；外面那一圈还是 1px 的极淡线（不用 0.5px：125% 的屏上会糊） */
+  --shadowCard: 0 0 0 1px var(--floatOutline), 0 2px 8px rgba(0,0,0,.06), 0 14px 40px rgba(0,0,0,.16);
+  --shadowBar: 0 0 0 1px var(--floatOutline), 0 1px 2px rgba(0,0,0,.06), 0 6px 20px rgba(0,0,0,.10);
+  /* 动效的曲线：出现、淡出（一开始就动）；整块滑动（侧栏、开关） */
+  --easeOut: cubic-bezier(.23,1,.32,1); --easeSheet: cubic-bezier(.32,.72,0,1);
+  /* 悬停的灰底：移上立刻出现，移走 100ms 淡掉（用户：比 140ms 再快一点）；按下立刻深一档，不缩放 */
+  --hoverOut: 100ms;
+  /* 菜单从触发它的那个角长出来 140ms、只淡出 90ms；对话框和它的暗色一起淡入 180ms、一起淡出 140ms；开关 160ms */
+  --menuIn: 140ms; --menuOut: 90ms; --dialogIn: 180ms; --dialogOut: 140ms; --switchDur: 160ms;
+  /* 侧栏收起、展开、停靠：整栏一起滑、一起淡，280ms，--easeSheet；顶栏的展开按钮、页面的宽跟着同一个钟 */
+  --sbDur: 280ms;
+  /* 空着的地方的说明框（空工作区，和空白的自定义页那一个同样的灰：editor/page/board/hint.mjs .ge-home-hint-box） */
+  --noteBg: rgba(55,53,47,.04);
+
+  /* 9 种颜色：文字色（明暗相同）/ 色块底色 / 块背景（半透明）/ 色块描边 */
+  --gra-tx: #7d7a75; --gra-sw: #f0efed; --gra-bg: rgba(42,28,0,.07);    --gra-bd: rgba(28,19,1,.11);
+  --bro-tx: #9f765a; --bro-sw: #f5ede9; --bro-bg: rgba(139,46,0,.086);  --bro-bd: rgba(127,51,0,.157);
+  --ora-tx: #d27b2d; --ora-sw: #fbebde; --ora-bg: rgba(224,101,1,.13);  --ora-bd: rgba(196,88,0,.204);
+  --yel-tx: #cb9434; --yel-sw: #f9f3dc; --yel-bg: rgba(211,168,0,.137); --yel-bd: rgba(209,156,0,.282);
+  --gre-tx: #50946e; --gre-sw: #e8f1ec; --gre-bg: rgba(0,100,45,.09);   --gre-bd: rgba(0,96,38,.157);
+  --blu-tx: #387dc9; --blu-sw: #e5f2fc; --blu-bg: rgba(0,124,215,.094); --blu-bd: rgba(0,118,217,.204);
+  --pur-tx: #9a6bb4; --pur-sw: #f3ebf9; --pur-bg: rgba(102,0,178,.08);  --pur-bd: rgba(92,0,163,.14);
+  --pin-tx: #c14c8a; --pin-sw: #fae9f1; --pin-bg: rgba(197,0,93,.086);  --pin-bd: rgba(183,0,78,.153);
+  --red-tx: #cf5148; --red-sw: #fce9e7; --red-bg: rgba(223,22,0,.094);  --red-bd: rgba(206,24,0,.165);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --texPri: #f0efed; --texSec: #ada9a3; --texTer: #7d7a75; --texAcc: #bcbab6; --texDis: #5f5e59;
+    --icoPri: #a9a69e; --icoSec: #ada9a3; --sidIco: #9b9b9b;
+    --borPri: #383836; --borSec: #2c2c2b; --borPriTra: rgba(255,255,235,.1); --borStrTra: rgba(255,252,235,.306);
+    --crumbSep: #383836;
+    --bacPri: #191919; --bacSec: #202020; --bacEle: #202020; --popBac: #252525;
+    --sidBac: #242423;
+    --pageBac: #181818;
+    --galleryPageBac: #191919;
+    --bacIntTra: rgba(255,255,255,.055); --bacTerTra: rgba(255,255,243,.082);
+    --bacPre: rgba(255,255,255,.11); --bacSelTra: rgba(255,255,255,.1);
+    --fieldBac: rgba(252,252,252,.03);
+    --blueTex: #5e9fe8;
+    --bluBacIntTra: rgba(68,153,255,.118);
+    --inputBac: rgba(255,255,255,.055);
+    --codeBg: rgba(255,255,255,.03);
+    --red: #ff6b6b; --star: #d99e35; --overlay: rgba(15,15,15,.8); --overlayNested: rgba(15,15,15,.4); --newDot: #3b8ff0;
+    --btnPriBg: rgba(67,155,255,.24); --btnPriBgHi: rgba(67,155,255,.34); --btnPriBgPre: rgba(67,155,255,.44); --btnPriTex: #7ab8ff;
+    --btnDanBg: rgba(255,104,92,.24); --btnDanBgHi: rgba(255,104,92,.34); --btnDanBgPre: rgba(255,104,92,.44); --btnDanTex: #ff9a90;
+    --warnTex: #f0a868;
+    --tipBg: #2f2f2f; --tipTex: #f0efed; --tipSub: #9b9b9b;
+    --tooltipBg: #2c2c2b; --tooltipSub: #ada9a3;
+    --scrollThumb: rgba(255,255,243,.14);
+    --floatOutline: #383836;
+    --shaOutMd: 0px 0px 0px 1px var(--floatOutline), 0px 4px 12px -2px rgba(25,25,25,.08);
+    --shaOutLg: 0px 0px 0px 1px var(--floatOutline), 0px 14px 28px -6px rgba(25,25,25,.2), 0px 2px 4px -1px rgba(25,25,25,.118);
+    --shaOutScr: 0px 0px 0px 1px var(--floatOutline), 0px 24px 48px 0px rgba(25,25,25,.64), 0px 4px 12px 0px rgba(25,25,25,.56);
+    --ctlBlue: #4F7FCB; --swTrack: rgba(255,255,255,.20); --danTint: rgba(255,104,92,.16); --find: rgba(255,204,0,.30); --okDot: #6fc596; --noteBg: rgba(255,255,255,.045);
+    --shadowCard: 0 0 0 1px var(--floatOutline), 0 14px 40px rgba(0,0,0,.5);
+    --shadowBar: 0 0 0 1px var(--floatOutline), 0 6px 20px rgba(0,0,0,.36);
+    --gra-sw: #383836; --gra-bg: rgba(255,255,235,.1);   --gra-bd: rgba(255,255,235,.1);
+    --bro-sw: #45362d; --bro-bg: rgba(255,177,129,.192); --bro-bd: rgba(255,177,129,.192);
+    --ora-sw: #53361f; --ora-bg: rgba(255,147,75,.28);   --ora-bd: rgba(255,147,75,.28);
+    --yel-sw: #504425; --yel-bg: rgba(255,205,75,.24);   --yel-bd: rgba(255,205,75,.24);
+    --gre-sw: #263d30; --gre-bg: rgba(108,255,172,.157); --gre-bd: rgba(108,255,172,.157);
+    --blu-sw: #233850; --blu-bg: rgba(67,155,255,.24);   --blu-bd: rgba(67,155,255,.24);
+    --pur-sw: #3c2d47; --pur-bg: rgba(200,125,255,.2);   --pur-bd: rgba(200,125,255,.2);
+    --pin-sw: #4e2b3c; --pin-bg: rgba(255,103,177,.23);  --pin-bd: rgba(255,103,177,.23);
+    --red-sw: #502c29; --red-bg: rgba(255,104,92,.24);   --red-bd: rgba(255,104,92,.24);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --texPri: #f0efed; --texSec: #ada9a3; --texTer: #7d7a75; --texAcc: #bcbab6; --texDis: #5f5e59;
+  --icoPri: #a9a69e; --icoSec: #ada9a3; --sidIco: #9b9b9b;
+  --borPri: #383836; --borSec: #2c2c2b; --borPriTra: rgba(255,255,235,.1); --borStrTra: rgba(255,252,235,.306);
+  --crumbSep: #383836;
+  --bacPri: #191919; --bacSec: #202020; --bacEle: #202020; --popBac: #252525;
+  --sidBac: #242423;
+  --pageBac: #181818;
+  --galleryPageBac: #191919;
+  --bacIntTra: rgba(255,255,255,.055); --bacTerTra: rgba(255,255,243,.082);
+  --bacPre: rgba(255,255,255,.11); --bacSelTra: rgba(255,255,255,.1);
+  --fieldBac: rgba(252,252,252,.03);
+  --blueTex: #5e9fe8;
+  --bluBacIntTra: rgba(68,153,255,.118);
+  --inputBac: rgba(255,255,255,.055);
+  --codeBg: rgba(255,255,255,.03);
+  --red: #ff6b6b; --star: #d99e35; --overlay: rgba(15,15,15,.8); --overlayNested: rgba(15,15,15,.4); --newDot: #3b8ff0;
+  --btnPriBg: rgba(67,155,255,.24); --btnPriBgHi: rgba(67,155,255,.34); --btnPriBgPre: rgba(67,155,255,.44); --btnPriTex: #7ab8ff;
+  --btnDanBg: rgba(255,104,92,.24); --btnDanBgHi: rgba(255,104,92,.34); --btnDanBgPre: rgba(255,104,92,.44); --btnDanTex: #ff9a90;
+  --warnTex: #f0a868;
+  --tipBg: #2f2f2f; --tipTex: #f0efed; --tipSub: #9b9b9b;
+  --tooltipBg: #2c2c2b; --tooltipSub: #ada9a3;
+  --scrollThumb: rgba(255,255,243,.14);
+  --floatOutline: #383836;
+  --shaOutMd: 0px 0px 0px 1px var(--floatOutline), 0px 4px 12px -2px rgba(25,25,25,.08);
+  --shaOutLg: 0px 0px 0px 1px var(--floatOutline), 0px 14px 28px -6px rgba(25,25,25,.2), 0px 2px 4px -1px rgba(25,25,25,.118);
+  --shaOutScr: 0px 0px 0px 1px var(--floatOutline), 0px 24px 48px 0px rgba(25,25,25,.64), 0px 4px 12px 0px rgba(25,25,25,.56);
+  --ctlBlue: #4F7FCB; --swTrack: rgba(255,255,255,.20); --danTint: rgba(255,104,92,.16); --find: rgba(255,204,0,.30); --okDot: #6fc596; --noteBg: rgba(255,255,255,.045);
+  --shadowCard: 0 0 0 1px var(--floatOutline), 0 14px 40px rgba(0,0,0,.5);
+  --shadowBar: 0 0 0 1px var(--floatOutline), 0 6px 20px rgba(0,0,0,.36);
+  --gra-sw: #383836; --gra-bg: rgba(255,255,235,.1);   --gra-bd: rgba(255,255,235,.1);
+  --bro-sw: #45362d; --bro-bg: rgba(255,177,129,.192); --bro-bd: rgba(255,177,129,.192);
+  --ora-sw: #53361f; --ora-bg: rgba(255,147,75,.28);   --ora-bd: rgba(255,147,75,.28);
+  --yel-sw: #504425; --yel-bg: rgba(255,205,75,.24);   --yel-bd: rgba(255,205,75,.24);
+  --gre-sw: #263d30; --gre-bg: rgba(108,255,172,.157); --gre-bd: rgba(108,255,172,.157);
+  --blu-sw: #233850; --blu-bg: rgba(67,155,255,.24);   --blu-bd: rgba(67,155,255,.24);
+  --pur-sw: #3c2d47; --pur-bg: rgba(200,125,255,.2);   --pur-bd: rgba(200,125,255,.2);
+  --pin-sw: #4e2b3c; --pin-bg: rgba(255,103,177,.23);  --pin-bd: rgba(255,103,177,.23);
+  --red-sw: #502c29; --red-bg: rgba(255,104,92,.24);   --red-bd: rgba(255,104,92,.24);
+  color-scheme: dark;
+}

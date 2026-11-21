@@ -1,0 +1,18 @@
+{
+  "id": "gallery/heatmap",
+  "apiVersion": 1,
+  "version": "2.0.0",
+  "name": { "zh": "编辑热力图", "en": "Editing heatmap" },
+  "description": { "zh": "过去一年每天编辑了几次或写了多少字，像 GitHub 的贡献图", "en": "How often, or how many words, the workspace was edited each day of the past year, like GitHub's contribution graph" },
+  "words": "bianjireilitu reilitu heatmap activity contributions calendar 热力图 编辑 贡献 日历 字数 每天",
+  "parts": {
+    "settings": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-heatmap-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[8, 4], [12, 4], [4, 4], [12, 3], [8, 3], [8, 2]], "resize": true },
+  "settings": [
+    { "key": "words", "label": { "zh": "按字数显示", "en": "Show words, not edits" }, "type": "switch", "default": false }
+  ],
+  "needs": ["workspace"]
+}

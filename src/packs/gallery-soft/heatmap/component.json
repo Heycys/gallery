@@ -1,0 +1,18 @@
+{
+  "id": "gallery-soft/heatmap",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "编辑热力图", "en": "Editing heatmap" },
+  "description": { "zh": "最近几个月每天编辑了几次或写了多少字，格子画得大，旁边是这段时间的数，以及你和 Agent 各占多少", "en": "How often, or how many words, the workspace was edited each day of the last months, large squares beside the period's figures and how much of it was yours and the Agent's" },
+  "words": "bianjireilitu reilitu heatmap activity contributions calendar 热力图 编辑 贡献 日历 字数 每天",
+  "parts": {
+    "settings": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-soft-heatmap-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[8, 4], [6, 4], [12, 4], [8, 3], [8, 2]], "resize": true },
+  "settings": [
+    { "key": "words", "label": { "zh": "按字数显示", "en": "Show words, not edits" }, "type": "switch", "default": false }
+  ],
+  "needs": ["workspace"]
+}

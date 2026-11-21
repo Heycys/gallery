@@ -1,0 +1,12 @@
+{
+  "id": "gallery-soft/today",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "问候与日期", "en": "Greeting and date" },
+  "description": { "zh": "按时间问候，显示今天的日期和这一周，到点自己更新", "en": "A greeting by the time of day, today's date and its week, kept up to date by the clock" },
+  "words": "wenhouyuriqi wenhou riqi xingqi jintian today greeting date 问候 日期 星期 今天 时间",
+  "parts": {},
+  "runtime": { "generated": [":scope > .gallery-soft-today-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[4, 2], [2, 2]], "resize": true }
+}

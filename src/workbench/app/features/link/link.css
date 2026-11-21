@@ -1,0 +1,10 @@
+/* 网页链接（LinkView.tsx）：和报告区一样撑满主区剩下的地方；最近的几个网页叠在一起，只显示打开着的那个 */
+.link-view { flex: 1; min-height: 0; position: relative; background: var(--pageBac); }
+.link-view.off, .link-pane.off { display: none; }
+.link-pane { position: absolute; inset: 0; display: flex; }
+.link-frame { display: block; flex: 1; width: 100%; height: 100%; border: 0; background: #fff; }
+/* 不让嵌入的网站：一张卡片，网址、在浏览器中打开 */
+.link-refused { flex: 1; }
+.link-refused-icon { width: 36px; height: 36px; margin-bottom: 6px; color: var(--texTer); }
+.link-refused-icon svg { width: 36px; height: 36px; }
+.link-refused-url { max-width: min(560px, 90%) !important; color: var(--texTer) !important; font-size: 13px !important; word-break: break-all; }

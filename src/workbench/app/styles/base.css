@@ -1,0 +1,133 @@
+* { box-sizing: border-box; }
+html, body, #root { margin: 0; height: 100%; }
+/* Scrollbars: a thumb on a transparent track in either theme (inherited by every part). */
+html { scrollbar-color: var(--scrollThumb) transparent; }
+body {
+  font-family: var(--font); font-size: 16px; line-height: 1.5;
+  background: var(--bacPri); color: var(--texPri);
+  overflow: hidden; -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: inherit; }
+svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+svg.fill { fill: currentColor; stroke: none; }
+svg.solid { fill: currentColor; }
+/* Lucide 的图标（components/icons.ts 里 class="lu"，lucide-react 1.67.0 的那几枚，24 格）：线宽 1.75，比 Lucide 默认的 2 细一点 */
+svg.lu { stroke-width: 1.75; }
+/* <Icon> 的外层：不参与布局，SVG 相当于父元素的直接子元素 */
+.ic { display: contents; }
+/* 首帧不播放过渡动画（避免加载时侧栏从展开动画到收起） */
+body.preload * { transition: none !important; }
+
+/* 菜单和浮层出现（lib/menuMotion.ts）：从触发它的那个角（transform-origin 由脚本给）0.96 → 1 加淡入，140ms；用键盘打开的不做（.menu-still）。
+   离开只淡出 90ms：菜单已经卸下，留一张不接指针、读屏不读的样子淡掉（lib/afterimage.ts ghostOut） */
+@keyframes menu-in { from { opacity: 0; transform: scale(.96); } }
+@keyframes fade-in { from { opacity: 0; } }
+/* 对话框（确认、写作偏好、组件列表、拓展列表、历史版本、导出、导入、搜索）：一种做法。外壳圆角 16；
+   和它后面的暗色一起淡入 180ms（暗色是颜色在变，对话框是不透明度；不位移、不缩放）；
+   关上时两样一起淡出 140ms（lib/afterimage.ts：对话框马上卸下，留下的样子淡掉） */
+@keyframes overlay-in { from { background-color: transparent; } }
+:is(.modal, .pref-overlay, .xf-overlay) { animation: overlay-in var(--dialogIn) var(--easeOut); }
+:is(.dialog, .pref-dialog, .xf-export, .xf-import, .search-panel) { border-radius: var(--r-shell); animation: fade-in var(--dialogIn) var(--easeOut); }
+/* 关上时留下来淡掉的样子（lib/afterimage.ts）：盖在原处、不接指针；里面是它在影子树里的一份 */
+.afterimage { position: fixed; inset: 0; pointer-events: none; }
+/* 等的时候才出来的字和细线（打开文档、写作偏好、搜索）：先藏着，0.3 秒还没好才淡出来，快的时候什么也看不到 */
+@keyframes wait-in { to { opacity: 1; } }
+.report-state.wait > p, .sb-note.wait { opacity: 0; animation: wait-in .2s ease-out .3s forwards; }
+
+/* 换外观时整个窗口淡过去（state/theme.ts setTheme：浏览器的视图过渡，两张窗口的画面交叉淡入淡出），160ms */
+:root.theme-fade::view-transition-old(root), :root.theme-fade::view-transition-new(root) { animation-duration: 160ms; animation-timing-function: ease-out; }
+
+/* 选中的字：淡蓝（和报告页的选中一样），不用浏览器自己的蓝；顶栏和侧栏底部是控件，拖一下不选字（里面的输入框照旧能选） */
+::selection { background: rgba(35,131,226,.28); }
+.topbar, .sb-foot { user-select: none; }
+
+/* 减少动态效果：所有过渡和动画在一瞬间走完（时长不取 0：transitionend 照样来），不动延迟（.pref-loading 的 .3 秒另有自己的保护）。
+   和套件的规则同一条（render/kit/styles/base.css），再加上动画：对话框、菜单、遮罩的入场、提示条的升起、侧栏的滑动、开关、箭头都在里面 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
+  /* 菜单和对话框的出现只剩淡入（不动、不缩放：淡入淡出不算动），时长照旧 */
+  .menu:not(.menu-still), .crumb-pop:not(.menu-still) { animation: fade-in var(--menuIn) var(--easeOut) !important; }
+  :is(.modal, .pref-overlay, .xf-overlay, .dialog, .pref-dialog, .xf-export, .xf-import, .search-panel, .card-underlay) { animation-duration: var(--dialogIn) !important; }
+}
+
+/* 应用骨架 */
+.app { display: flex; height: 100vh; height: 100dvh; font-size: 14px; }
+.main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; background: var(--bacPri); font-size: 16px; }
+.sandbox-banner { flex: none; padding: 2px 12px; text-align: center; font-size: 12px; font-weight: 500; color: var(--texPri); background: var(--yel-sw); }
+
+/* 悬停和按下（2026-11-17 定的）：移上立刻出现灰底，移走 100ms 淡掉；按下立刻深一档；不缩放。
+   键盘走到它（:focus-visible）也是立刻出现，和以前一样不淡入；焦点走开时同样 100ms 淡掉。
+   这里列的是工作台里平时没有底、指针来了才有灰底的控件和行（侧栏自己的行在 sidebar.css）；颜色各自给：
+   普通按钮和对话框里的行移上 5%（--fillQuiet），浮出卡片里的行 7%（--fill），按下 10%（--fillStrong） */
+:is(.icon-btn, .g-icon-btn, .row-act, .dialog-btn, .g-btn, .menu-item, .trash-item, .crumb, .crumb-pop-item, .look-font, .look-option,
+    .xf-select, .xf-btn, .search-item, .project-row, .project-toggle, .pref-save, .comp-line, .comp-opt, .comp-pack, .comp-back, .comp-import-pick,
+    .wp-tab, .wp-new, .wp-enable, .wp-hint-example, .wp-hint-close, .hist-item, .ext-link, .ext-add, .present-btn, .present-zoom, .ws-btn, .g-sidebar-row, .report-blank-copy) {
+  transition: background-color var(--hoverOut) ease-out;
+}
+:is(.icon-btn, .g-icon-btn, .row-act, .dialog-btn, .g-btn, .menu-item, .trash-item, .crumb, .crumb-pop-item, .look-font, .look-option,
+    .xf-select, .xf-btn, .search-item, .project-row, .project-toggle, .pref-save, .comp-line, .comp-opt, .comp-pack, .comp-back, .comp-import-pick,
+    .wp-tab, .wp-new, .wp-enable, .wp-hint-example, .wp-hint-close, .hist-item, .ext-link, .ext-add, .present-btn, .present-zoom, .ws-btn, .g-sidebar-row, .report-blank-copy):is(:hover, :active, .active, :focus-visible) {
+  transition: none;
+}
+
+/* 通用按钮：28×28，圆角 8（控件的圆角），不做成圆的 */
+:is(.icon-btn,.g-icon-btn) {
+  flex: none; width: 28px; height: 28px; border-radius: var(--r-ctl);
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--icoSec);
+}
+/* 线宽：画出来是 1.3px，不管图标是哪一套、画多大（线宽 × 画的大小 ÷ 格数）：自绘的 20 格画 20px、Lucide 的 24 格画 18px（1.75）、16px（1.95） */
+:is(.icon-btn,.g-icon-btn) svg { width: 20px; height: 20px; stroke-width: 1.3; }
+:is(.icon-btn,.g-icon-btn) svg.lu { width: 18px; height: 18px; stroke-width: 1.75; }
+:is(.icon-btn,.g-icon-btn):hover { background: var(--bacIntTra); }
+/* 按下去：悬停底色的两倍，不缩放；拖着东西时不算（拖动由 body.dragging 管，侧栏的悬停底色那时也撤掉） */
+body:not(.dragging) :is(.icon-btn,.g-icon-btn,.row-act):active:not(:disabled) { background: var(--bacPre); }
+
+/* 20×20 的小操作按钮（侧栏条目右侧的 ＋ / ···、回收区里的恢复 / 删除）：圆角 6（行尾的小按钮） */
+.row-act { width: 20px; height: 20px; border-radius: var(--r-small); display: flex; align-items: center; justify-content: center; color: var(--icoSec); flex: none; }
+.row-act svg { width: 16px; height: 16px; stroke-width: 1.3; }
+.row-act svg.lu { stroke-width: 1.95; }
+.row-act:hover { background: var(--bacTerTra); }
+
+/* 页面图标（emoji 或默认文档图标） */
+.pg-icon { width: 20px; height: 20px; flex: none; display: inline-flex; align-items: center; justify-content: center; color: var(--sidIco); font-size: 16px; line-height: 1; }
+/* 页面位置里的 Lucide 图标；默认文档对齐「添加其他 Gallery 项目」的大小，颜色仍继承页面图标。 */
+.pg-icon svg.lu { width: 18px; height: 18px; }
+.pg-icon svg.page-outline { width: 16px; height: 16px; stroke-width: 1.95; }
+/* 页面图标（components/Icon.tsx PageIcon）：表情、上传的图 18px（图片铺满、圆角 3）；“图标”页签的图标是遮罩，颜色同报告里的（十种颜色的浅色 / 深色） */
+.pg-icon .page-icon { display: block; width: 18px; height: 18px; object-fit: cover; border-radius: 3px; }
+/* 网页链接存着的网站图标（Icon.tsx PageIcon，data: 地址）：16px 画在 20px 的格子中间，网站的图标多是 16 或 32 的方图，整数倍缩放才清楚；
+   整张图显示（contain），带留白的图标不变形 */
+.pg-icon .page-icon.site-icon { width: 16px; height: 16px; object-fit: contain; border-radius: 3px; }
+.pg-icon .glyph-icon { display: block; width: 18px; height: 18px; background: currentColor; mask: center / contain no-repeat; -webkit-mask: center / contain no-repeat; }
+/* The ten colors: shared/emoji/icon-value.mjs ICON_COLOR_VALUES, which tests/unit/icons.mjs holds these rules to. */
+.glyph-icon[data-icon$="_gray.svg"] { color: light-dark(#55534E, #D3D3D3); }
+.glyph-icon[data-icon$="_lightgray.svg"] { color: light-dark(#A6A299, #7F7F7F); }
+.glyph-icon[data-icon$="_brown.svg"] { color: light-dark(#9F6B53, #AA755F); }
+.glyph-icon[data-icon$="_yellow.svg"] { color: light-dark(#CB912F, #CA8E1B); }
+.glyph-icon[data-icon$="_orange.svg"] { color: light-dark(#D9730D, #D87620); }
+.glyph-icon[data-icon$="_green.svg"] { color: light-dark(#448361, #2D9964); }
+.glyph-icon[data-icon$="_blue.svg"] { color: light-dark(#337EA9, #2E7CD1); }
+.glyph-icon[data-icon$="_purple.svg"] { color: light-dark(#9065B0, #8D5BC1); }
+.glyph-icon[data-icon$="_pink.svg"] { color: light-dark(#C14C8A, #C94079); }
+.glyph-icon[data-icon$="_red.svg"] { color: light-dark(#D44C47, #CD4945); }
+
+/* =========================================================
+   键盘焦点：一种样子（能填底色的控件填底色，不描边；填不出来的才画环）
+   ========================================================= */
+/* 不要浏览器自己的黑框（也包括 Esc 关掉菜单后脚本把焦点还给按钮、Chrome 当它是键盘焦点的那一种）；输入框自己有焦点的样子 */
+:where(button, [role="button"], [role="tab"], [role="option"], [role="switch"], [role="menuitem"], [tabindex="0"]):focus-visible { outline: none; }
+/* 填底色：比悬停深一档（--bacTerTra），平时有悬停底色的控件都是这样；确认、保存那样的按钮见 components.css */
+:is(.icon-btn, .g-icon-btn, .row-act, .sb-act, .ws-btn, .g-sidebar-row, .sec-toggle, button.row-icon, .sb-page-icon, .crumb, .present-btn, .present-zoom, .comp-back, .comp-opt, .comp-import-pick, .project-toggle, .wp-new, .wp-hint-example, .wp-hint-close, .ext-link, .ext-setting):focus-visible { background: var(--bacTerTra); }
+.comp-line:has(.comp-head:focus-visible) { background: var(--bacIntTra); }
+.row-chevron:focus-visible { color: var(--texPri); }
+.toast button:focus-visible { background: rgba(255,255,255,.08); }
+/* 环：2px 垫着控件站着的底，再 2px 蓝。只用在填底色看不出来的地方：
+   开关（环画在开关上）、平时就是灰底的卡片和标签、已经因为选中而填着底的行、浮在别的页面上的圆按钮。
+   控件站着的底是哪一层，垫的就是哪一层的颜色：侧栏 --sidBac、菜单 --popBac、对话框 --bacPri（组件列表、拓展列表在深色里是 --bacEle，见 preferences.css） */
+:is(.comp-toggle, .wp-enable, .hist-marks):focus-visible .mi-switch,
+.xf-switch:focus-visible { box-shadow: 0 0 0 2px var(--ringBase, var(--bacPri)), 0 0 0 4px var(--blue); }
+.wp-tab:focus-visible,
+.comp-pack:has(.comp-pack-open:focus-visible), .comp-pack-add:focus-visible,
+.hist-item[aria-selected="true"]:focus-visible { box-shadow: 0 0 0 2px var(--ringBase, var(--bacPri)), 0 0 0 4px var(--blue); }
+:is(.sb-act, .sb-page, .row).selected:focus-visible, .sb-search:focus-visible { box-shadow: 0 0 0 2px var(--sidBac), 0 0 0 4px var(--blue); }

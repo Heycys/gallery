@@ -1,0 +1,15 @@
+{
+  "id": "local/scorecard",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "评分表", "en": "Scorecard" },
+  "description": { "zh": "按加权的标准给几个方案打分：点一下改分，总分跟着变", "en": "Options scored on weighted criteria: a press changes a score, the totals follow" },
+  "words": "pingfenbiao scorecard score 评分 打分 比较 方案",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "caption": { "at": ":scope > p", "edit": "text", "optional": true },
+    "scores": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [".scorecard-drawn"] },
+  "markdown": "parts"
+}

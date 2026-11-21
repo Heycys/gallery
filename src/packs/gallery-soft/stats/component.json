@@ -1,0 +1,13 @@
+{
+  "id": "gallery-soft/stats",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "工作区统计", "en": "Workspace numbers" },
+  "description": { "zh": "文档数、总字数、待办完成了几项、本周编辑了几篇，每个数下面一件小东西：字数的走势、本周每天的编辑", "en": "How many documents, words in all, to-dos done, documents edited this week, each with a small thing under it: the words' trend, this week's edits by day" },
+  "words": "gongzuoqutongji tongji shuzi stats statistics numbers count words 统计 工作区 字数 文档数 待办",
+  "parts": {},
+  "runtime": { "generated": [":scope > .gallery-soft-stats-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[8, 2], [12, 2], [4, 2], [4, 4]], "resize": true },
+  "needs": ["workspace"]
+}

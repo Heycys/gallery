@@ -1,0 +1,4 @@
+[data-doc-component="local/rows"] table { width: 100%; }
+[data-doc-component="local/rows"] .rows-drawn { margin: 8px 0 0; padding: 0; list-style: none; }
+[data-doc-component="local/rows"] .rows-drawn li { padding: 4px 8px; }
+[data-doc-component="local/rows"] .rows-down { margin-left: 8px; }

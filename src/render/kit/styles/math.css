@@ -1,0 +1,125 @@
+/* 公式 (math.js, KaTeX): inline formulas and formula blocks. */
+
+/* An inline formula keeps a hair of optical room (.08em) at each side, a margin and not a space: the
+   spaces around it are real text. It wraps with its line as TeX's does: between KaTeX's pieces, after
+   a relation or an operator (each piece kept whole: katex.css), never off the line's end. */
+.doc-math-inline { margin-inline: .08em; }
+/* A formula and the closing punctuation right after it (，。、）…: runtime/spacing.js puts them in this
+   span, or the bold, link or colored run the formula ends and the marks) are not parted by a line's
+   end, so the mark never starts a line: the one place the span holds is between its own children.
+   Inside them the line breaks as anywhere: between the formula's pieces, as above, and in the run's
+   words before it, which would otherwise make one unbreakable line wider than the page; at a word's
+   end only (overflow-wrap: normal), as a cell that breaks a line anywhere it must would part the
+   run's end from the marks. */
+.doc-math-tie { white-space: nowrap; }
+.doc-math-tie > :not(.doc-math-inline):not(.katex):not(.doc-math-joiner) { white-space: normal; overflow-wrap: normal; }
+/* The formula's boxes are held too: Chrome breaks after an inline-block (KaTeX's last box) by the
+   white-space of its parent, so a .katex-html that wraps would leave the mark at the start of the next
+   line. It wraps only at the zero-width spaces between its boxes (.doc-math-break, spacing.js).
+   After a wrapper's end Chrome breaks by the wrapper's white-space (normal, above): a word joiner
+   (U+2060, no line breaks beside it) drawn before the marks holds that place, generated content of
+   an empty span (spacing.js), so that no copy of the text holds it; held as the span is, so that a
+   line that breaks anywhere it must (a table cell's, overflow-wrap) does not break there either: a
+   formula and its mark wider than the line reach past it rather than part. */
+.doc-math-tie .katex-html { white-space: nowrap; }
+.doc-math-break { white-space: normal; }
+.doc-math-joiner::before { content: "\2060"; }
+
+/* Formula blocks often come several together: a group gap apart (their own 8px inside), as disclosures are.
+   The block's own size (1.08em) is its text's metrics: the line height (1.8 of it) and the strut the
+   formula stands on; the formula's own size is set at .katex below. */
+.doc-math-block {
+  max-width: 100%;
+  margin: var(--doc-group-gap) 0;
+  padding: 8px 0;
+  overflow-x: auto;
+  color: var(--doc-text);
+  font-size: 1.08em;
+  line-height: 1.8;
+  text-align: center;
+}
+
+/* A formula wider than the page scrolls sideways under a thumb as a table's (styles/table.css): 6px,
+   round, 3px in from the bottom edge, shown while the pointer is over it; no track, no buttons.
+   The page's scrollbar color (base.css, inherited) is set back, or Chrome draws its own bar. */
+.doc-math-block { scrollbar-color: auto; }
+.doc-math-block::-webkit-scrollbar { height: 12px; background: transparent; }
+.doc-math-block::-webkit-scrollbar-button { display: none; }
+.doc-math-block::-webkit-scrollbar-thumb { border: 3px solid transparent; border-radius: 999px; background: transparent padding-box; }
+.doc-math-block:hover::-webkit-scrollbar-thumb { background-color: var(--doc-scrollbar-thumb); }
+.doc-math-block::-webkit-scrollbar-thumb:hover { background-color: var(--doc-scrollbar-thumb-active); }
+@supports not selector(::-webkit-scrollbar) {
+  .doc-math-block { scrollbar-width: thin; scrollbar-color: var(--doc-scrollbar-thumb) transparent; }
+}
+
+/* KaTeX's own size for formulas in text, on the text's line. */
+.doc-math-inline .katex { font-size: 1.21em; line-height: 1; }
+.doc-math-block .katex-display { width: max-content; min-width: 100%; margin: 0; }
+/* A block formula is drawn at 1.08em of the block (KaTeX's 1.21em is set back), and the block is itself
+   1.08em of the text: 1.1664em of the text, 18.66px at the body size, a little smaller than the 1.21em of
+   a formula in a line. The two multiply and are kept so: the block's own size is its line height and
+   its strut, and one step of 1.1664em instead (the block at 1em) draws the same formula but makes
+   every formula block 2.3px lower (kit-diff). */
+.doc-math-block .katex { font-size: 1.08em; }
+
+/* A formula block's color (颜色 in the page editor's block menu, base.css's classes): a background
+   with room at its sides, or the color of its text. */
+.doc-math-block:is(@highlight-colors) { padding-inline: 12px; border-radius: 10px; }
+.doc-math-block:is(@text-colors) { color: var(--doc-ink); }
+
+/* 无效的公式: a formula KaTeX could not read (math.js marks it), shown to a reader as the page editor shows
+   it (src/editor/components/placeholder.mjs), its values the editor's: in the text a gray chip, its √x and
+   the words; a formula block a gray bar as wide as the page, the TeX logo and the words, as an empty
+   formula block is in the editor. Its TeX stays in it, unseen, and KaTeX's reason is its title (the
+   pointer's, and gallery qa's formula-error). Words and marks: the kit's table (words.js) and
+   src/shared/math-marks.mjs. */
+.doc-math-invalid {
+  display: inline-block;
+  margin: 0 2px;
+  padding: 1px 7px 1px 6px;
+  border-radius: 4px;
+  vertical-align: top;
+  white-space: nowrap;
+  background: light-dark(#f0efed, #383836);
+  color: light-dark(#7d7a75, #ada9a3);
+  font-size: .9em;
+  line-height: 1.4;
+}
+.doc-math-invalid::before {
+  content: "";
+  display: inline-block;
+  width: 1.1em;
+  height: 1.1em;
+  margin-inline-end: 4px;
+  vertical-align: -.2em;
+  background: currentColor;
+  -webkit-mask: @formula-mark center / contain no-repeat;
+  mask: @formula-mark center / contain no-repeat;
+}
+.doc-math-invalid::after { content: var(--doc-word-math-invalid); }
+.doc-math-invalid > .doc-math-tex { display: none; }
+/* The chip is the formula's room in the line: no hair beside it as well. */
+.doc-math-inline:has(.doc-math-invalid) { margin-inline: 0; }
+.doc-math-block:has(.doc-math-invalid) { margin-block: var(--doc-media-gap); padding: 0; overflow: visible; line-height: 1.5; text-align: start; }
+.doc-math-block :has(> .doc-math-invalid) { display: contents; } /* KaTeX's span around it */
+.doc-math-block .doc-math-invalid {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 12px 36px 12px 12px;
+  border-radius: 10px;
+  white-space: normal;
+  background: light-dark(rgb(66 35 3 / 3%), rgb(252 252 252 / 3%));
+  font-size: 14px;
+  line-height: 1.5;
+}
+.doc-math-block .doc-math-invalid::before {
+  flex: none;
+  width: 25px;
+  height: 25px;
+  margin-inline-end: 12px;
+  -webkit-mask-image: @tex-mark;
+  mask-image: @tex-mark;
+}

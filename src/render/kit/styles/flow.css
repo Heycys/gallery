@@ -1,0 +1,218 @@
+/* ---------- body text in flows ----------
+   A flow is the page itself, a Sheet panel, the content of a section, the opening
+   summary, a highlight panel, a callout, a disclosure, a dialog, a column or a slot of an instance of a component
+   package (data-doc-slot), and of a plain <div> (no class) grouping blocks inside any of them but the
+   page and a panel. The text blocks of a flow (its own
+   paragraphs, headings, lists, quotes and rules) read the same wherever they sit, and the rules
+   stop at them: the inside of a card, table or report widget keeps its own styles, so a
+   component looks the same in any flow too. The flows are the components' descriptions' (flow,
+   and the parts edited as flow: src/shared/components/): the one list of them is the selector
+   below, which every rule of the flow nests in (&), and a unit test holds it to the descriptions.
+   The rules have no weight (:where, and & has none of its own), so any component or report class
+   wins; but one: a framed block right under a heading (below) weighs a class and an element, to win
+   over the block's own margin in its file, which comes after this one, and so over a report's class
+   of one class on that block too: a report that wants its own room above such a block there says it
+   with a selector of more weight. */
+
+:where(.doc-page, .doc-section, .doc-summary, .doc-panel, .doc-callout, .doc-details-content, .doc-dialog-content, [data-doc-sheet], .doc-column, [data-doc-slot], :is(.doc-section, .doc-summary, .doc-panel, .doc-callout, .doc-details-content, .doc-dialog-content, .doc-column, [data-doc-slot]) > div:not([class])) {
+  & > :where(p),
+  & > :where(ul, ol, blockquote) :where(p) {
+    margin: 0 0 var(--doc-paragraph-gap);
+  }
+
+  /* The four heading levels (in the flow, or held by one of its list items): one weight, 700, so that the
+     Chinese (Microsoft YaHei has no 600: drawn Bold) and the Latin and figures beside it (Segoe UI Bold, not
+     Semibold) are one strength in a heading; tracking by size, tighter the larger (h1 and h2 -.015em, h3
+     -.01em, h4 none). More room above a heading than under it, so a section reads as one: 32, 28, 24 and
+     18px above (the user's measure of 2026-11-17: "可以多留，但不用留太多"), 10, 8, 8 and 8 under. */
+  & > :where(h1, h2, h3, h4),
+  & > :where(ul, ol) :where(li) > :where(h1, h2, h3, h4) {
+    color: var(--doc-text);
+    font-weight: 700;
+  }
+  & > :where(h1),
+  & > :where(ul, ol) :where(li) > :where(h1) {
+    margin: calc(32px * var(--doc-space, 1)) 0 calc(10px * var(--doc-space, 1));
+    font-size: var(--doc-h1-font-size);
+    line-height: var(--doc-h1-line-height);
+    letter-spacing: -.015em;
+  }
+  & > :where(h2),
+  & > :where(ul, ol) :where(li) > :where(h2) {
+    margin: calc(28px * var(--doc-space, 1)) 0 calc(8px * var(--doc-space, 1));
+    font-size: var(--doc-h2-font-size);
+    line-height: var(--doc-h2-line-height);
+    letter-spacing: -.015em;
+  }
+  & > :where(h3),
+  & > :where(ul, ol) :where(li) > :where(h3) {
+    margin: calc(24px * var(--doc-space, 1)) 0 calc(8px * var(--doc-space, 1));
+    font-size: var(--doc-h3-font-size);
+    line-height: var(--doc-h3-line-height);
+    letter-spacing: -.01em;
+  }
+  & > :where(h4),
+  & > :where(ul, ol) :where(li) > :where(h4) {
+    margin: calc(18px * var(--doc-space, 1)) 0 calc(8px * var(--doc-space, 1));
+    font-size: var(--doc-h4-font-size);
+    line-height: var(--doc-h4-line-height);
+    letter-spacing: 0;
+  }
+  /* A heading right under a heading of a level above it is its sub-heading, not a new section: 12px above it. */
+  & > :where(h1) + :where(h2, h3, h4),
+  & > :where(h2) + :where(h3, h4),
+  & > :where(h3) + :where(h4) {
+    margin-top: calc(12px * var(--doc-space, 1));
+  }
+  /* A framed block right under a heading is the heading's own: a paragraph's gap above it, not its own larger one
+     (a card stood as far from the heading over it as from the paragraph before that heading). Weighted (:is, a
+     class), so that it wins over the block's own margin, whose file comes after this one. A file's row is not
+     one: its 10px and its own 4px of padding are that gap already (file.css). */
+  & > :is(h1, h2, h3, h4) + :is(.doc-figure, .doc-table-wrap, .doc-callout, .doc-columns, .doc-sheet-shell, .doc-summary, .doc-panel, .doc-code, .doc-diff, .doc-flow, .doc-image, .doc-bookmark, .doc-embed, blockquote) {
+    margin-top: var(--doc-paragraph-gap);
+  }
+  & > :where(ul, ol) {
+    margin: calc(10px * var(--doc-space, 1)) 0 var(--doc-block-gap);
+    padding-inline-start: 1.625em;
+  }
+  /* One gap between any two items: between items of a level, from an item
+     to the first it holds, from the last it holds to the next item, and from a list to a list right
+     after it (two lists side by side read as one). */
+  & > :where(ul, ol) :where(li + li) { margin-top: var(--doc-list-gap); }
+  & > :where(ul, ol) :where(li > :is(ul, ol)) { margin: var(--doc-list-gap) 0 0; padding-inline-start: 1.5625em; }
+  /* The other blocks an item holds after its text (a paragraph,
+     a heading, an image, a code block…): under its text, at its left edge (the markers hang outside
+     the item), the list's one gap above each and none below; a component's own class keeps its look. */
+  & > :where(ul, ol) :where(li) > :where(p, h1, h2, h3, h4, div, figure, blockquote, details, table, pre, hr) { margin-top: var(--doc-list-gap); margin-bottom: 0; }
+  & > :where(ul, ol):where(:has(+ :is(ul, ol))) { margin-bottom: 0; }
+  & > :where(ul, ol) + :where(ul, ol) { margin-top: var(--doc-list-gap); }
+  /* The lists the kit draws the markers of (& in the rules inside): a list without a class of its own
+     straight in the flow, or straight in a flowchart's step (what a step holds after its title is its
+     content, a list there counted from the first depth again, as in a highlight block: flowchart.css),
+     and the lists their items hold, by depth; no depth goes on through a flowchart (an ol of its
+     class), whose steps' lists start again. */
+  & > :where(ul:not([class]), ol:not([class])), & :where(ol.doc-flow > li) > :where(ul:not([class]), ol:not([class])) {
+    &, & :where(li > :is(ul, ol)) { list-style: none; }
+    & :where(li) { position: relative; }
+    /* Lists: their markers the kit's, in their own blue (--doc-list-marker), left of the text: numbers 1., a., i. by depth,
+       each list from its start (or an item's value), right-aligned 6px from the text; bullets a dot, a
+       ring, a square by depth, 16px left of the text, on the middle of the first line. A list with a
+       class of its own keeps the browser's markers. */
+    & :where(li)::before {
+      position: absolute;
+      right: 100%;
+      color: var(--doc-list-marker);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      user-select: none;
+    }
+    :where(&:is(ol) > li, & li > ol:not(.doc-flow) > li)::before { margin-right: 4px; padding: 0 2px; border-radius: 2px; }
+    :where(&:is(ul) > li, & li > ul > li)::before {
+      content: "";
+      top: calc(.5lh - 2.75px);
+      width: 5.5px; /* a bullet glyph of Arial 16px at 1.375: 5.4px */
+      height: 5.5px;
+      margin-right: 13.25px; /* its middle 16px left of the text */
+      border-radius: 50%;
+      background: currentColor;
+    }
+    :where(&:is(ol) > li)::before { content: counter(list-item) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item, lower-alpha) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item, lower-roman) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item, lower-alpha) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item, lower-roman) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item, lower-alpha) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ol) > li)::before { content: counter(list-item, lower-roman) "."; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)):is(ul) > li)::before { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ul) > li)::before { top: calc(.5lh - 2.5px); width: 5px; height: 5px; margin-right: 13.5px; border-radius: 1px; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ul) > li)::before { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ul) > li)::before { top: calc(.5lh - 2.5px); width: 5px; height: 5px; margin-right: 13.5px; border-radius: 1px; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ul) > li)::before { background: transparent; box-shadow: inset 0 0 0 1px currentColor; }
+    :where(& > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)) > li > :is(ul, ol:not(.doc-flow)):is(ul) > li)::before { top: calc(.5lh - 2.5px); width: 5px; height: 5px; margin-right: 13.5px; border-radius: 1px; }
+    /* A numbered list giving an item a number of its own (<li value>): the browser's numbers, which count
+       on from it (the kit's do not), in the same blue. */
+    :where(&:is(ol):has(> li[value]), & li > ol:has(> li[value])) { list-style: decimal; }
+    :where(&:is(ol):has(> li[value]), & li > ol:has(> li[value])) > li::before { content: none; }
+    :where(&:is(ol):has(> li[value]), & li > ol:has(> li[value])) > li::marker { color: var(--doc-list-marker); }
+  }
+
+  & > :where(p, ul, ol, blockquote, h1, h2, h3, h4) :where(strong) { font-weight: 700; }
+
+  /* A quote and a divider (in the flow, or held by one of its list items: the same look, there the
+     list's one gap above it and none below, as any block an item holds, none at its sides). */
+  & > :where(blockquote) { margin: var(--doc-block-gap) 0; }
+  & > :where(blockquote),
+  & > :where(ul, ol) :where(li) > :where(blockquote) {
+    margin-inline: 0;
+    padding: 2px 0 2px 14px;
+    /* Its bar in its words' grey (currentColor, so a colored quote has a bar of its color), the one shape the block has, seen, but a lighter share of it (the user's 2026-11-19: it was too dark): about the line numbers' grey, between a divider's and the words'. */
+    border-left: 3px solid light-dark(color-mix(in srgb, currentColor 40%, transparent), color-mix(in srgb, currentColor 46%, transparent));
+    color: var(--doc-muted);
+  }
+
+  & > :where(blockquote) > :where(:last-child),
+  & > :where(ul, ol) :where(li) > :where(blockquote) > :where(:last-child) { margin-bottom: 0; }
+  & > :where(hr) { margin: var(--doc-component-gap) 0; }
+  & > :where(hr),
+  & > :where(ul, ol) :where(li) > :where(hr) { margin-inline: 0; border: 0; border-top: 1px solid var(--doc-border); }
+}
+
+/* The edges of a container of blocks: a column's, a disclosure's content's and a detail card's first
+   block takes no gap above it and its last none below, whatever the block (a highlight panel's are
+   its own: highlight.css, where a component keeps its margins). A Sheet panel's last block takes none
+   below it: a framed panel's room under its blocks is its padding alone (sheets.css), so a paragraph
+   typed into an empty tab leaves its bottom where the tab's placeholder had it. Its first keeps its
+   own under the tabs (a heading in a tab keeps its top margin; a paragraph's falls into
+   the tabs' margin). */
+:is(.doc-column, .doc-details-content, .doc-dialog-content) > :first-child { margin-top: 0; }
+:is(.doc-column, .doc-details-content, .doc-dialog-content, [data-doc-sheet]) > :last-child { margin-bottom: 0; }
+/* A text block the reader left empty (a line of space) is one line high: a disclosure's
+   title too, and a callout the file has empty (an empty one of the editor's before 2026-11-07). */
+.doc-page :where(p, h1, h2, h3, h4, li, .doc-callout, .doc-details-summary-label):empty::after { content: "\200b"; }
+
+/* A paragraph's or a heading's alignment and indent (对齐与缩进 in the page editor's block
+   menu): centred or at the right (left is neither), and moved in by levels of two body characters,
+   whatever the block's own size, its background with it (a margin, so its fill keeps to its words). */
+:is(p, h1, h2, h3, h4).doc-align-center { text-align: center; }
+:is(p, h1, h2, h3, h4).doc-align-right { text-align: right; }
+:is(p, h1, h2, h3, h4):is(.doc-indent-1, .doc-indent-2, .doc-indent-3, .doc-indent-4, .doc-indent-5, .doc-indent-6, .doc-indent-7, .doc-indent-8) { margin-inline-start: calc(var(--doc-indent-level) * 2 * var(--doc-body-font-size)); }
+.doc-indent-1 { --doc-indent-level: 1; }
+.doc-indent-2 { --doc-indent-level: 2; }
+.doc-indent-3 { --doc-indent-level: 3; }
+.doc-indent-4 { --doc-indent-level: 4; }
+.doc-indent-5 { --doc-indent-level: 5; }
+.doc-indent-6 { --doc-indent-level: 6; }
+.doc-indent-7 { --doc-indent-level: 7; }
+.doc-indent-8 { --doc-indent-level: 8; }
+
+/* An item's color (颜色 in the page editor's block menu: base.css's classes): a text
+   color is its marker's too, and the items it holds take both; a background lies behind it, its
+   marker and the items it holds, 2px past them as a paragraph's (base.css), its part left of the
+   item a second shadow as far out as the list's indent, so that nothing moves. */
+li:is(@text-colors) { --doc-list-marker: var(--doc-ink); }
+li:is(@highlight-colors) { border-radius: 4px; box-shadow: 0 0 0 2px var(--doc-fill), -1.625em 0 0 2px var(--doc-fill); }
+
+/* Body text may stand straight in the page or a Sheet panel, before, between or instead of
+   sections (the flow rules above take its known text elements, never a component). The gap below
+   the header is the title's own (page.css), whatever comes first. */
+
+/* 小字: small text, a block of its own in any flow, as far from the block above as from the one below. */
+.doc-note {
+  margin: var(--doc-paragraph-gap) 0;
+  color: var(--doc-muted);
+  font-size: var(--doc-note-font-size);
+  line-height: var(--doc-note-line-height);
+}
+/* What follows a tab in it (span.doc-tab: the page editor's Tab) stands at the line's right end,
+   as a scope on the left and a unit on the right. */
+.doc-note:has(> .doc-tab) { display: flow-root; }
+.doc-note > .doc-tab { float: right; margin-inline-start: 16px; }
+
+@media (max-width: 640px) {
+  /* On a phone the part after the tab takes a line of its own under the words before it, at the left, as an older
+     table's scope line does (table.css .doc-table-meta): a unit hung at the right of a line of its own read as
+     cut off. */
+  .doc-note > .doc-tab { display: block; float: none; margin: 4px 0 0; }
+}

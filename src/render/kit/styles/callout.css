@@ -1,0 +1,17 @@
+/* 提示块: blocks set apart on a fill, with a line at its left in that fill's deep shade. It holds
+   blocks as a highlight block does (its paragraphs, lists, code…: they read as in any flow, flow.css,
+   its first and last taking no margin outside them, highlight.css); one written the old way, words
+   straight in it, shows them as its one paragraph. Its color is the background it is given (颜色 in
+   the page editor's block menu, base.css's classes: --doc-fill and --doc-fill-deep), and with none
+   the palette's blue (src/shared/colors.mjs), the same as one given that blue; its fill is that
+   color taken a little toward the page's background (the user's, 2026-11-07: a little lighter),
+   its line that color's deep shade as it is. A text color colors its words only. Its corners are
+   square; the editor's selection lies 6px past it, round (--doc-box-reach: what it wraps, base.css). */
+
+.doc-callout {
+  --doc-box-reach: 6px;
+  margin-block: var(--doc-component-gap);
+  padding: 12px 14px;
+  border-left: 3px solid var(--doc-fill-deep, light-dark(#387dc9, #5e87c9));
+  background: color-mix(in srgb, var(--doc-fill, light-dark(#e5f2fc, #233850)) 70%, var(--doc-bg));
+}

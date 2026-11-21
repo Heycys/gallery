@@ -1,0 +1,14 @@
+{
+  "id": "local/dragover-only",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "只听拖过", "en": "Dragover only" },
+  "description": { "zh": "能放下的列表只取消了 dragover", "en": "A list a row is dropped on that cancels dragover alone" },
+  "words": "zhitingtuoguo dragover",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "rows": { "at": ":scope > table", "edit": "data" }
+  },
+  "runtime": { "generated": [".drops-list"], "attrs": { ":scope > table": ["hidden"] } },
+  "markdown": "parts"
+}

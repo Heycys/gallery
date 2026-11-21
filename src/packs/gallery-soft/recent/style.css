@@ -1,0 +1,163 @@
+/* 柔光风格's recently edited. Every selector starts at the instance and goes down from it, so that nothing
+   here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark(): the page's
+   color scheme, which follows its theme), then the face: a faint wash of the accent from the card's top over
+   the soft card's fill; a head of a clock's chip and 最近编辑, today's count at its end (fading while the grip
+   shows); the documents as rows like the sidebar's (a page icon on a soft gray square, an emoji on none, the
+   title, when at the end, the latest's 刚刚 in the accent), a row under the pointer a soft gray; on a tall card
+   faint labels of today, yesterday, this week and earlier between them; a muted line of how many more under
+   them at the card's bottom; on a card 2 cells high its rows at the bottom. Nothing to list: the cards' empty
+   face. On a custom page the face is the card's whole room, taken out over the card's padding and given the
+   soft frame's (data-pad), the board's line around it; where no card is (a document, as gallery block check
+   shows it) the face frames itself at a 4 × 4 card's size. */
+[data-doc-component="gallery-soft/recent"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-faint: light-dark(#ababb0, #66666c);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-ink: light-dark(#356cb3, #98bee9);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-track: light-dark(rgb(28 28 32 / 7%), rgb(255 255 255 / 8%));
+  --soft-hover: light-dark(rgb(55 53 47 / 6%), rgb(255 255 255 / 6%));
+  --soft-grip-room: 0px;
+  > .gallery-soft-recent-face {
+    --soft-pad: 24px;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 304px;
+    max-width: 100%;
+    height: 304px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-wash), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-recent-face[data-pad="m"] { --soft-pad: 20px; }
+  > .gallery-soft-recent-face[data-pad="s"] { --soft-pad: 18px; }
+  /* The head: the clock's chip, 最近编辑, today's count at its end. */
+  > .gallery-soft-recent-face > .gallery-soft-recent-head { display: flex; align-items: center; gap: 10px; flex: none; height: 28px; min-width: 0; padding-inline-end: var(--soft-grip-room); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-head > .gallery-soft-recent-chip { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 8px; background: var(--soft-accent-soft); color: var(--soft-accent); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-head > .gallery-soft-recent-chip > svg { display: block; width: 16px; height: 16px; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-head > .gallery-soft-recent-title { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 14px; font-weight: 600; color: var(--soft-strong); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-head > .gallery-soft-recent-meta {
+    flex: none;
+    margin-left: auto;
+    margin-inline-end: calc(-1 * var(--soft-grip-room));
+    font-size: 12px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+    opacity: calc(1 - var(--gallery-grip-shown, 0));
+    transition: opacity .12s ease-out;
+  }
+  /* The rows. */
+  > .gallery-soft-recent-face > .gallery-soft-recent-list {
+    position: relative;
+    flex: 0 1 auto;
+    min-height: 0;
+    /* The list clips what lies past it, and the rows lie 6px past its content (their fill and the keys' ring): it takes them in, 6px of padding given back by its margins. */
+    margin: 12px -6px 0;
+    padding: 0 6px;
+    list-style: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  > .gallery-soft-recent-face[data-h="1"] > .gallery-soft-recent-list,
+  > .gallery-soft-recent-face[data-h="2"] > .gallery-soft-recent-list { margin-top: auto; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-section { display: flex; align-items: flex-end; height: 22px; padding-bottom: 3px; box-sizing: border-box; font-size: 11.5px; color: var(--soft-muted); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-section:first-child { height: 16px; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item { display: block; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-sizing: border-box;
+    width: calc(100% + 12px);
+    height: 31px;
+    margin: 0 -6px;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document:is(:hover, :focus-visible) { background: var(--soft-hover); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document:focus-visible { outline: 2px solid var(--soft-accent); outline-offset: -2px; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-icon {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 7px;
+    background: var(--soft-track);
+    color: var(--soft-muted);
+    font-size: 15px;
+    line-height: 1;
+  }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-emoji { background: transparent; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-emoji > img { display: block; width: 18px; height: 18px; object-fit: contain; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-icon > svg { display: block; width: 15px; height: 15px; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-picture { background: transparent; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-picture > img { display: block; width: 20px; height: 20px; border-radius: 4px; object-fit: cover; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-glyph::before { content: ""; width: 15px; height: 15px; background: var(--soft-muted); -webkit-mask: var(--gallery-soft-recent-icon) center / contain no-repeat; mask: var(--gallery-soft-recent-icon) center / contain no-repeat; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-name { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13.5px; color: var(--soft-text); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-when { flex: none; margin-left: auto; padding-left: 10px; font: 12px var(--soft-num); color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-list > .gallery-soft-recent-item > .gallery-soft-recent-document > .gallery-soft-recent-now { color: var(--soft-accent-ink); font-weight: 500; }
+  /* How many more are below. */
+  > .gallery-soft-recent-face > .gallery-soft-recent-more { display: flex; align-items: center; gap: 4px; flex: none; margin: auto 0 0; padding-top: 8px; font-size: 12px; color: var(--soft-muted); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-more[hidden] { display: none; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-more > .gallery-soft-recent-arrow { display: block; width: 13px; height: 13px; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-more > .gallery-soft-recent-arrow > svg { display: block; width: 100%; height: 100%; }
+  /* Nothing to list: the cards' empty face. */
+  > .gallery-soft-recent-face > .gallery-soft-recent-empty { display: none; }
+  > .gallery-soft-recent-face[data-empty] > .gallery-soft-recent-list { display: none; }
+  > .gallery-soft-recent-face[data-empty] > .gallery-soft-recent-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; flex: 1; min-height: 0; text-align: center; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-empty > .gallery-soft-recent-disc { display: grid; place-items: center; flex: none; width: 44px; height: 44px; margin-bottom: 8px; border-radius: 50%; background: var(--soft-track); color: var(--soft-muted); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-empty > .gallery-soft-recent-disc > svg { display: block; width: 20px; height: 20px; }
+  > .gallery-soft-recent-face > .gallery-soft-recent-empty > .gallery-soft-recent-line { margin: 0; font-size: 13px; color: var(--soft-text); }
+  > .gallery-soft-recent-face > .gallery-soft-recent-empty > .gallery-soft-recent-how { margin: 0; font-size: 12px; color: var(--soft-muted); text-wrap: pretty; }
+  /* A 2 × 2 card: a smaller disc, a line each, so that the three stand clear of the head. */
+  > .gallery-soft-recent-face[data-pad="s"] > .gallery-soft-recent-empty { gap: 0; }
+  > .gallery-soft-recent-face[data-pad="s"] > .gallery-soft-recent-empty > .gallery-soft-recent-disc { width: 30px; height: 30px; margin-bottom: 4px; }
+  > .gallery-soft-recent-face[data-pad="s"] > .gallery-soft-recent-empty > .gallery-soft-recent-disc > svg { width: 15px; height: 15px; }
+  > .gallery-soft-recent-face[data-pad="s"] > .gallery-soft-recent-empty > :is(.gallery-soft-recent-line, .gallery-soft-recent-how) { max-width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  > .gallery-soft-recent-face[data-pad="s"] > .gallery-soft-recent-empty > .gallery-soft-recent-line { font-size: 12.5px; line-height: 18px; }
+  > .gallery-soft-recent-face[data-pad="s"] > .gallery-soft-recent-empty > .gallery-soft-recent-how { line-height: 16px; }
+  /* A card 2 cells high and wider: the disc beside its line and what to do, which under the head have no room for a column. */
+  > .gallery-soft-recent-face[data-pad="m"][data-empty] > .gallery-soft-recent-empty { display: grid; grid-template-columns: auto minmax(0, max-content); column-gap: 12px; row-gap: 2px; align-content: center; justify-content: center; text-align: left; }
+  > .gallery-soft-recent-face[data-pad="m"] > .gallery-soft-recent-empty > .gallery-soft-recent-disc { grid-row: 1 / span 2; width: 36px; height: 36px; margin: 0; }
+  > .gallery-soft-recent-face[data-pad="m"] > .gallery-soft-recent-empty > .gallery-soft-recent-disc > svg { width: 17px; height: 17px; }
+  > .gallery-soft-recent-face[data-pad="m"] > .gallery-soft-recent-empty > :is(.gallery-soft-recent-line, .gallery-soft-recent-how) { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  > .gallery-soft-recent-face[data-pad="m"] > .gallery-soft-recent-empty > .gallery-soft-recent-line { align-self: end; }
+  > .gallery-soft-recent-face[data-pad="m"] > .gallery-soft-recent-empty > .gallery-soft-recent-how { align-self: start; }
+  > .gallery-soft-recent-face[data-pad="m"] > .gallery-soft-recent-empty > .gallery-soft-recent-line:last-child { grid-row: 1 / span 2; align-self: center; }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it; the head's end kept clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/recent"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/recent"] > .gallery-soft-recent-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}

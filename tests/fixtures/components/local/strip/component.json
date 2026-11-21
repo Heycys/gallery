@@ -1,0 +1,14 @@
+{
+  "id": "local/strip",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "指标条", "en": "Metric strip" },
+  "description": { "zh": "一排数字和它们的说明", "en": "A row of numbers and what they say" },
+  "words": "kpi metrics strip 指标 数字",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "caption": { "at": ":scope > .strip-caption", "edit": "text", "optional": true },
+    "metrics": { "at": ":scope > dl", "edit": "none" }
+  },
+  "markdown": "parts"
+}

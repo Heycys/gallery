@@ -1,0 +1,64 @@
+name: Bug report
+description: Something in Gallery did not work as it should
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gallery has so far been tested on Windows 11 (Chrome and Edge) and macOS 27 (Chrome) only. Reports from Linux, Safari and Firefox are especially welcome, and the fields below are what makes them usable.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you saw instead. A screenshot helps.
+    validations:
+      required: true
+  - type: input
+    id: gallery
+    attributes:
+      label: Gallery version
+      description: The first line of `gallery --version`
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How Gallery is installed
+      options:
+        - npm global install (npm i -g @heycys/gallery)
+        - npx (npx -y @heycys/gallery …)
+        - From source (a clone of this repository)
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15.1, Windows 11, Ubuntu 24.04…
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      placeholder: Chrome 131, Edge 131, Safari 18…
+    validations:
+      required: true
+  - type: input
+    id: node
+    attributes:
+      label: Node.js version
+      description: "`node --version`"
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent, if one was writing
+      placeholder: Claude Code, Codex, none…
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `gallery doctor`
+      description: It shows folder paths (the workspace, the browser, the skill folders), which may hold your user name or a project's name. Edit them out before pasting if you like.
+      render: text

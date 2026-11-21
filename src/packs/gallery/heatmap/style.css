@@ -1,0 +1,187 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. In the kit's card tokens: the head (the chip, a
+   calendar, 编辑热力图 and its quiet meta), its end clear of the card's grip; the squares the hero, a grid
+   of columns of seven (the script's --gallery-heatmap-cell, -gap and -weeks), five shades of the accent
+   (their own in dark: the deepest the lightest there), a day before the record a small gray dot, today
+   ringed; the months' names over them and 一 三 五 at their left, faint; less to more under them. Laid out by
+   the face's data-layout: "full" the figures in a column of 156px at the left (what the weeks are, the
+   total large, the average a day, three facts and the reader's and the Agent's split as a bar), the squares
+   24px after it; "compact" the total and the days with any on a line over the squares; "strip" the squares
+   alone under the head; "grid" (8 × 2) the squares alone. A pointer on a square: a dark tip over it with its
+   day, over the card (the top layer). Unread: a line over empty squares. Light and dark. */
+[data-doc-component="gallery/heatmap"] {
+  --gallery-heatmap-0: light-dark(rgb(55 53 47 / 6.5%), rgb(255 255 255 / 6.5%));
+  --gallery-heatmap-1: light-dark(#d1e2f6, #243b5a);
+  --gallery-heatmap-2: light-dark(#90b6e3, #335e95);
+  --gallery-heatmap-3: light-dark(#4d88d3, #4e89d0);
+  --gallery-heatmap-4: light-dark(#2e5e9c, #a0c2ea);
+  --gallery-heatmap-dot: light-dark(rgb(55 53 47 / 17%), rgb(255 255 255 / 17%));
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gallery-text);
+  > .gallery-heatmap-face { display: flex; flex-direction: column; box-sizing: border-box; min-height: 0; }
+  > .gallery-heatmap-face > .gallery-heatmap-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
+    height: 20px;
+    min-width: 0;
+    padding-inline-end: var(--gallery-grip-room, 0px);
+  }
+  > .gallery-heatmap-face > .gallery-heatmap-head > .gallery-heatmap-chip {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: var(--gallery-fill);
+    color: var(--gallery-muted);
+  }
+  > .gallery-heatmap-face > .gallery-heatmap-head > .gallery-heatmap-chip > svg { display: block; width: var(--gallery-chip-icon); height: var(--gallery-chip-icon); }
+  > .gallery-heatmap-face > .gallery-heatmap-head > .gallery-heatmap-title { flex: none; font-size: var(--gallery-title-size); line-height: var(--gallery-title-line); font-weight: 600; color: var(--gallery-text); white-space: nowrap; }
+  > .gallery-heatmap-face > .gallery-heatmap-head > .gallery-heatmap-line { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: var(--gallery-meta-size); color: var(--gallery-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  > .gallery-heatmap-face > .gallery-heatmap-head > .gallery-heatmap-line > .gallery-heatmap-dot { margin: 0 5px; color: var(--gallery-faintest); }
+  > .gallery-heatmap-face > .gallery-heatmap-body { flex: 1; display: flex; gap: 24px; min-height: 0; margin-top: 16px; }
+
+  /* The figures: a column at the left of a full card. */
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside { flex: none; display: flex; flex-direction: column; width: 156px; min-width: 0; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-label { font-size: 12px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-total { display: flex; align-items: baseline; margin-top: 6px; white-space: nowrap; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-total > .gallery-heatmap-number {
+    font-size: 36px;
+    line-height: 1;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: var(--gallery-numeral-tracking);
+    font-variant-numeric: lining-nums;
+    color: var(--gallery-text-strong);
+  }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-total > .gallery-heatmap-unit { margin-left: var(--gallery-unit-gap); font-size: var(--gallery-unit); font-weight: 500; color: var(--gallery-muted); white-space: pre; }
+  > .gallery-heatmap-face[data-unread] > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-total > .gallery-heatmap-number { font-weight: 300; color: var(--gallery-faintest); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-average { margin-top: 6px; font-size: 12px; line-height: 16px; color: var(--gallery-muted); white-space: nowrap; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-average > .gallery-heatmap-strong { font-weight: 600; color: var(--gallery-muted); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-facts { display: flex; flex-direction: column; gap: 8px; margin: auto 0 0; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-facts > .gallery-heatmap-fact { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-facts > .gallery-heatmap-fact > dt { margin: 0; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-facts > .gallery-heatmap-fact > dd { margin: 0; font-size: 14px; font-weight: 600; color: var(--gallery-text); font-variant-numeric: tabular-nums; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-facts > .gallery-heatmap-fact > dd > small { margin-left: 2px; font-size: 11.5px; font-weight: 400; color: var(--gallery-faint); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-facts > .gallery-heatmap-fresh { margin: 0; font-size: 12px; line-height: 18px; color: var(--gallery-muted); text-wrap: pretty; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-facts > .gallery-heatmap-fresh > .gallery-heatmap-clause { display: inline-block; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who { margin-top: auto; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who[hidden] { display: none; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-split { display: flex; gap: 2px; height: 6px; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-split > i { border-radius: 3px; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-split > .gallery-heatmap-you-bar { background: var(--gallery-accent); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-split > .gallery-heatmap-agent-bar { background: var(--gallery-accent-mid); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-who-words { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11.5px; line-height: 15px; color: var(--gallery-faint); white-space: nowrap; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-who-words > span { display: inline-flex; align-items: center; gap: 5px; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-who-words > span > b { margin-left: -2px; font-weight: 600; color: var(--gallery-muted); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-who-words > span > i { width: 6px; height: 6px; border-radius: 2px; background: var(--gallery-accent); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-who > .gallery-heatmap-who-words > .gallery-heatmap-agent > i { background: var(--gallery-accent-mid); }
+
+  /* The squares and what stands around them. */
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field { position: relative; flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area {
+    position: relative;
+    flex: none;
+    box-sizing: content-box;
+    width: calc(var(--gallery-heatmap-weeks, 14) * (var(--gallery-heatmap-cell, 23px) + var(--gallery-heatmap-gap, 4px)) - var(--gallery-heatmap-gap, 4px));
+    padding: 18px 0 0 20px;
+  }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-months { position: absolute; top: 0; left: 20px; right: 0; height: 18px; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-months > .gallery-heatmap-month { position: absolute; top: 0; left: calc(var(--gallery-heatmap-week) * (var(--gallery-heatmap-cell) + var(--gallery-heatmap-gap))); font-size: 11px; line-height: 14px; color: var(--gallery-faint); white-space: nowrap; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-rows { position: absolute; top: 18px; left: 0; display: grid; grid-template-rows: repeat(7, var(--gallery-heatmap-cell, 23px)); row-gap: var(--gallery-heatmap-gap, 4px); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-rows > .gallery-heatmap-row { display: flex; align-items: center; font-size: 11px; line-height: 1; color: var(--gallery-faint); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-rows: repeat(7, var(--gallery-heatmap-cell, 23px));
+    grid-auto-columns: var(--gallery-heatmap-cell, 23px);
+    gap: var(--gallery-heatmap-gap, 4px);
+  }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-day { position: relative; border-radius: max(3px, calc(var(--gallery-heatmap-cell, 23px) * .24)); background: var(--gallery-heatmap-0); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-day[data-level="1"] { background: var(--gallery-heatmap-1); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-day[data-level="2"] { background: var(--gallery-heatmap-2); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-day[data-level="3"] { background: var(--gallery-heatmap-3); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-day[data-level="4"] { background: var(--gallery-heatmap-4); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-future { visibility: hidden; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-before { background: none; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-before::after { content: ""; position: absolute; top: 50%; left: 50%; width: 3.2px; height: 3.2px; margin: -1.6px 0 0 -1.6px; border-radius: 50%; background: var(--gallery-heatmap-dot); }
+  > .gallery-heatmap-face[data-layout="full"] > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-before::after { width: 4px; height: 4px; margin: -2px 0 0 -2px; }
+  > .gallery-heatmap-face[data-unread] > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-before { background: var(--gallery-heatmap-0); }
+  > .gallery-heatmap-face[data-unread] > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-before::after { content: none; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-today { outline: 1.5px solid var(--gallery-muted); outline-offset: 1.75px; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-grid > .gallery-heatmap-day[data-date]:hover { outline: 1.5px solid var(--gallery-text); outline-offset: 1.75px; }
+  /* The tip: over the card in the top layer (a popover, else fixed), placed in the window by the script; the kit's tooltip's look
+     (controls.css .doc-tip: its colors, 5px 8px, radius 6, 12px on 1.4, no arrow), since a heatmap's is the same thing. */
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-tip {
+    position: fixed;
+    inset: auto;
+    z-index: 10; /* the top layer needs none: this is where no popover is */
+    box-sizing: border-box;
+    margin: 0;
+    border: 0;
+    overflow: visible;
+    padding: 5px 8px;
+    border-radius: 6px;
+    background: var(--doc-tip-bg);
+    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 8%), inset 0 0 0 1px rgb(255 255 255 / 5%);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--doc-tip-text);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-tip[hidden] { display: none; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-area > .gallery-heatmap-tip > small { display: block; color: var(--doc-tip-sub); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend { display: flex; align-items: center; gap: 4px; margin-top: auto; padding-top: 8px; font-size: 11px; line-height: 14px; color: var(--gallery-faint); white-space: nowrap; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend > .gallery-heatmap-square { width: 11px; height: 11px; border-radius: 3px; background: var(--gallery-heatmap-0); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend > .gallery-heatmap-square[data-level="1"] { background: var(--gallery-heatmap-1); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend > .gallery-heatmap-square[data-level="2"] { background: var(--gallery-heatmap-2); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend > .gallery-heatmap-square[data-level="3"] { background: var(--gallery-heatmap-3); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend > .gallery-heatmap-square[data-level="4"] { background: var(--gallery-heatmap-4); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend > .gallery-heatmap-note { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend > .gallery-heatmap-note > s { display: block; width: 3px; height: 3px; border-radius: 50%; background: var(--gallery-heatmap-dot); }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin: 0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    transform: translate(-50%, -50%);
+    background: var(--gallery-card-fill);
+    box-shadow: 0 0 0 1px var(--gallery-hair);
+    font-size: 12.5px;
+    line-height: 18px;
+    color: var(--gallery-muted);
+    white-space: nowrap;
+  }
+  > .gallery-heatmap-face > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-overlay[hidden] { display: none; }
+
+  /* A compact card: a line of the total over the squares, no legend. */
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body { flex-direction: column; gap: 10px; margin-top: 12px; }
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body > .gallery-heatmap-aside { flex-direction: row; align-items: flex-end; justify-content: space-between; width: auto; }
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body > .gallery-heatmap-aside > :is(.gallery-heatmap-label, .gallery-heatmap-facts, .gallery-heatmap-who) { display: none; }
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-total { margin: 0; }
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-total > .gallery-heatmap-number { font-size: var(--gallery-figure-size); }
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-total > .gallery-heatmap-unit { margin-left: 11px; }
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body > .gallery-heatmap-aside > .gallery-heatmap-average { margin: 0; font-size: 11.5px; line-height: 16px; color: var(--gallery-muted); }
+  > .gallery-heatmap-face[data-layout="compact"] > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend { display: none; }
+  /* A strip: the squares alone under the head. */
+  > .gallery-heatmap-face[data-layout="strip"] > .gallery-heatmap-body { margin-top: 12px; }
+  > .gallery-heatmap-face[data-layout="strip"] > .gallery-heatmap-body > .gallery-heatmap-aside { display: none; }
+  /* Two cells high (8 × 2): the squares alone, no head, figures or legend, in the middle of the card's height;
+     the months' row its first, kept out of the grip's corner by the script (the probe: as wide as that corner). */
+  > .gallery-heatmap-face[data-layout="grid"] > .gallery-heatmap-head { display: none; }
+  > .gallery-heatmap-face[data-layout="grid"] > .gallery-heatmap-body { margin-top: 0; }
+  > .gallery-heatmap-face[data-layout="grid"] > .gallery-heatmap-body > .gallery-heatmap-aside { display: none; }
+  > .gallery-heatmap-face[data-layout="grid"] > .gallery-heatmap-body > .gallery-heatmap-field { justify-content: center; }
+  > .gallery-heatmap-face[data-layout="grid"] > .gallery-heatmap-body > .gallery-heatmap-field > .gallery-heatmap-legend { display: none; }
+  > .gallery-heatmap-face > .gallery-heatmap-grip-room { position: absolute; width: var(--gallery-grip-room, 0px); height: 0; visibility: hidden; pointer-events: none; }
+}
+/* On a custom page the face fills the card the board frames. */
+.gallery-card > [data-doc-component="gallery/heatmap"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery/heatmap"] > .gallery-heatmap-face { height: 100%; }

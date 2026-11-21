@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>预览 · {{TITLE}}</title>
+<style>
+:root { --pv-bg: #f1f0ee; --pv-bar: #fbfbfa; --pv-line: #e3e2e0; --pv-text: #37352f; --pv-sub: #787774; --pv-hover: #37352f0f; --pv-on: #37352f17; --pv-frame: #ffffff; }
+:root[data-theme="dark"] { --pv-bg: #151515; --pv-bar: #202020; --pv-line: #2f2f2f; --pv-text: #e6e6e5; --pv-sub: #9b9b9b; --pv-hover: #ffffff0e; --pv-on: #ffffff1a; --pv-frame: #191919; }
+html, body { height: 100%; margin: 0; }
+body { display: flex; flex-direction: column; background: var(--pv-bg); color: var(--pv-text); font: 13px/1.4 -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif; }
+.pvs-bar { flex: none; display: flex; align-items: center; gap: 12px; height: 44px; padding: 0 12px; box-sizing: border-box; background: var(--pv-bar); border-bottom: 1px solid var(--pv-line); }
+.pvs-title, .pvs-hint { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pvs-title { font-weight: 600; }
+.pvs-hint { color: var(--pv-sub); font-size: 12px; text-align: right; }
+.pvs-tools { flex: none; display: flex; align-items: center; max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+.pvs-group { display: flex; align-items: center; gap: 2px; white-space: nowrap; }
+.pvs-group + .pvs-group { margin-left: 6px; padding-left: 8px; border-left: 1px solid var(--pv-line); }
+.pvs-label { padding: 0 4px; color: var(--pv-sub); font-size: 12px; }
+.pvs-tools button { height: 26px; padding: 0 9px; border: 0; border-radius: 6px; background: none; color: var(--pv-sub); font: inherit; cursor: pointer; }
+.pvs-tools button:hover { background: var(--pv-hover); }
+.pvs-tools button[aria-pressed="true"] { background: var(--pv-on); color: var(--pv-text); font-weight: 500; }
+.pvs-tools button:focus-visible { outline: 2px solid #2383e2; outline-offset: -2px; }
+.pvs-stage { flex: 1; min-height: 0; display: flex; justify-content: center; }
+.pvs-stage iframe { display: block; width: 100%; max-width: 100%; height: 100%; border: 0; background: var(--pv-frame); }
+.pvs-stage[data-fixed] iframe { box-shadow: 0 0 0 1px var(--pv-line); }
+@media (max-width: 900px) { .pvs-title, .pvs-hint { display: none; } .pvs-bar { justify-content: center; } }
+</style>
+</head>
+<body>
+<header class="pvs-bar">
+  <div class="pvs-title"></div>
+  <div class="pvs-tools" role="toolbar" aria-label="预览设置"></div>
+  <div class="pvs-hint"></div>
+</header>
+<main class="pvs-stage"><iframe title="预览"></iframe></main>
+<script>
+(() => {
+  const CONFIG = /*CONFIG*/;
+  const PAGE = /*PAGE*/;
+  const WIDTH_NAMES = { normal: '正常', wide: '宽', narrow: '窄', phone: '手机' };
+  const groups = [
+    ...(CONFIG.options || []).map(o => ({ key: o.key, label: o.label, values: Object.entries(o.values) })),
+    { key: 'theme', label: '主题', values: [['light', '浅色'], ['dark', '深色']] },
+    { key: 'width', label: '宽度', values: Object.keys(CONFIG.widths).map(k => [k, WIDTH_NAMES[k] || k]) },
+  ];
+  const fromHash = Object.fromEntries(new URLSearchParams(location.hash.slice(1)));
+  const state = {};
+  for (const g of groups) {
+    const fallback = g.key === 'theme' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : g.values[0][0];
+    state[g.key] = g.values.some(([v]) => v === fromHash[g.key]) ? fromHash[g.key] : fallback;
+  }
+  window.__pvState = state;
+
+  const $ = s => document.querySelector(s);
+  const esc = value => String(value).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const frame = $('iframe'), stage = $('.pvs-stage');
+  $('.pvs-title').textContent = CONFIG.title || '';
+  $('.pvs-hint').textContent = CONFIG.hint || '';
+  $('.pvs-tools').innerHTML = groups.map(g => '<div class="pvs-group"><span class="pvs-label">' + esc(g.label) + '</span>' +
+    g.values.map(([v, label]) => '<button type="button" data-k="' + esc(g.key) + '" data-v="' + esc(v) + '">' + esc(label) + '</button>').join('') + '</div>').join('');
+
+  function show() {
+    document.documentElement.dataset.theme = state.theme;
+    document.querySelectorAll('.pvs-tools button').forEach(b => b.setAttribute('aria-pressed', String(state[b.dataset.k] === b.dataset.v)));
+    const px = CONFIG.widths[state.width];
+    frame.style.width = px ? px + 'px' : '100%';
+    stage.toggleAttribute('data-fixed', Boolean(px));
+    history.replaceState(null, '', '#' + new URLSearchParams(state));
+  }
+  function set(next, key) {
+    Object.assign(state, next);
+    show();
+    frame.contentWindow?.postMessage({ pv: 'state', state: { ...state }, key }, '*');
+  }
+  $('.pvs-tools').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b && state[b.dataset.k] !== b.dataset.v) set({ [b.dataset.k]: b.dataset.v }, b.dataset.k);
+  });
+  addEventListener('message', e => {
+    if (e.source !== frame.contentWindow) return;
+    if (e.data?.pv === 'set') set(e.data.state, Object.keys(e.data.state)[0]);
+    if (e.data?.pv === 'hello') frame.contentWindow.postMessage({ pv: 'state', state: { ...state }, key: 'init' }, '*');
+  });
+
+  let loaded;
+  const ready = new Promise(r => { loaded = r; });
+  frame.addEventListener('load', () => loaded(), { once: true });
+  show();
+  frame.srcdoc = PAGE;
+
+  // For scripts that drive the preview (screenshots, checks): run code inside the page, find where an element is.
+  window.pv = {
+    ready, state, set,
+    run: code => frame.contentWindow.eval('(async () => {\n' + code + '\n})()'),
+    rect(selector) {
+      const f = frame.getBoundingClientRect(), el = frame.contentDocument.querySelector(selector);
+      if (!el) return null;
+      const r = el.getBoundingClientRect();
+      return { x: f.left + r.left + r.width / 2, y: f.top + r.top + r.height / 2, left: f.left + r.left, top: f.top + r.top, width: r.width, height: r.height };
+    },
+    frameRect() { const r = frame.getBoundingClientRect(); return { x: r.left, y: r.top, width: r.width, height: r.height }; },
+  };
+})();
+</script>
+</body>
+</html>

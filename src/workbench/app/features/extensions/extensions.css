@@ -1,0 +1,62 @@
+/* 设置 → 扩展。
+   和「组件列表」的块包是同一套：卡片网格 .comp-packs > .comp-pack（.comp-pack-open + .comp-toggle），
+   点卡片进入 .comp-pack-view（‹ 返回、头部、说明），「安装」是网格里的 .comp-pack-add，展开 .comp-import。
+   这里只加扩展独有的部分。 */
+
+/* 高度随内容，顶部对齐（和 .modal 一样），展开「安装」或进入详情时对话框不会上下跳。 */
+.pref-overlay.ext-overlay { align-items: flex-start; padding-top: 12vh; }
+.pref-dialog.ext-dialog { height: auto; max-height: min(720px, 100%); }
+
+/* 未安装时是居中的空状态，它唯一的动作「安装扩展」是主按钮（淡蓝底、蓝字，和别的主按钮一样）；已有扩展时安装入口是网格里的灰卡片（.comp-pack-add）。 */
+.ext-empty { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 40px 24px 28px; text-align: center; }
+.ext-empty .ext-icon { flex: none; width: 40px; height: 40px; border-radius: 10px; background: var(--bacIntTra); color: var(--icoSec); font-size: 18px; line-height: 1; }
+.ext-empty .ext-icon svg { width: 20px; height: 20px; stroke-width: 1.25px; }
+.ext-empty-title { margin-top: 6px; color: var(--texPri); font-size: 14px; font-weight: 500; line-height: 20px; }
+.ext-empty-hint { max-width: 380px; color: var(--texSec); font-size: 13px; line-height: 1.5; }
+.ext-add { display: flex; align-items: center; justify-content: center; gap: 6px; width: fit-content; height: 32px; margin: 0 auto; padding: 0 14px; border-radius: var(--r-ctl); background: var(--btnPriBg); color: var(--btnPriTex); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
+.ext-add:hover, .ext-add[aria-expanded="true"], .ext-add:focus-visible { background: var(--btnPriBgHi); }
+.ext-add:active { background: var(--btnPriBgPre); }
+.ext-add svg { width: 16px; height: 16px; stroke-width: 1.6px; }
+.ext-add + .ext-import { margin-top: 8px; }
+.comp-import.ext-import { gap: 8px; }
+.ext-import .comp-import-pick { margin: 0; }
+
+.ext-card[data-off] .comp-pack-icon { opacity: .55; filter: grayscale(1); }
+
+/* 需要用户知道的事：卡片的第二行和详情里各显示一次，前面一个小圆点。蓝色是要刷新，红色是出错。 */
+.ext-state { display: inline-flex; align-items: center; gap: 6px; min-width: 0; }
+.ext-state::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+.ext-state[data-tone="error"] { color: var(--btnDanTex); }
+.ext-state[data-tone="error"]::before { background: var(--red); }
+.comp-pack-meta .ext-state { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.comp-pack-meta .ext-state[data-tone="info"] { color: var(--texSec); }
+
+/* 详情 */
+.ext-view .comp-pack-head .comp-pack-icon { background: var(--bacIntTra); }
+.ext-view > .comp-note { margin-bottom: 6px; }
+.ext-view > .ext-state { display: flex; margin: 2px 0 8px; font-size: 13px; line-height: 18px; }
+.ext-view > .ext-state[data-tone="info"] { color: var(--texSec); }
+
+/* 扩展自己的设置（extension.json 的 settings）：和组件列表展开后的开关一样（.comp-opt），一个一行 */
+.ext-view > .ext-settings { margin: 2px 0 0; }
+
+.ext-detail-rows { margin-top: 10px; }
+.ext-detail-row { display: grid; grid-template-columns: 20px 76px minmax(0, 1fr) auto; align-items: center; gap: 0 10px; min-height: 40px; border-top: 1px solid var(--borSec); }
+.ext-detail-row:last-child { border-bottom: 1px solid var(--borSec); }
+.ext-detail-row .comp-icon svg { width: 18px; height: 18px; }
+.ext-detail-label { color: var(--texPri); font-size: 14px; line-height: 20px; white-space: nowrap; }
+.ext-detail-value { min-width: 0; color: var(--texSec); font-size: 13px; line-height: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ext-detail-value code { font-family: var(--mono); font-size: 12px; }
+
+/* 文字按钮：行尾的操作、底部的「移除扩展…」 */
+.ext-link { flex: none; height: 26px; padding: 0 8px; border-radius: var(--r-ctl); color: var(--texSec); font: inherit; font-size: 13px; white-space: nowrap; cursor: pointer; }
+.ext-link:hover { background: var(--bacIntTra); color: var(--texPri); }
+.ext-link:active:not(:disabled) { background: var(--bacPre); }
+.ext-remove { margin: 14px 0 0 -8px; color: var(--btnDanTex); }
+.ext-remove:hover { color: var(--btnDanTex); }
+
+.ext-icon { display:flex; align-items:center; justify-content:center; width:100%; height:100%; }
+.ext-icon img { width:24px; height:24px; object-fit:contain; }
+.ext-dialog .comp-pack-icon .page-icon { width:24px; height:24px; }
+.ext-view > .ext-state { overflow-wrap:anywhere; white-space:pre-wrap; }
+@media(max-width:560px){.ext-detail-row{grid-template-columns:20px 64px minmax(0,1fr);padding:6px 0;row-gap:4px}.ext-detail-row > .ext-link{grid-column:3;justify-self:start}}

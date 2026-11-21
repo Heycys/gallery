@@ -1,0 +1,247 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. The board: a muted line saying what it groups by, the settings (⚙)
+   at its right while the page edits, then the groups side by side, each a column of cards on a soft
+   fill, its head a dot of its color (the kit's series colors in the groups' order, a gray one for the
+   rows with no value: --gallery-kanban-dot, which the script sets), its name, its count and, at its
+   right where the table takes a change, a + that adds a card; past the width of the page the groups
+   scroll sideways in the board, never the page. A card is the kit's surface on a hairline, its title,
+   the other cells' words in small muted print, its links as chips; its 🗑 shows as the pointer is on it,
+   where the table takes a change, and it lifts a little under the pointer where it can be dragged. The
+   words drawn from a cell (a title, the words under it, a group's name) are typed in where they stand:
+   the kit's look (styles/installed.css, data-doc-text), the light accent fill under the pointer. What
+   keeps the board from showing (no table, a column renamed) is said in a soft panel where the board
+   would be. Flat, in the kit's colors, light and dark. */
+[data-doc-component="gallery/kanban"] {
+  margin: var(--doc-component-gap) 0;
+  > .gallery-kanban-face {
+    position: relative;
+    color: var(--doc-text);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+  > .gallery-kanban-face > .gallery-kanban-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    margin: 0 0 6px;
+    > .gallery-kanban-caption { flex: 1 1 auto; min-width: 0; font-size: 12px; color: var(--doc-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    > .gallery-kanban-gear {
+      display: none;
+      flex: none;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      margin: 0 -6px 0 0;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--doc-muted);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s, background-color .1s ease-out, color .1s ease-out;
+    }
+    > .gallery-kanban-gear > svg { width: 16px; height: 16px; }
+    > .gallery-kanban-gear:hover { background: var(--doc-hover); color: var(--doc-text); transition: opacity .12s; }
+    > .gallery-kanban-gear:active { background: var(--doc-press); }
+    > .gallery-kanban-gear:focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 1px; }
+    > .gallery-kanban-gear[aria-expanded="true"] { background: var(--doc-hover); color: var(--doc-text); opacity: 1; }
+  }
+  > .gallery-kanban-face > .gallery-kanban-head[hidden] { display: none; }
+  > .gallery-kanban-face[data-writes] > .gallery-kanban-head > .gallery-kanban-gear { display: inline-flex; }
+  > .gallery-kanban-face[data-writes]:hover > .gallery-kanban-head > .gallery-kanban-gear,
+  > .gallery-kanban-face[data-writes]:focus-within > .gallery-kanban-head > .gallery-kanban-gear { opacity: 1; }
+  @media (hover: none) {
+    > .gallery-kanban-face[data-writes] > .gallery-kanban-head > .gallery-kanban-gear { opacity: 1; }
+  }
+  > .gallery-kanban-face > .gallery-kanban-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--doc-hover);
+    font-size: 12px;
+    > .gallery-kanban-setting { display: inline-flex; align-items: center; gap: 6px; color: var(--doc-muted); }
+    /* A select is a button that opens the kit's menu (DocKit's choices): no line, as every button; its chevron is the
+       kit's background image, so the fill is background-color and the right padding leaves it room. */
+    > .gallery-kanban-setting > select {
+      max-width: 200px;
+      box-sizing: border-box;
+      height: 26px;
+      padding: 2px 24px 2px 8px;
+      border: 0;
+      cursor: pointer;
+      border-radius: 6px;
+      background-color: var(--doc-surface);
+      color: var(--doc-text);
+      font: inherit;
+    }
+    > .gallery-kanban-setting > select:focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 0; }
+  }
+  > .gallery-kanban-face > .gallery-kanban-strip[hidden] { display: none; }
+  /* What keeps the board from showing, or from being changed: a soft panel, where it would be or over it. */
+  > .gallery-kanban-face > .gallery-kanban-line { margin: 0 0 8px; padding: 10px 12px; border-radius: 8px; background: var(--doc-hover); font-size: 13px; line-height: 20px; color: var(--doc-muted); }
+  > .gallery-kanban-face > .gallery-kanban-line[hidden] { display: none; }
+  > .gallery-kanban-face > .gallery-kanban-groups {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(200px, 1fr);
+    align-items: start;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  > .gallery-kanban-face > .gallery-kanban-groups > .gallery-kanban-group {
+    min-width: 0;
+    padding: 8px;
+    border-radius: 10px;
+    background: var(--doc-hover);
+    > .gallery-kanban-group-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 24px;
+      margin: 0 4px 6px;
+      font-size: 13px;
+      line-height: 20px;
+      > .gallery-kanban-dot { flex: none; width: 8px; height: 8px; margin-inline-end: -1px; border-radius: 50%; background: var(--gallery-kanban-dot, var(--doc-muted)); }
+      > .gallery-kanban-name {
+        min-width: 1em;
+        font-weight: 600;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+      > .gallery-kanban-name:focus { text-overflow: clip; }
+      > .gallery-kanban-count { color: var(--doc-muted); font-variant-numeric: tabular-nums; }
+      /* The + that adds a card to the group: the kit's icon button (no line; a light gray under the pointer, a step
+         deeper pressed), at the head's right, while the table takes a change. */
+      > .gallery-kanban-add {
+        display: none;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        margin: -2px -4px -2px auto;
+        padding: 0;
+        border: 0;
+        border-radius: 6px;
+        background: transparent;
+        color: var(--doc-muted);
+        cursor: pointer;
+        transition: background-color .1s ease-out, color .1s ease-out;
+      }
+      > .gallery-kanban-add > svg { width: 16px; height: 16px; }
+      > .gallery-kanban-add:hover { background: var(--doc-hover); color: var(--doc-text); transition: none; }
+      > .gallery-kanban-add:active { background: var(--doc-press); }
+      > .gallery-kanban-add:focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 1px; }
+    }
+    > .gallery-kanban-cards {
+      display: grid;
+      gap: 6px;
+      min-height: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+  }
+  > .gallery-kanban-face > .gallery-kanban-groups[data-writes] > .gallery-kanban-group > .gallery-kanban-group-head > .gallery-kanban-add { display: inline-flex; }
+  /* A card, in its group or lifted under the pointer as it is dragged (.gallery-kanban-lift, a copy the script puts there). */
+  > .gallery-kanban-face :is(.gallery-kanban-groups > .gallery-kanban-group > .gallery-kanban-cards, .gallery-kanban-lift) > .gallery-kanban-card {
+    position: relative;
+    /* A card off the screen is not laid out (its size kept as it was last drawn): a board of 500 cards
+       costs a keystroke in its table what the cards in sight cost. */
+    content-visibility: auto;
+    contain-intrinsic-size: auto 64px;
+    border: 1px solid var(--doc-border);
+    border-radius: 8px;
+    background: var(--doc-surface);
+    box-shadow: 0 1px 2px rgb(15 15 15 / .04);
+    overflow-wrap: anywhere;
+    transition: box-shadow .12s ease-out;
+    > .gallery-kanban-hold { padding: 8px 10px; }
+    > .gallery-kanban-hold > .gallery-kanban-title { display: block; font-weight: 500; }
+    > .gallery-kanban-hold > .gallery-kanban-props > .gallery-kanban-prop[contenteditable] { min-width: 1em; }
+    > .gallery-kanban-hold > .gallery-kanban-props { display: flex; flex-wrap: wrap; gap: 2px 10px; margin-top: 4px; font-size: 12px; color: var(--doc-muted); }
+    > .gallery-kanban-links { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 10px 8px; margin-top: -2px; }
+    > .gallery-kanban-links > .gallery-kanban-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      max-width: 100%;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--doc-hover);
+      color: var(--doc-link);
+      font-size: 12px;
+      text-decoration: none;
+    }
+    > .gallery-kanban-links > .gallery-kanban-link > svg { flex: none; width: 13px; height: 13px; }
+    > .gallery-kanban-links > .gallery-kanban-link > .gallery-kanban-words { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    > .gallery-kanban-links > .gallery-kanban-link:hover { background: var(--doc-press); }
+    > .gallery-kanban-tools {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      display: none;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .12s;
+      gap: 2px;
+      padding: 1px;
+      border: 1px solid var(--doc-border);
+      border-radius: 6px;
+      background: var(--doc-surface);
+    }
+    > .gallery-kanban-tools > button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      padding: 0;
+      border: 0;
+      border-radius: 4px;
+      background: transparent;
+      color: var(--doc-muted);
+      cursor: pointer;
+    }
+    > .gallery-kanban-tools > button > svg { width: 14px; height: 14px; }
+    > .gallery-kanban-tools > button:hover { background: var(--doc-hover); color: var(--doc-text); }
+    /* Inside the button: the card clips what lies past it. */
+    > .gallery-kanban-tools > button:focus-visible { outline: 2px solid var(--doc-accent); outline-offset: -2px; }
+  }
+  /* Where the table takes a change the tools are there to be reached: shown while the pointer or the keys are in the card, always where there is no
+     hover; not while its words are typed in (data-typing, the script's: no :has() over what is editable, which the page sets on every block),
+     whose end they would stand over. */
+  > .gallery-kanban-face > .gallery-kanban-groups[data-writes] > .gallery-kanban-group > .gallery-kanban-cards > .gallery-kanban-card > .gallery-kanban-tools { display: inline-flex; }
+  > .gallery-kanban-face > .gallery-kanban-groups[data-writes] > .gallery-kanban-group > .gallery-kanban-cards > .gallery-kanban-card:is(:hover, :focus-within):not(.doc-dragging, [data-typing]) > .gallery-kanban-tools { opacity: 1; pointer-events: auto; }
+  @media (hover: none) {
+    > .gallery-kanban-face > .gallery-kanban-groups[data-writes] > .gallery-kanban-group > .gallery-kanban-cards > .gallery-kanban-card:not([data-typing]) > .gallery-kanban-tools { opacity: 1; pointer-events: auto; }
+  }
+  > .gallery-kanban-face > .gallery-kanban-groups[data-writes] > .gallery-kanban-group > .gallery-kanban-cards > .gallery-kanban-card > .gallery-kanban-hold { cursor: grab; touch-action: none; user-select: none; }
+  @media (hover: hover) {
+    > .gallery-kanban-face > .gallery-kanban-groups[data-writes] > .gallery-kanban-group > .gallery-kanban-cards > .gallery-kanban-card:hover { box-shadow: 0 2px 6px rgb(15 15 15 / .08); }
+  }
+  /* A card dragged: where it was, faint; a copy of it lifted under the pointer (fixed to the window, above the page, no
+     pointer of its own), where it goes the accent line. */
+  > .gallery-kanban-face > .gallery-kanban-groups > .gallery-kanban-group > .gallery-kanban-cards > .gallery-kanban-card.doc-dragging { opacity: .4; }
+  > .gallery-kanban-face > .gallery-kanban-lift {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    pointer-events: none;
+    > .gallery-kanban-card { content-visibility: visible; box-shadow: 0 12px 28px rgb(15 15 15 / .16), 0 2px 6px rgb(15 15 15 / .08); cursor: grabbing; }
+  }
+  > .gallery-kanban-face > .gallery-kanban-groups > .gallery-kanban-group > .gallery-kanban-cards > .gallery-kanban-drop { height: 3px; border-radius: 2px; background: var(--doc-accent); }
+}

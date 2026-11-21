@@ -1,0 +1,8 @@
+{
+  "id": "my-cards",
+  "name": { "zh": "我的卡片", "en": "My cards" },
+  "description": { "zh": "两张自己画的卡片：问候和便签。", "en": "Two cards of one's own: a greeting and a note." },
+  "version": "1.0.0",
+  "author": "小林",
+  "icon": "🃏"
+}

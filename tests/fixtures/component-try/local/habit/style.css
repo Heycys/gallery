@@ -1,0 +1,10 @@
+/* The habit's name, its unit and its count on a line. */
+[data-doc-component="local/habit"] .habit-drawn {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+[data-doc-component="local/habit"] .habit-count {
+  font-size: 24px;
+  font-weight: 600;
+}

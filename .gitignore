@@ -1,0 +1,22 @@
+/node_modules/
+/dist/
+/public/vendor/
+/public/kit/
+/release/
+.DS_Store
+*.log
+.env*
+# A checkout's own dev workspace, if one is made there (a file already tracked under it stays tracked)
+/reports/
+/reports/.gallery/
+/reports/exports/
+# What a checkout made before Gallery 0.1 wrote and nothing writes now (built previews, exports, qa
+# pictures, backups, the trash at those places), left where it was: the workspace's are
+# /reports/.gallery/ and /reports/exports/.
+/public/generated/
+/exports/
+/qa/
+/backups/
+/reports/.trash/
+# Local previews of the READMEs
+/preview/

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="168" viewBox="0 0 720 168">
+  <style>
+    .card { fill: #f4f2ee; stroke: #e2ded7; }
+    .last { fill: #e8f1fb; stroke: #c9dcf2; }
+    .title { font: 600 17px system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #2c2c2b; }
+    .note { font: 13px system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; fill: #7d7a75; }
+    .arrow { stroke: #a19e99; stroke-width: 1.6; fill: none; }
+    @media (prefers-color-scheme: dark) {
+      .card { fill: #2c2c2b; stroke: #3a3a38; }
+      .last { fill: #1f3044; stroke: #2c4560; }
+      .title { fill: #f0efed; }
+      .note { fill: #ada9a3; }
+      .arrow { stroke: #7d7a75; }
+    }
+  </style>
+  <defs>
+    <marker id="head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M1 1 L8 5 L1 9" class="arrow"/>
+    </marker>
+  </defs>
+  <rect class="card" x="8" y="34" width="140" height="100" rx="14"/>
+  <text class="title" x="78" y="78" text-anchor="middle">材料</text>
+  <text class="note" x="78" y="104" text-anchor="middle">数据、日志、记录</text>
+  <rect class="card" x="196" y="34" width="140" height="100" rx="14"/>
+  <text class="title" x="266" y="78" text-anchor="middle">结论</text>
+  <text class="note" x="266" y="104" text-anchor="middle">先想清楚要说什么</text>
+  <rect class="card" x="384" y="34" width="140" height="100" rx="14"/>
+  <text class="title" x="454" y="78" text-anchor="middle">组件</text>
+  <text class="note" x="454" y="104" text-anchor="middle">图表、表格、图片</text>
+  <rect class="last" x="572" y="34" width="140" height="100" rx="14"/>
+  <text class="title" x="642" y="78" text-anchor="middle">单文件 HTML</text>
+  <text class="note" x="642" y="104" text-anchor="middle">离线可开，图片嵌入</text>
+  <path class="arrow" d="M152 84 H190" marker-end="url(#head)"/>
+  <path class="arrow" d="M340 84 H378" marker-end="url(#head)"/>
+  <path class="arrow" d="M528 84 H566" marker-end="url(#head)"/>
+</svg>

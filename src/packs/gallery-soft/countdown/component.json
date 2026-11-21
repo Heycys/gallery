@@ -1,0 +1,18 @@
+{
+  "id": "gallery-soft/countdown",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "倒计时", "en": "Countdown" },
+  "description": { "zh": "离某一天还有几天，宽卡片旁边放一页小日历；到了那天说就是今天，过了说已过几天", "en": "How many days until a date, a page of a calendar beside it on a wide card: today on the day, and the days since after it" },
+  "words": "daojishi daoshu countdown days until 倒计时 倒数日 纪念日 日子",
+  "parts": {
+    "settings": { "at": ":scope > script", "edit": "data" }
+  },
+  "runtime": { "generated": [":scope > .gallery-soft-countdown-face"] },
+  "places": ["page"],
+  "card": { "sizes": [[2, 2], [4, 2]], "resize": true },
+  "settings": [
+    { "key": "title", "label": { "zh": "名称", "en": "Name" }, "type": "text", "default": "" },
+    { "key": "date", "label": { "zh": "日期", "en": "Date" }, "type": "date", "required": true }
+  ]
+}

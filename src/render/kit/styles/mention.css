@@ -1,0 +1,39 @@
+/* A link shown as its page's icon and title (图标视图, 页面块: shared/components/mention.mjs): a quiet
+   look, not a text link's blue (base.css): the muted gray on a thin line always shown, under the pointer
+   too (--doc-mention, --doc-mention-line), the icon before the title, a little taller than a capital
+   and on the text's middle, rounded a little, the line under the title alone; an empty icon is a
+   globe drawn in the link's color. */
+.doc-link-mention { color: var(--doc-mention); text-decoration: underline .05em var(--doc-mention-line); text-underline-offset: .2em; }
+.doc-link-mention-icon {
+  display: inline-block;
+  width: 1.125em;
+  height: 1.125em;
+  margin-inline-end: .3em;
+  vertical-align: -.2em;
+  border-radius: 3px;
+  object-fit: contain;
+}
+span.doc-link-mention-icon {
+  border-radius: 0;
+  background: currentColor;
+  opacity: .85;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23000' stroke-width='1.5'%3E%3Ccircle cx='10' cy='10' r='7.25'/%3E%3Cpath d='M2.75 10h14.5M10 2.75c-1.9 2-2.85 4.4-2.85 7.25S8.1 15.25 10 17.25M10 2.75c1.9 2 2.85 4.4 2.85 7.25s-.95 5.25-2.85 7.25'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23000' stroke-width='1.5'%3E%3Ccircle cx='10' cy='10' r='7.25'/%3E%3Cpath d='M2.75 10h14.5M10 2.75c-1.9 2-2.85 4.4-2.85 7.25S8.1 15.25 10 17.25M10 2.75c1.9 2 2.85 4.4 2.85 7.25s-.95 5.25-2.85 7.25'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+
+/* A page block: the address is a document's. An empty icon is a page, as a page with none has in the
+   workbench's tree (Lucide's plain file outline), and the pointer lights it up as a whole to click on. */
+.doc-link-mention[href]:not([href^="http" i]) > span.doc-link-mention-icon {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z'/%3E%3Cpath d='M14 2v5a1 1 0 0 0 1 1h5'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z'/%3E%3Cpath d='M14 2v5a1 1 0 0 0 1 1h5'/%3E%3C/svg%3E");
+}
+.doc-link-mention[href]:not([href^="http" i]):hover {
+  border-radius: 1px;
+  background: rgb(148 148 148 / 15%);
+  box-shadow: 0 0 0 3px rgb(148 148 148 / 15%);
+}
+/* A page block whose document is not there (render/page-chips.mjs): its words, gray, no line. */
+.doc-link-mention[data-doc-gone] { color: var(--doc-muted); text-decoration: none; }
+
+/* One left empty (no address yet: the editor's gray 链接 or 页面) shows to no reader. */
+.doc-link-mention:empty { display: none; }

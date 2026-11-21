@@ -1,0 +1,148 @@
+/* 柔光风格's note. Every selector starts at the instance and goes down a step at a time (>), so that
+   nothing here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark():
+   the page's color scheme, which follows its theme), then the face: a sheet of paper, its warm fill and
+   faint ruled lines the words sit on, one every line of the field's (the lines scroll with its words), a
+   head of a warm chip, 便签 and the count at its end, the field under it with no border, fill or ring of its
+   own, its placeholder faint (muted while the reader types), the caret the accent; while the field has the
+   focus and takes edits, a line at the bottom saying how to keep and drop what was typed. On a custom page
+   the face is the card's whole room, taken out over the card's padding and given the soft frame's (20px,
+   18px on a 2 × 2 card, 24px on a tall one: the face's data-pad), the board's line around it; where no card
+   is (a document, as gallery block check shows it) the face frames itself at the size of a 4 × 2 card. */
+[data-doc-component="gallery-soft/note"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-faint: light-dark(#ababb0, #66666c);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-warm: light-dark(#e59a2c, #f0b257);
+  --soft-warm-soft: light-dark(#fdf1df, rgb(240 178 87 / 14%));
+  --soft-paper: light-dark(#fffcf3, #232220);
+  --soft-paper-line: light-dark(rgb(160 120 40 / 10%), rgb(255 220 150 / 6%));
+  --soft-grip-room: 0px;
+  > .gallery-soft-note-face {
+    --soft-pad: 20px;
+    --soft-line: 22px;
+    --soft-head: 28px;
+    --soft-gap: 10px;
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    width: 304px;
+    max-width: 100%;
+    height: 144px;
+    padding: calc(var(--soft-pad) - var(--soft-edge, 0px));
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-paper);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-note-face[data-pad="s"] { --soft-pad: 18px; --soft-line: 21px; --soft-head: 24px; --soft-gap: 8px; }
+  > .gallery-soft-note-face[data-pad="l"] { --soft-pad: 24px; }
+  > .gallery-soft-note-face[data-pad="xs"] { padding: 0 calc(16px - var(--soft-edge, 0px)); justify-content: center; }
+  > .gallery-soft-note-face > .gallery-soft-note-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+    height: 28px;
+    min-width: 0;
+    padding-inline-end: var(--soft-grip-room);
+  }
+  > .gallery-soft-note-face > .gallery-soft-note-head > .gallery-soft-note-chip {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--soft-warm-soft);
+    color: var(--soft-warm);
+  }
+  > .gallery-soft-note-face > .gallery-soft-note-head > .gallery-soft-note-chip > svg { display: block; width: 16px; height: 16px; }
+  > .gallery-soft-note-face > .gallery-soft-note-head > .gallery-soft-note-title {
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-note-face > .gallery-soft-note-head > .gallery-soft-note-meta:empty { display: none; }
+  > .gallery-soft-note-face > .gallery-soft-note-head > .gallery-soft-note-meta {
+    flex: none;
+    margin-left: auto;
+    margin-inline-end: calc(-1 * var(--soft-grip-room));
+    font-size: 12px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+    opacity: calc(1 - var(--gallery-grip-shown, 0));
+    transition: opacity .12s ease-out;
+  }
+  > .gallery-soft-note-face[data-pad="s"] > .gallery-soft-note-head { gap: 8px; height: 24px; }
+  > .gallery-soft-note-face[data-pad="s"] > .gallery-soft-note-head > .gallery-soft-note-chip { width: 24px; height: 24px; border-radius: 7px; }
+  > .gallery-soft-note-face[data-pad="s"] > .gallery-soft-note-head > .gallery-soft-note-chip > svg { width: 14px; height: 14px; }
+  > .gallery-soft-note-face[data-pad="s"] > .gallery-soft-note-head > .gallery-soft-note-title { font-size: 13px; }
+  /* The field: the paper's ruled lines, one a line of its words, as high as whole lines fit. */
+  > .gallery-soft-note-face > .gallery-soft-note-field {
+    display: block;
+    flex: none;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: 0;
+    height: round(down, calc(100% - var(--soft-head) - var(--soft-gap) - var(--soft-hint, 0px)), var(--soft-line));
+    margin: var(--soft-gap) 0 0;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    resize: none;
+    background-color: transparent;
+    background-image: linear-gradient(transparent calc(var(--soft-line) - 1px), var(--soft-paper-line) calc(var(--soft-line) - 1px), var(--soft-paper-line) var(--soft-line));
+    background-size: 100% var(--soft-line);
+    background-attachment: local;
+    font: inherit;
+    font-size: 13.5px;
+    line-height: var(--soft-line);
+    color: var(--soft-text);
+    caret-color: var(--soft-accent);
+    overflow-wrap: break-word;
+    scrollbar-width: none;
+  }
+  > .gallery-soft-note-face[data-pad="s"] > .gallery-soft-note-field { font-size: 13px; }
+  > .gallery-soft-note-face > .gallery-soft-note-field::placeholder { color: var(--soft-faint); opacity: 1; }
+  > .gallery-soft-note-face > .gallery-soft-note-field:focus::placeholder { color: var(--soft-muted); }
+  > .gallery-soft-note-face > .gallery-soft-note-field:read-only { cursor: default; }
+  > .gallery-soft-note-face > .gallery-soft-note-hint {
+    display: none;
+    justify-content: space-between;
+    gap: 8px;
+    flex: none;
+    margin-top: 6px;
+    font-size: 11.5px;
+    line-height: 18px;
+    color: var(--soft-muted);
+    white-space: nowrap;
+  }
+  > .gallery-soft-note-face:has(> .gallery-soft-note-field:focus:not(:read-only)) { --soft-hint: 24px; }
+  > .gallery-soft-note-face:has(> .gallery-soft-note-field:focus:not(:read-only)) > .gallery-soft-note-hint { display: flex; margin-top: auto; }
+}
+/* On a custom page: the face over the card's whole room, its padding the soft frame's, the board's line around it; the head's end kept clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/note"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/note"] > .gallery-soft-note-face {
+  --soft-edge: 1px;
+  --soft-grip-room: max(0px, calc(40px - var(--soft-pad)));
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}

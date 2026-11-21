@@ -1,0 +1,118 @@
+/* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
+   reaches the rest of the page. A framed card of the kit's (.doc-figure's since 2026-11-17: its 1px line, its
+   12px corners, the ground it stands on, which is the surface inside it, its insets): its name small and
+   muted, the number large under it with its unit in smaller muted print (the number's weight, tracking
+   and unit the kit's card tokens, as a page's cards draw theirs), and a muted line under it only where
+   there is more to know (the rows it was counted of, the rows a sum left out). The settings (⚙) stand at
+   the top right corner while the page edits, over nothing (a metric with no name, one that cannot be
+   read, has no empty line for them), the strip they open under the name: a field a line, its name in a
+   column of their own, where the card is narrow, as in a row of tiles; side by side where it is wide.
+   Side by side in a document's columns metrics read as a row of tiles. The instance is a container, so
+   that the number fits a narrow column. Flat, light and dark. */
+[data-doc-component="gallery/metric"] {
+  --doc-surface: var(--doc-figure-ground, var(--doc-bg));
+  container-type: inline-size;
+  margin: var(--doc-component-gap) 0;
+  padding: 14px 18px 14px;
+  border: 1px solid var(--doc-border);
+  border-radius: 12px;
+  background: var(--doc-surface);
+  > .gallery-metric-face { position: relative; color: var(--doc-text); }
+  > .gallery-metric-face > .gallery-metric-head {
+    padding-right: 22px;
+    > .gallery-metric-label { display: block; font-size: 13px; line-height: 20px; color: var(--doc-muted); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    > .gallery-metric-label[hidden] { display: none; }
+    > .gallery-metric-gear {
+      position: absolute;
+      top: -3px;
+      right: -6px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      padding: 0;
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--doc-muted);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity .12s, background-color .1s ease-out, color .1s ease-out;
+    }
+    > .gallery-metric-gear > svg { width: 16px; height: 16px; }
+    > .gallery-metric-gear:hover { background: var(--doc-hover); color: var(--doc-text); transition: opacity .12s; }
+    > .gallery-metric-gear:active { background: var(--doc-press); }
+    > .gallery-metric-gear:focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 1px; }
+    > .gallery-metric-gear[aria-expanded="true"] { background: var(--doc-hover); color: var(--doc-text); opacity: 1; }
+  }
+  > .gallery-metric-face > .gallery-metric-head[hidden] { display: none; }
+  > .gallery-metric-face[data-writes] > .gallery-metric-head > .gallery-metric-gear { display: inline-flex; }
+  > .gallery-metric-face[data-writes]:hover > .gallery-metric-head > .gallery-metric-gear,
+  > .gallery-metric-face[data-writes]:focus-within > .gallery-metric-head > .gallery-metric-gear { opacity: 1; }
+  @media (hover: none) {
+    > .gallery-metric-face[data-writes] > .gallery-metric-head > .gallery-metric-gear { opacity: 1; }
+  }
+  /* The settings: a grid of a name and its field a line where the card is narrow; a row that wraps where it is wide.
+     A field is a white well on the strip's light fill, no line, as a select (a button that opens the kit's menu,
+     DocKit's choices, its chevron the kit's background image, so the fill is background-color and the right padding
+     leaves it room) and a text alike. */
+  > .gallery-metric-face > .gallery-metric-strip {
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 6px 10px;
+    margin: 8px 0 6px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--doc-hover);
+    font-size: 12px;
+    > .gallery-metric-setting { display: contents; color: var(--doc-muted); }
+    > .gallery-metric-setting[hidden] { display: none; }
+    > .gallery-metric-setting > select,
+    > .gallery-metric-setting > input {
+      box-sizing: border-box;
+      width: 100%;
+      min-width: 0;
+      max-width: 220px;
+      height: 26px;
+      padding: 2px 8px;
+      border: 0;
+      border-radius: 6px;
+      background-color: var(--doc-surface);
+      color: var(--doc-text);
+      font: inherit;
+      justify-self: start;
+    }
+    > .gallery-metric-setting > select { width: auto; padding-right: 24px; cursor: pointer; }
+    > .gallery-metric-setting > :is(select, input):focus-visible { outline: 2px solid var(--doc-accent); outline-offset: 0; }
+  }
+  @container (min-width: 440px) {
+    > .gallery-metric-face > .gallery-metric-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+      > .gallery-metric-setting { display: inline-flex; align-items: center; gap: 6px; }
+      > .gallery-metric-setting[hidden] { display: none; }
+      > .gallery-metric-setting > input { width: 120px; }
+    }
+  }
+  > .gallery-metric-face > .gallery-metric-strip[hidden] { display: none; }
+  > .gallery-metric-face > .gallery-metric-value {
+    margin: 2px 0 0;
+    font-size: clamp(26px, 12cqi, 36px);
+    line-height: 1.2;
+    font-weight: var(--gallery-numeral-weight);
+    letter-spacing: var(--gallery-numeral-tracking);
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+    > .gallery-metric-unit { display: inline-block; margin-inline-start: .25em; font-size: max(13px, var(--gallery-unit-size)); font-weight: 500; letter-spacing: 0; color: var(--doc-muted); }
+    > .gallery-metric-unit[hidden] { display: none; }
+  }
+  > .gallery-metric-face > .gallery-metric-value[hidden] { display: none; }
+  > .gallery-metric-face > .gallery-metric-foot { margin: 4px 0 0; font-size: 12px; line-height: 1.4; color: var(--doc-muted); }
+  > .gallery-metric-face > .gallery-metric-foot[hidden] { display: none; }
+  /* What keeps it from a number, said where the number would be: the first thing in the card where it has no name. */
+  > .gallery-metric-face > .gallery-metric-line { margin: 2px 0 0; padding-right: 22px; font-size: 13px; line-height: 20px; color: var(--doc-muted); }
+  > .gallery-metric-face > .gallery-metric-line[hidden] { display: none; }
+}

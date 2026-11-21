@@ -1,0 +1,97 @@
+/* A custom page and its boards: the page's
+   margins, and each board a grid of square cells, like a phone's home screen, its cards placed by
+   whole cells. A cell is 64px square whatever the window, as a document's reading width is (the user's
+   word of 2026-11-09: folding the workbench's sidebar makes no card larger), twelve to a row, 944px,
+   in the middle of the page. board/index.js gives each card its place and size as --gallery-x,
+   --gallery-y, --gallery-w and --gallery-h (from its data-x, data-y, data-w and data-h), and the board
+   its cell's side in pixels as --gallery-cell and how many columns it has now as data-columns and
+   --gallery-columns: 12, or as many as a narrower board holds (4 at the least), its cards then one after
+   another in the order of their places, which the script works out and draws by the same custom
+   properties. A page's own <style> comes after this and wins over it at the same weight. */
+
+/* A card's frame (one for every card: the block draws only what is in it) and the page's ground are the
+   kit's card tokens (styles/tokens.css, "Cards"), light and dark: white cards on the page's white in light,
+   a card a step lighter than the ground in dark; a hairline ring outside the card (its shadow's first, so
+   that it takes nothing of the card's cells), a soft shadow that lifts it, one radius and one padding for
+   every card. */
+
+/* The page: its ground (the window's whole, past the page's top and end too), the board's 24px on either
+   side at the least, 40px of room above the first board (a page open alone has its 添加自定义块 there);
+   --gallery-board-width, the width of twelve columns (12 x 64px and 11 gaps of 16px: shared/board-places.mjs
+   CELL and GAP, which tests/unit/pages.mjs holds it to), what a board and the page's header are at most, so
+   that the header's left edge is the cards'. A custom page shows
+   no big title of its own: its name is the sidebar's, the tab's and the top bar's, so a header's h1 (what a
+   page written before drew, and an Agent may still write) is not drawn, and a header holding nothing else
+   takes no room. */
+html:has(> body > .gallery-page),
+body:has(> .gallery-page),
+.gallery-page { background: var(--gallery-page-fill); }
+.gallery-page {
+  --gallery-board-width: 944px;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 40px 24px 48px;
+}
+.gallery-page-head { max-width: var(--gallery-board-width); margin: 0 auto; padding: 0 0 20px; }
+.gallery-page-head > h1 { display: none; }
+.gallery-page-head:not(:has(> :not(h1))) { display: none; }
+
+/* A board: as wide as the room it stands in, up to twelve columns' width, in its middle; its columns of
+   square cells 16px apart in the middle of it, as many as the script says (--gallery-columns: 12, fewer
+   on a narrower board) and as large (--gallery-cell: 64px, smaller only where not even 4 fit); twelve of
+   64px until it has said them. */
+.gallery-board {
+  --gallery-gap: 16px;
+  --gallery-columns: 12;
+  display: grid;
+  grid-template-columns: repeat(var(--gallery-columns), var(--gallery-cell, 64px));
+  grid-auto-rows: var(--gallery-cell, 64px);
+  justify-content: center;
+  gap: var(--gallery-gap);
+  max-width: var(--gallery-board-width, 944px);
+  margin: 0 auto 24px;
+}
+/* A board with no card yet: the room of a row of two cells, outlined, so that the page shows where its cards will go. */
+.gallery-board:not(:has(> .gallery-card)) {
+  min-height: calc(2 * var(--gallery-cell, 64px) + var(--gallery-gap));
+  border: 1px dashed var(--gallery-card-line);
+  border-radius: var(--gallery-card-radius);
+}
+
+/* A card: at its cells, the instance it holds in its frame. What does not fit scrolls inside it. Its
+   top-right corner, a 28 x 28 box 6px in from its top and right edges, is the grip's (the board's editing):
+   --gallery-grip-room is how far that box reaches into the content from its right edge, with a little air,
+   which a block keeps its head's own controls and words out of (padding-inline-end on its first row).
+   --gallery-grip-shown is 1 while the grip stands in the card (the board's editing sets it), else 0: a head's
+   quiet note at its end may reach into the corner while it is 0, so that it ends where the content under it
+   does (margin-inline-end: calc(-1 * var(--gallery-grip-room))), and fades while it is 1. */
+.gallery-card {
+  --gallery-grip-room: max(0px, calc(40px - var(--gallery-card-pad)));
+  --gallery-grip-shown: 0;
+  position: relative;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+  grid-column: calc(var(--gallery-x, 0) + 1) / span var(--gallery-w, 4);
+  grid-row: calc(var(--gallery-y, 0) + 1) / span var(--gallery-h, 2);
+  overflow: auto;
+  padding: var(--gallery-card-pad);
+  border: 0;
+  border-radius: var(--gallery-card-radius);
+  background: var(--gallery-card-fill);
+  box-shadow: var(--gallery-card-shadow);
+  scrollbar-width: thin;
+  /* A native checkbox, radio, range or progress bar on a card in the card's accent, not the browser's blue. */
+  accent-color: var(--gallery-accent);
+}
+/* A block that asks for no frame (its manifest's card.bare: the server says data-ge-bare): its card is
+   where it is and as large, and draws nothing of its own; its content stands at the cells' edges. */
+.gallery-card[data-ge-bare] {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+/* The instance fills its card, its own margins and its first and last blocks' outer ones left out: the frame's padding is the room around it. */
+.gallery-card > [data-doc-component] { margin: 0; }
+.gallery-card > [data-doc-component] > :first-child { margin-top: 0; }
+.gallery-card > [data-doc-component] > :last-child { margin-bottom: 0; }

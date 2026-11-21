@@ -1,0 +1,13 @@
+{
+  "id": "gallery/static",
+  "apiVersion": 1,
+  "version": "2.0.0",
+  "name": { "zh": "静态卡片", "en": "Static card" },
+  "description": { "zh": "放一段任意的 HTML，只展示，不能在页面上改", "en": "Any HTML, shown as it is: nothing on it changes in the page" },
+  "words": "jingtaikapian jingtai kapian static html card 静态 卡片 展示 内容",
+  "parts": {
+    "content": { "at": ":scope > div", "edit": "none" }
+  },
+  "places": ["page"],
+  "card": { "sizes": [[4, 4], [4, 2], [8, 2], [2, 2], [4, 1], [2, 1]], "min": { "w": 1, "h": 1 }, "max": { "w": 12, "h": 24 }, "resize": true }
+}

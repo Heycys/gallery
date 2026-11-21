@@ -1,0 +1,8 @@
+/* 批注的按钮（顶栏 ☆ 左边）：列表开着时是按下的灰底（比悬停的 5% 深一点），没有蓝色 */
+.tb-right .icon-btn.annot-open, .tb-right .icon-btn.annot-open:hover { background: var(--bacTerTra); }
+/* 它的列表是工作台的菜单，一行一条批注（没有头像）：按钮下方 8（Popover 自己留 4），行多了在 384 高里滚动，复制和删除留在下面 */
+.menu.annot-list { width: 320px; margin-top: 4px; overflow: visible; }
+.annot-list .menu-scroll { max-height: 384px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent; }
+.annot-list .menu-scroll .menu-item { height: 44px; }
+.annot-list .menu-scroll .mi-icon { display: none; }
+.annot-list .menu-scroll .menu-item { padding-left: 9px; }

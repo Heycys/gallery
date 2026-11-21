@@ -1,0 +1,188 @@
+/* The static card has no script: what its content holds, any HTML, is what a reader sees. It gives that
+   HTML a light reading look: 13px words on 20px lines; the heading it starts with,
+   where more follows it, the cards' head row (a small chip of lines before it, 13px and 600, 8px over what
+   follows); a list's items after a small dot; a small heading (h4 to h6) a faint 11.5px label over what it
+   names; a paragraph of strong words alone right after the heading it starts with at the card's foot, with
+   what follows it; a paragraph holding one link a row of 28px, a small picture before the link (a page for one of the
+   workspace's, a link's for the web) and its <small> (a domain, a date) at its end; a table compact, its
+   heads faint, its rows a hairline apart; a heading alone (a card that names a group of cards) 15px, its
+   <small> beside it; a link alone (a tile) 600 after an arrow; content of one line on a card one cell high
+   in the middle of it. Each of those rules is written in an @scope of the instance with :where(), so that
+   it weighs nothing: the page's own <style> and an inline style always win over it. It sets no color of
+   its own but the links' (the accent's ink): its words are the color they stand in, inherited (the page's
+   text, which follows the theme, or a color the page gives the card or a wrapper of the content), and what
+   is muted (small words, a label, a quote, a dot, an empty card's words) or drawn as a line is a share of
+   that color (color-mix with currentColor: 65% muted, 12% a line), so that light words on a dark fill a page
+   writes stay light in every heading and line. Its first line keeps its end clear of the card's grip, and
+   only its first: a float as wide and as high as the grip's corner (--gallery-grip-room) stands at the top
+   right of the instance on a card, before its content, so that the words of the first line or two go round
+   it; its text wraps so that no line is left with a word or a character alone (text-wrap: pretty). Every
+   selector stands in the instance: nothing here reaches the rest of the page. A card with nothing in its
+   content (a new one, from a menu) says so, in the page's language, until an Agent writes it: the cards'
+   empty face, a short line over a muted one saying what to do. */
+[data-doc-component="gallery/static"] > div {
+  font-family: var(--gallery-font);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: break-word;
+  text-wrap: pretty;
+}
+/* The grip's corner, on a card: a float the content's first lines go round. */
+.gallery-card > [data-doc-component="gallery/static"]::before {
+  content: "";
+  float: inline-end;
+  width: var(--gallery-grip-room, 0px);
+  height: var(--gallery-grip-room, 0px);
+}
+@scope ([data-doc-component="gallery/static"]) {
+  :where(h1, h2, h3) { margin: 12px 0 6px; font-size: 15px; line-height: 22px; font-weight: 600; }
+  :where(h4, h5, h6) { margin: 14px 0 4px; font-size: 11.5px; line-height: 16px; font-weight: 600; color: color-mix(in srgb, currentColor 65%, transparent); }
+  :where(p, ul, ol, dl, blockquote, table, figure, pre) { margin: 0 0 8px; }
+  :where(ul) { display: flex; flex-direction: column; gap: 5px; padding: 0; list-style: none; }
+  :where(ul) > :where(li) { position: relative; padding-inline-start: 14px; }
+  :where(ul) > :where(li)::before { content: ""; position: absolute; top: 8px; inset-inline-start: 3px; width: 4px; height: 4px; border-radius: 50%; background: color-mix(in srgb, currentColor 45%, transparent); }
+  :where(ol) { padding-inline-start: 1.5em; }
+  :where(a) { color: var(--gallery-accent-ink); text-decoration: none; }
+  :where(a:hover) { text-decoration: underline; }
+  :where(img, svg, video) { max-width: 100%; }
+  :where(img, video) { height: auto; }
+  :where(table) { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  :where(th, td) { padding: 5px 8px 5px 0; border-bottom: 1px solid color-mix(in srgb, currentColor 12%, transparent); line-height: 18px; text-align: start; vertical-align: top; white-space: nowrap; }
+  :where(th) { font-size: 11.5px; font-weight: 600; color: color-mix(in srgb, currentColor 65%, transparent); }
+  :where(tr:last-child) > :where(td) { border-bottom-style: none; }
+  :where(hr) { margin: 12px 0; border: 0; border-top: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+  :where(code) { padding: 0 4px; border-radius: 4px; background: color-mix(in srgb, currentColor 6%, transparent); font-family: var(--doc-mono); font-size: .9em; }
+  /* A quote's line is a share of its own muted color: 18% of 65%, about the 12% of the other lines. */
+  :where(blockquote) { padding-inline-start: 12px; border-inline-start: 3px solid color-mix(in srgb, currentColor 18%, transparent); color: color-mix(in srgb, currentColor 65%, transparent); }
+  :where(small) { font-size: 11.5px; color: color-mix(in srgb, currentColor 65%, transparent); }
+  :scope > div > :where(:first-child) { margin-top: 0; }
+  :scope > div > :where(:last-child) { margin-bottom: 0; }
+  /* A paragraph of one link (and a small word after it): a row, a small picture before the link, the small word at its end. */
+  :where(p:has(> a:only-of-type)):where(:not(:has(> :not(a, small)))) { display: flex; align-items: center; gap: 8px; min-height: 28px; margin: 0 -6px; padding: 0 6px; border-radius: 6px; }
+  :where(p:has(> a:only-of-type)):where(:not(:has(> :not(a, small)))) > :where(a) { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  :where(p:has(> a:only-of-type)):where(:not(:has(> :not(a, small)))) > :where(a)::before {
+    content: "";
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    margin-inline-end: 8px;
+    vertical-align: -2px;
+    background: color-mix(in srgb, var(--gallery-text, currentColor) 45%, transparent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z'/%3E%3Cpath d='M13.5 3.5V8H18'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 3.5h6.5L18 8v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 5.5 19V5A1.5 1.5 0 0 1 7 3.5z'/%3E%3Cpath d='M13.5 3.5V8H18'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  :where(p:has(> a:only-of-type)):where(:not(:has(> :not(a, small)))) > :where(a[href^="http"])::before {
+    -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.5 13.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1'/%3E%3C/svg%3E");
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M10.5 13.5a3.5 3.5 0 0 0 5 0l3-3a3.5 3.5 0 0 0-5-5l-1 1M13.5 10.5a3.5 3.5 0 0 0-5 0l-3 3a3.5 3.5 0 0 0 5 5l1-1'/%3E%3C/svg%3E");
+  }
+  :where(p:has(> a:only-of-type)):where(:not(:has(> :not(a, small)))) > :where(small) { flex: none; }
+  /* A paragraph of strong words alone: a line larger, 15px. */
+  :where(p:has(> strong:only-child)):where(:not(:has(> :not(strong)))) { font-size: 15px; line-height: 22px; }
+  /* The heading it starts with, where more follows: the cards' head row, a chip before it. */
+  :scope > div > :where(h1, h2, h3, h4, h5, h6):where(:first-child:not(:last-child)) {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: var(--gallery-chip-size);
+    margin: 0 0 8px;
+    font-size: var(--gallery-title-size);
+    line-height: var(--gallery-title-line);
+    font-weight: 600;
+    color: inherit;
+  }
+  :scope > div > :where(h1, h2, h3, h4, h5, h6):where(:first-child:not(:last-child))::before {
+    content: "";
+    flex: none;
+    width: var(--gallery-chip-size);
+    height: var(--gallery-chip-size);
+    border-radius: var(--gallery-chip-radius);
+    background: color-mix(in srgb, currentColor 6%, transparent);
+  }
+  :scope > div > :where(h1, h2, h3, h4, h5, h6):where(:first-child:not(:last-child))::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: calc((var(--gallery-chip-size) - var(--gallery-chip-icon)) / 2);
+    width: var(--gallery-chip-icon);
+    height: var(--gallery-chip-icon);
+    margin-top: calc(var(--gallery-chip-icon) / -2);
+    background: color-mix(in srgb, currentColor 60%, transparent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 6.5h14M5 12h14M5 17.5h9'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 6.5h14M5 12h14M5 17.5h9'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  /* A heading alone (a card naming a group of cards): 15px, its small words beside it. */
+  :scope > div > :where(h1, h2, h3, h4, h5, h6):where(:only-child) { display: flex; align-items: baseline; gap: 10px; margin: 0; font-size: 15px; line-height: 22px; font-weight: 600; color: inherit; }
+  :scope > div > :where(h1, h2, h3, h4, h5, h6):where(:only-child) > :where(small) { font-size: 12px; font-weight: 400; }
+  /* A link alone (a tile): 600, after an arrow, in the words' color. */
+  :scope > div > :where(p:only-child:has(> a:only-child)) > :where(a) { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: inherit; }
+  :scope > div > :where(p:only-child:has(> a:only-child)) > :where(a)::before {
+    content: "";
+    width: 15px;
+    height: 15px;
+    margin: 0;
+    background: color-mix(in srgb, currentColor 45%, transparent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 16 16 8M9.5 8H16v6.5'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 16 16 8M9.5 8H16v6.5'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+}
+/* A card whose heading is followed by a paragraph of strong words alone (还差 2 项, a number, a word to keep in
+   mind): the content as high as the card, a column, and that paragraph and what follows it at the card's foot,
+   as a small widget's figure (margin-top: auto). In a column no float goes round, so the grip's corner is
+   the heading's to keep clear (padding at its end), one line as it is. One rule for every size. */
+.gallery-card > [data-doc-component="gallery/static"]:has(> div > :is(h1, h2, h3, h4, h5, h6):first-child + p > strong:only-child) { height: 100%; }
+.gallery-card > [data-doc-component="gallery/static"]:has(> div > :is(h1, h2, h3, h4, h5, h6):first-child + p > strong:only-child)::before { display: none; }
+.gallery-card > [data-doc-component="gallery/static"] > div:has(> :is(h1, h2, h3, h4, h5, h6):first-child + p > strong:only-child) { display: flex; flex-direction: column; box-sizing: border-box; min-height: 100%; }
+.gallery-card > [data-doc-component="gallery/static"] > div:has(> :is(h1, h2, h3, h4, h5, h6):first-child + p > strong:only-child) > :is(h1, h2, h3, h4, h5, h6):first-child { padding-inline-end: var(--gallery-grip-room, 0px); }
+.gallery-card > [data-doc-component="gallery/static"] > div > :is(h1, h2, h3, h4, h5, h6):first-child + p:has(> strong:only-child) { margin-top: auto; }
+.gallery-card > [data-doc-component="gallery/static"] > div > :is(h1, h2, h3, h4, h5, h6):first-child + p:has(> strong:only-child) + p { margin-top: -2px; }
+/* Content of one line on a card: in the middle of its height. */
+.gallery-card > [data-doc-component="gallery/static"]:has(> div > :only-child:is(h1, h2, h3, h4, h5, h6, p)) { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+.gallery-card > [data-doc-component="gallery/static"]:has(> div > :only-child:is(h1, h2, h3, h4, h5, h6, p))::before { display: none; }
+/* Nothing in it: the cards' empty face, a short line over what to do, muted (the content's ::before and
+   ::after), each line whole. One empty face for the family (the pack's other cards: 28px chip, line, hint, centred):
+   a card with no head row, and so this one, takes the centred form with the chip (the instance's ::before) where it
+   is 100px high or more; one too short for the chip (a cell high) keeps the two lines at the left, as a card whose
+   head row leaves no room for it does (weather, countdown). Where no card is (a document) the lines stay at the left. */
+[data-doc-component="gallery/static"]:has(> div:empty) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.gallery-card > [data-doc-component="gallery/static"]:has(> div:empty) { height: 100%; container-type: size; }
+.gallery-card > [data-doc-component="gallery/static"]:has(> div:empty)::before { display: none; }
+[data-doc-component="gallery/static"] > div:empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  box-sizing: border-box;
+  font-size: 12px;
+  line-height: 18px;
+}
+[data-doc-component="gallery/static"] > div:empty::before { content: "还没有内容"; font-size: 13.5px; line-height: 20px; font-weight: 600; }
+[data-doc-component="gallery/static"] > div:empty::after {
+  content: "跟 Agent 说要在这里放什么";
+  color: color-mix(in srgb, currentColor 55%, transparent);
+}
+@container (min-height: 100px) {
+  [data-doc-component="gallery/static"] > div:empty { align-items: center; text-align: center; }
+  /* The chip: a soft square and the page's lines, one mask over a share of the words' color (a fill of 12%, the lines of 45%). */
+  .gallery-card > [data-doc-component="gallery/static"]:has(> div:empty)::before {
+    display: block;
+    float: none;
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 6px;
+    background: color-mix(in srgb, currentColor 45%, transparent);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect width='28' height='28' rx='8' fill-opacity='.12'/%3E%3Cg transform='translate(6 6) scale(.6667)' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 6.5h14M5 12h14M5 17.5h9'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 28 28'%3E%3Crect width='28' height='28' rx='8' fill-opacity='.12'/%3E%3Cg transform='translate(6 6) scale(.6667)' fill='none' stroke='black' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 6.5h14M5 12h14M5 17.5h9'/%3E%3C/g%3E%3C/svg%3E") center / contain no-repeat;
+  }
+}
+:root[data-ge-language="en"] [data-doc-component="gallery/static"] > div:empty::before,
+:root:not([data-ge-language])[lang|="en" i] [data-doc-component="gallery/static"] > div:empty::before { content: "Nothing here yet"; }
+:root[data-ge-language="en"] [data-doc-component="gallery/static"] > div:empty::after,
+:root:not([data-ge-language])[lang|="en" i] [data-doc-component="gallery/static"] > div:empty::after {
+  content: "Tell your Agent what this card should show";
+}

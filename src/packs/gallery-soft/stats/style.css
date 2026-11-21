@@ -1,0 +1,121 @@
+/* 柔光风格's workspace numbers. Every selector starts at the instance and goes down from it, so that nothing
+   here reaches the rest of the page. The soft look's tokens first, light and dark (light-dark(): the page's
+   color scheme, which follows its theme), then the face: a faint wash of the accent from the card's top over
+   the soft card's fill, and no head: four cells, each its small chip and name over its number, large, its
+   unit muted, and under it a small thing of its own (the words a document holds on average; the words'
+   line, washed under it and its end ringed; the to-dos' bar and share; this week's bars, today's in the
+   accent, the days to come a stub). By the card's size (data-layout, from the script): a row of four on a
+   wide card, a hairline between them, each like a small card; two by two on a 4 × 4 card, hairlines between;
+   on a 4 × 2 card two by two with no feet, each its name after a small picture in the accent. Where nothing
+   could be read, a muted line at the bottom right says why. On a custom page the face is the card's whole
+   room, taken out over the card's padding, the board's line around it; where no card is (a document, as
+   gallery block check shows it) the face frames itself at an 8 × 2 card's size. */
+[data-doc-component="gallery-soft/stats"] {
+  --soft-font: "PingFang SC", "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --soft-num: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --soft-card: light-dark(#ffffff, #1f1f20);
+  --soft-card-line: light-dark(rgb(28 28 32 / 6.5%), rgb(255 255 255 / 7.5%));
+  --soft-card-shadow: 0 0 0 1px var(--soft-card-line), 0 1px 2px light-dark(rgb(28 28 32 / 3.5%), rgb(0 0 0 / 0%)), 0 8px 24px -14px light-dark(rgb(28 28 32 / 12%), rgb(0 0 0 / 60%));
+  --soft-wash: linear-gradient(180deg, light-dark(rgb(62 122 198 / 6%), rgb(126 173 226 / 7%)) 0%, transparent 52%);
+  --soft-text: light-dark(#37352f, #d9d9dc);
+  --soft-strong: light-dark(#1f1f1f, #f1f1f2);
+  --soft-muted: light-dark(#7a7a7f, #9d9da3);
+  --soft-accent: light-dark(#3e7ac6, #7eade2);
+  --soft-accent-ink: light-dark(#356cb3, #98bee9);
+  --soft-accent-soft: light-dark(#ecf3fb, rgb(126 173 226 / 14%));
+  --soft-accent-mid: light-dark(#afcaea, #4a6f9b);
+  --soft-track: light-dark(rgb(28 28 32 / 7%), rgb(255 255 255 / 8%));
+  --soft-good: light-dark(#23874f, #6fcf97);
+  --soft-good-soft: light-dark(#e6f4ec, rgb(111 207 151 / 14%));
+  --soft-bad: light-dark(#c9473d, #f08a80);
+  --soft-bad-soft: light-dark(#fcecea, rgb(240 138 128 / 14%));
+  > .gallery-soft-stats-face {
+    position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    width: 624px;
+    max-width: 100%;
+    height: 144px;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 16px;
+    box-shadow: var(--soft-card-shadow);
+    background: var(--soft-wash), var(--soft-card);
+    color: var(--soft-text);
+    font: 13px/1.5 var(--soft-font);
+    -webkit-font-smoothing: antialiased;
+  }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid { display: grid; flex: 1; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0; min-height: 0; }
+  > .gallery-soft-stats-face[data-layout="quad"] > .gallery-soft-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); }
+  > .gallery-soft-stats-face[data-layout="compact"] { padding: calc(20px - var(--soft-edge, 0px)); }
+  > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); column-gap: 20px; row-gap: 12px; align-content: center; }
+  /* A cell: its chip and name, its number, its foot. */
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell { position: relative; display: flex; flex-direction: column; min-width: 0; padding: calc(18px - var(--soft-edge, 0px)) calc(20px - var(--soft-edge, 0px)); }
+  > .gallery-soft-stats-face[data-layout="row"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell + .gallery-soft-stats-cell { box-shadow: -1px 0 0 var(--soft-track); }
+  > .gallery-soft-stats-face[data-layout="quad"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell { padding: calc(16px - var(--soft-edge, 0px)) calc(18px - var(--soft-edge, 0px)); }
+  > .gallery-soft-stats-face[data-layout="quad"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell:nth-child(2) { box-shadow: -1px 0 0 var(--soft-track); }
+  > .gallery-soft-stats-face[data-layout="quad"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell:nth-child(3) { box-shadow: 0 -1px 0 var(--soft-track); }
+  > .gallery-soft-stats-face[data-layout="quad"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell:nth-child(4) { box-shadow: -1px 0 0 var(--soft-track), 0 -1px 0 var(--soft-track); }
+  > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell { gap: 4px; padding: 0; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-label { display: flex; align-items: center; gap: 8px; height: 22px; min-width: 0; overflow: hidden; font-size: 12.5px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-label > .gallery-soft-stats-chip { display: grid; place-items: center; flex: none; width: 22px; height: 22px; border-radius: 6px; background: var(--soft-accent-soft); color: var(--soft-accent); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-label > .gallery-soft-stats-chip > svg { display: block; width: 13px; height: 13px; }
+  /* The name's words are the one thing in the row that shrinks, cut with an ellipsis where the cell is too narrow (a bare text in a flex row cannot take one). */
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-label > .gallery-soft-stats-label-words { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-label { gap: 6px; height: 18px; font-size: 12px; }
+  > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-label > .gallery-soft-stats-chip { width: 14px; height: 14px; border-radius: 0; background: none; }
+  > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-label > .gallery-soft-stats-chip > svg { width: 14px; height: 14px; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-figure {
+    margin: 8px 0 0;
+    white-space: nowrap;
+    font: 700 30px/1 var(--soft-num);
+    letter-spacing: -.025em;
+    font-variant-numeric: tabular-nums;
+    color: var(--soft-strong);
+  }
+  > .gallery-soft-stats-face[data-layout="row"][data-w="12"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-figure { font-size: 40px; }
+  > .gallery-soft-stats-face[data-layout="quad"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-figure { margin-top: 12px; }
+  > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-figure { margin: 0; font-size: 24px; letter-spacing: -.015em; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-figure > .gallery-soft-stats-unit { margin-left: 4px; font: 500 13px var(--soft-font); letter-spacing: 0; color: var(--soft-muted); }
+  > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-figure > .gallery-soft-stats-unit { margin-left: 3px; font-size: 12px; }
+  /* Its foot: what the number has under it. */
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot { display: flex; align-items: center; gap: 8px; min-height: 22px; margin: auto 0 0; font-size: 11.5px; color: var(--soft-muted); white-space: nowrap; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-said > .gallery-soft-stats-average { font: 600 11.5px var(--soft-num); color: var(--soft-text); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-bar { flex: 1; height: 6px; overflow: hidden; border-radius: 3px; background: var(--soft-track); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-bar > .gallery-soft-stats-fill { display: block; height: 100%; border-radius: 3px; background: var(--soft-accent); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-share { font: 600 11.5px var(--soft-num); color: var(--soft-accent-ink); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-bars { display: flex; align-items: flex-end; gap: 4px; height: 24px; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-bars > .gallery-soft-stats-day { width: 9px; border-radius: 2.5px; background: var(--soft-accent-mid); }
+  > .gallery-soft-stats-face[data-w="12"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-bars > .gallery-soft-stats-day { width: 12px; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-bars > .gallery-soft-stats-today { background: var(--soft-accent); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-bars > .gallery-soft-stats-future { height: 3px; background: var(--soft-track); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > :is(.gallery-soft-stats-grew, .gallery-soft-stats-fell) { display: inline-flex; align-items: center; gap: 3px; flex: none; height: 20px; padding: 0 7px; border-radius: 6px; font: 600 11.5px var(--soft-num); background: var(--soft-good-soft); color: var(--soft-good); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-fell { background: var(--soft-bad-soft); color: var(--soft-bad); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > :is(.gallery-soft-stats-grew, .gallery-soft-stats-fell) > svg { display: block; width: 12px; height: 12px; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-room { flex: 1; min-width: 40px; }
+  > .gallery-soft-stats-face > .gallery-soft-stats-grid > .gallery-soft-stats-cell > .gallery-soft-stats-foot > .gallery-soft-stats-room > .gallery-soft-stats-spark > svg { display: block; overflow: visible; }
+  > .gallery-soft-stats-face .gallery-soft-stats-wash-top { stop-color: var(--soft-accent); stop-opacity: .22; }
+  > .gallery-soft-stats-face .gallery-soft-stats-wash-end { stop-color: var(--soft-accent); stop-opacity: 0; }
+  > .gallery-soft-stats-face .gallery-soft-stats-spark-line { fill: none; stroke: var(--soft-accent); stroke-width: 1.8; stroke-linejoin: round; stroke-linecap: round; }
+  > .gallery-soft-stats-face .gallery-soft-stats-end { fill: var(--soft-card); stroke: var(--soft-accent); stroke-width: 1.8; }
+  /* Nothing read: the line saying why, at the bottom right. */
+  > .gallery-soft-stats-face > .gallery-soft-stats-line { position: absolute; right: 20px; bottom: 10px; margin: 0; font-size: 11.5px; color: var(--soft-muted); }
+  > .gallery-soft-stats-face > .gallery-soft-stats-line[hidden] { display: none; }
+}
+/* On a custom page: the face over the card's whole room, the board's line around it. */
+.gallery-card > [data-doc-component="gallery-soft/stats"] { height: 100%; }
+.gallery-card > [data-doc-component="gallery-soft/stats"] > .gallery-soft-stats-face {
+  --soft-edge: 1px;
+  width: auto;
+  max-width: none;
+  height: calc(100% + 2 * var(--gallery-card-pad));
+  margin: calc(-1 * var(--gallery-card-pad));
+  border-radius: calc(var(--gallery-card-radius) - 1px);
+  box-shadow: none;
+}
+/* The cell at the card's top right keeps its name clear of the grip's corner. */
+.gallery-card > [data-doc-component="gallery-soft/stats"] > .gallery-soft-stats-face[data-layout="row"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell:nth-child(4) > .gallery-soft-stats-label { padding-inline-end: 20px; }
+.gallery-card > [data-doc-component="gallery-soft/stats"] > .gallery-soft-stats-face[data-layout="quad"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell:nth-child(2) > .gallery-soft-stats-label { padding-inline-end: 22px; }
+.gallery-card > [data-doc-component="gallery-soft/stats"] > .gallery-soft-stats-face[data-layout="compact"] > .gallery-soft-stats-grid > .gallery-soft-stats-cell:nth-child(2) > .gallery-soft-stats-label { padding-inline-end: 20px; }

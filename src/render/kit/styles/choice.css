@@ -1,0 +1,137 @@
+/* A choice (runtime/choice.js): the menu card a <select> and DocKit.choose open instead of the browser's
+   popup, and the quiet look a <select> has where nobody gave it one. The card is the display menu's
+   (controls.css): 14 round, 5 inside it, the floating surface and the card's shadow, rows of 28px, 9 round
+   and touching, that take the row fill (7%) under the pointer or the keys, a step darker pressed, the chosen
+   row checked at its right (no empty column before the words on the others), as wide as its rows (the
+   trigger's width at least, 320px at most, its words cut by an ellipsis past that). It grows out of the
+   corner by its trigger (choice.js sets which: under it the top left, above it the bottom left) from 96% with
+   its opacity over 140ms, and leaves by its opacity over 90ms (choice.js: doc-choice-leaving, then gone); opened from
+   the keys it is there at once (is-keyed), and where motion is reduced it only fades. It stands in the top
+   layer (a popover, so no z-index of the page covers it); z-index is for a browser without popovers. */
+
+.doc-choice,
+.doc-choice-leaving {
+  position: fixed;
+  inset: auto;
+  left: 0;
+  top: 0;
+  z-index: 1100;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(320px, calc(100vw - 16px));
+  margin: 0;
+  padding: var(--doc-card-pad);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border: 0;
+  border-radius: var(--doc-radius-card);
+  color: var(--doc-text);
+  background: var(--doc-float-fill);
+  box-shadow: var(--doc-shadow-card);
+  font: 14px/1.2 var(--doc-font);
+  user-select: none;
+  transform-origin: top left;
+  transition: opacity 140ms var(--doc-ease-out), scale 140ms var(--doc-ease-out);
+}
+
+@starting-style {
+  .doc-choice { opacity: 0; scale: .96; }
+}
+
+.doc-choice.is-keyed { transition: none; }
+/* Leaving: its class no longer the menu's (choice.js), so that nothing finds it as the open menu meanwhile. */
+.doc-choice-leaving { opacity: 0; pointer-events: none; transition: opacity 90ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Only its opacity (the kit's rule for reduced motion, base.css, would take the fade too). */
+  @starting-style {
+    .doc-choice { scale: 1; }
+  }
+  .doc-choice:not(.is-keyed) { transition-duration: 140ms, 0s !important; }
+  .doc-choice-leaving { transition-duration: 90ms !important; }
+}
+
+.doc-choice-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 9px;
+  border-radius: var(--doc-radius-row);
+  cursor: pointer;
+  transition: background-color 100ms ease-out;
+}
+
+/* Under the pointer, or reached with the keys: the row fill of every menu card, at once; pressed a step darker. */
+.doc-choice-row.is-active { background: var(--doc-hover-row); transition: none; }
+.doc-choice-row:active { background: var(--doc-press); transition: none; }
+.doc-choice-row[aria-disabled="true"] { opacity: .4; cursor: default; }
+.doc-choice-row[aria-disabled="true"]:active { background: transparent; }
+
+.doc-choice-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The chosen row: a check at its right, the one the workbench's and the editor's menus draw (16 on a grid of 16, a
+   line of 1.25), so that a menu of a page and one of the app read as one hand. */
+.doc-choice-check {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* An <optgroup>'s name: a small heading, no row. */
+.doc-choice-group {
+  padding: 8px 9px 4px;
+  color: var(--doc-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.doc-choice-group:not(:first-child) { margin-top: 5px; }
+
+/* A <select> nobody styled: no frame, a light fill that darkens under the pointer, and the kit's own
+   16px chevron at its right in place of the browser's arrow (one look with the menu it opens),
+   in the grey of the kit's controls, the same in both themes. The chevron is a
+   background image beside the fill (background-color), so a page or a block that sets its own fill as a
+   color keeps it; one that writes the background shorthand takes the chevron off with it, and its select
+   shows no arrow (write background-color, and keep 24px of padding at the right for it). A class's or a
+   block's own rule outweighs this (it has no weight); a list box (multiple) is the browser's. */
+:where(select:not([multiple], [size])) {
+  appearance: none;
+  min-height: 28px;
+  padding: 0 24px 0 8px;
+  border: 0;
+  border-radius: var(--doc-radius-control);
+  color: var(--doc-text);
+  background-color: var(--doc-hover);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238e8b86' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 6.5 3 3 3-3'/%3E%3C/svg%3E");
+  background-position: right 6px center;
+  background-repeat: no-repeat;
+  background-size: 16px 16px;
+  font: inherit;
+  cursor: pointer;
+  transition: background-color 100ms ease-out;
+}
+
+/* Under the pointer a step darker than at rest, at once (the fill going back over 100ms), pressed a step more. */
+:where(select:not([multiple], [size]):hover) { background-color: var(--doc-hover-row); transition: none; }
+:where(select:not([multiple], [size]):active) { background-color: var(--doc-press); transition: none; }
+
+/* On paper a <select> is the words of its chosen option, no arrow, and the menu is never there. */
+@media print {
+  select { appearance: none; background-image: none; }
+  .doc-choice, .doc-choice-leaving { display: none; }
+}

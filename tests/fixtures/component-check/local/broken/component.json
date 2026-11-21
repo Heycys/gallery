@@ -1,0 +1,11 @@
+{
+  "id": "local/broken",
+  "apiVersion": 1,
+  "version": "1.0.0",
+  "name": { "zh": "坏块", "en": "Broken" },
+  "description": { "zh": "读得出的每件事上都错一处", "en": "One thing wrong in each that can be read" },
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "body": { "at": ":scope > div", "edit": "text" }
+  }
+}

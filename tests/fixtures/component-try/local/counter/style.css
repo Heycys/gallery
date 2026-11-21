@@ -1,0 +1,15 @@
+/* The count and its button on a line; the box a trial draws over them covers both. */
+[data-doc-component="local/counter"] .counter-drawn {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+[data-doc-component="local/counter"] .counter-count {
+  font-size: 24px;
+  font-weight: 600;
+}
+[data-doc-component="local/counter"] .counter-cover {
+  position: absolute;
+  inset: 0;
+}

@@ -1,0 +1,16 @@
+{
+  "id": "gallery/chart-card",
+  "apiVersion": 1,
+  "version": "1.3.0",
+  "name": { "zh": "表格图表卡片", "en": "Chart from a table" },
+  "description": { "zh": "一个标题、一张表格和它画出的条形图，改表格里的数，图跟着重画", "en": "A title, a table and the bar chart drawn from it: edit a number and the chart draws again" },
+  "words": "biaogetubiaokapian tubiao chart bar table 图表 条形图 表格 画图",
+  "parts": {
+    "title": { "at": ":scope > h3", "edit": "text" },
+    "table": { "edit": "flow" }
+  },
+  "runtime": { "generated": [":scope > .gallery-chart-card-bars"] },
+  "places": ["document"],
+  "listed": false,
+  "markdown": "parts"
+}

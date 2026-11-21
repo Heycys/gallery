@@ -1,0 +1,155 @@
+/* =========================================================
+   菜单和浮层（侧栏菜单、更多操作、右键、子菜单、移动到、回收区、添加在线网页这几张小卡片共用这个外壳）：
+   2026-11-17 用户定的质感（不是它的结构）：圆角 14、四边各留 5，更软、更大的影子（外面那一圈还是 1px 的极淡线）；
+   行高 28、圆角 9、行与行贴着；指针移上 7%（--fill），按下 10%；危险的行移上淡红底、红字。字还是 14px，灰还是现在的暖灰。
+   出现：从触发它的那个角长出来（lib/menuMotion.ts）；离开：淡出 90ms（lib/afterimage.ts）
+   ========================================================= */
+.menu {
+  position: fixed; left: 0; top: 0; z-index: 1000;
+  min-width: 216px; max-width: 320px; padding: var(--pad-card);
+  /* 比窗口高的菜单在自己里面滚（placeEl 把它的顶摆在离窗口顶 8px 处），底下的几行才够得着；圆角把滚动条裁干净 */
+  max-height: calc(100vh - 16px); overflow: hidden auto; scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent;
+  --ringBase: var(--popBac);
+  background: var(--popBac); border-radius: var(--r-card); box-shadow: var(--shadowCard);
+  font-size: 14px; line-height: 1.2; user-select: none;
+  animation: menu-in var(--menuIn) var(--easeOut);
+  outline: none; /* 菜单自己拿焦点收键盘（MenuList） */
+}
+/* 用键盘打开的：不做动画，马上在那里（lib/menuMotion.ts） */
+.menu.menu-still, .crumb-pop.menu-still { animation: none; }
+/* 有小标题的一组前面不画分隔线：小标题自己就把它和上一组分开了 */
+.menu-head { padding: 8px 9px 4px; font-size: 12px; font-weight: 500; line-height: 14px; color: var(--texSec); }
+.menu-sep:has(+ .menu-head) { display: none; }
+.menu-item {
+  height: 28px; margin: 0; padding: 0 9px 0 6px;
+  display: flex; align-items: center; gap: 8px; border-radius: var(--r-row); cursor: pointer; color: var(--texPri);
+}
+/* 没有图标的一行（语言、下拉选择的几项）：字和小标题对齐 */
+.menu-item.noicon { padding-left: 9px; }
+/* 普通菜单用 :hover 高亮；受控菜单（块菜单）只认 .active，避免键盘 / 鼠标出现两处高亮 */
+.menu:not(.controlled) .menu-item:hover, .menu-item.active { background: var(--fill); }
+.menu:not(.controlled) .menu-item:active:not(.off), .menu-item.active:active { background: var(--fillStrong); }
+.menu:not(.controlled) .menu-item.danger:not(.off):hover, .menu-item.danger:not(.off).active { background: var(--danTint); color: var(--btnDanTex); }
+/* 灰着的一行（例如还没有批注时的复制批注、删除批注）：字、小字和图标淡到 .4（--off），不高亮，悬停也不变红；
+   「淡」的一行（muted）只淡字 */
+.menu-item.off, .menu-item.off:hover { cursor: default; }
+.menu-item.off :is(.mi-label, .mi-detail, .mi-icon), .menu-item.muted :is(.mi-label, .mi-detail) { opacity: var(--off); }
+.menu:not(.controlled) .menu-item.off:hover { background: none; }
+.menu:not(.controlled) .menu-item.danger:not(.off):hover .mi-icon, .menu-item.danger:not(.off).active .mi-icon { color: var(--btnDanTex); }
+/* 行里的图标（用户 2026-11-17 选的）：和编辑器菜单里的一样，格子 20px；自绘的（20 格、16 格）画满 20px，Lucide 的（24 格，图画得满）画 18px，
+   两套看起来一样大（Lucide 画 20px 比旁边自绘的大一圈，2026-11-17 复核量过）；线宽在屏幕上都约 1.25（线宽 × 画的大小 ÷ 格数：
+   20 格 1.25、16 格 1、Lucide 1.65 × 18 ÷ 24）。菜单、回收区、面包屑的页面浮层、搜索结果的行共用这一条：同一张卡片里的图标一样大、一样粗、一样的颜色 */
+.mi-icon { flex: none; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: var(--icoPri); }
+:is(.mi-icon, .trash-item .pg-icon, .crumb-pop-item .pg-icon, .search-item .pg-icon) svg { width: 20px; height: 20px; stroke-width: 1.25; }
+:is(.mi-icon, .trash-item .pg-icon, .crumb-pop-item .pg-icon, .search-item .pg-icon) svg[viewBox="0 0 16 16"] { stroke-width: 1; }
+:is(.mi-icon, .trash-item .pg-icon, .crumb-pop-item .pg-icon, .search-item .pg-icon) svg.lu { width: 18px; height: 18px; stroke-width: 1.65; }
+.mi-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mi-line { display: block; overflow: hidden; text-overflow: ellipsis; }
+.mi-detail { margin-top: 2px; font-size: 12px; color: var(--texTer); }
+.mi-kbd { flex: none; max-width: 45%; margin-left: 28px; font-size: 12px; color: var(--texTer); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mi-kbd:empty { display: none; } /* 跟着数据变的个数为 0 时（回收区） */
+/* 行尾的 › 和 ✓：16 格画 16px，线 1.25；编辑器的菜单、套件的下拉和显示菜单是同一个大小、同一个粗细
+   （一处 20px、一处 16px、一处线 1.7 时，并排看出三种手笔，2026-11-17 合起来看时量过） */
+.mi-arrow { flex: none; width: 16px; height: 16px; margin: 0 -3px 0 4px; color: var(--texTer); }
+.mi-check { flex: none; width: 16px; height: 16px; margin-left: 28px; color: var(--texPri); }
+.mi-arrow svg, .mi-check svg { display: block; width: 16px; height: 16px; stroke-width: 1.25; }
+/* 开关（菜单里设置的偏好、组件列表、写作偏好、导出对话框的开关都是它；用户 2026-11-17 定的样子）：所有开关一个尺寸 30×18，
+   圆钮 14、白色不带影；关着是一层灰（--swTrack），开着是平静的蓝（--ctlBlue，深色里不比关着的暗）；
+   圆钮和底色 160ms（--easeSheet）；按住时圆钮向要去的那边宽 3px（像被拉住） */
+:is(.mi-switch,.g-switch) { position: relative; flex: none; display: block; box-sizing: border-box; width: 30px; height: 18px; padding: 0; margin-left: 28px; border-radius: 9px; background: var(--swTrack); transition: background-color var(--switchDur) var(--easeSheet); }
+:is(.mi-switch,.g-switch).on { background: var(--ctlBlue); }
+:is(.mi-switch,.g-switch) > span { position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 7px; background: #fff; transition: left var(--switchDur) var(--easeSheet), width var(--switchDur) var(--easeSheet); }
+:is(.mi-switch,.g-switch).on > span { left: 14px; }
+:is(.menu-item:not([aria-disabled="true"]), .comp-opt:not([aria-disabled="true"]), .comp-toggle:not([aria-disabled="true"]), .wp-enable:not(:disabled), .hist-marks):active :is(.mi-switch,.g-switch) > span,
+:is(.mi-switch,.g-switch):not(.disabled):active > span { width: 17px; }
+:is(.menu-item:not([aria-disabled="true"]), .comp-opt:not([aria-disabled="true"]), .comp-toggle:not([aria-disabled="true"]), .wp-enable:not(:disabled), .hist-marks):active :is(.mi-switch,.g-switch).on > span,
+:is(.mi-switch,.g-switch).on:not(.disabled):active > span { left: 11px; }
+.menu-sep { height: 1px; margin: 5px 9px; background: var(--bacTerTra); }
+.menu-foot { padding: 4px 9px 2px; font-size: 12px; line-height: 1.6; color: var(--texTer); }
+.menu-note { padding: 4px 9px 8px; font-size: 13px; line-height: 1.6; color: var(--texSec); }
+.menu-empty { padding: 8px 9px; font-size: 13px; color: var(--texTer); }
+
+/* 弹出层变体 */
+/* 子菜单和它的几行一样宽：至少 180（菜单的最小宽，编辑器的子菜单也是这样，editor/page/menu.mjs FIT），
+   不用一级菜单的 216；要固定宽度的子菜单自己给（回收区 settings-menu，字体与布局 look-menu） */
+.menu-sub { min-width: 180px; }
+.menu-wide { width: 320px; overflow: visible; }
+.settings-menu { width: 240px; }
+.pop-search { padding: 2px 3px 6px; }
+/* 输入框平时：没有边，淡淡的底加一圈 1px 的线（和编辑器的 --ge-field 一样）；点进去是蓝线（里外各 1px）。放不下的字和占位符用 … 收住。
+   圆角 8，和旁边的按钮一样 */
+:is(.pop-input,.g-input) {
+  width: 100%; height: 28px; padding: 0 8px; border-radius: var(--r-ctl); outline: none;
+  border: 0; background: var(--fieldBac); box-shadow: 0 0 0 1px var(--borPriTra); color: var(--texPri); font: inherit; font-size: 14px; text-overflow: ellipsis;
+}
+:is(.pop-input,.g-input)::placeholder { text-overflow: ellipsis; }
+:is(.pop-input,.g-input):focus { box-shadow: inset 0 0 0 1px var(--blue), 0 0 0 1px var(--blue); }
+.pop-list { max-height: 320px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--scrollThumb) transparent; }
+/* 回收区（设置的子菜单）的一行：菜单的行一样（圆角 9、行与行贴着、移上 7%），图标也和菜单的一样（上面 .mi-icon 那一条） */
+.trash-item { height: 28px; margin: 0; padding: 0 4px 0 6px; display: flex; align-items: center; gap: 8px; border-radius: var(--r-row); }
+.trash-item:hover { background: var(--fill); }
+.trash-item:active { background: var(--fillStrong); }
+.trash-item .t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* =========================================================
+   提示 / Toast
+   ========================================================= */
+/* 气泡提示：宽最多 300、字 12px 常规、淡淡的影加一圈 5% 的白线；停 150ms、50ms 淡入，走开、按下去时一下子没有（不淡出，免得盖在点开的东西上）；
+   上一个提示走开后 300ms 里进到下一个按钮，马上出来、不淡入（.instant，Tooltip.tsx） */
+.tip {
+  position: fixed; left: 0; top: 0; z-index: 3000; max-width: 300px; pointer-events: none;
+  padding: 5px 8px; border-radius: 6px; background: var(--tooltipBg); color: var(--tipTex);
+  font-size: 12px; font-weight: 400; line-height: 1.4; box-shadow: 0 4px 12px -2px rgb(0 0 0 / 8%), inset 0 0 0 1px rgb(255 255 255 / 5%); overflow-wrap: anywhere; /* 一条长路径没有空格，在哪里都能断 */
+  opacity: 0; transition: none;
+}
+.tip.show { opacity: 1; transition: opacity 50ms ease-out; }
+.tip.show.instant { transition: none; }
+.tip .sub { color: var(--tooltipSub); font-weight: 400; }
+
+/* 和报告页自己的提示条一样宽（editor/page/notices.mjs）：宽同文字，最宽 640px 且比窗口窄 32px，居中，再长的字换行 */
+.toast {
+  position: fixed; left: 0; right: 0; bottom: 24px; z-index: 2500;
+  width: fit-content; max-width: min(640px, calc(100vw - 32px)); margin: 0 auto;
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px;
+  background: var(--tipBg); color: var(--tipTex); border-radius: 8px; box-shadow: var(--shaOutLg);
+  font-size: 14px;
+  opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .18s, transform .18s;
+}
+.toast.show { opacity: 1; transform: none; }
+/* 通知盖在页面的 iframe 上，页面的菜单在它下面：按下穿过通知，只有它的按钮接住 */
+.toast.show button { pointer-events: auto; }
+.toast:is(.error, .update)::before { content: ""; flex: none; width: 6px; height: 6px; border-radius: 50%; background: #ff6b6b; }
+/* Agent 刚改了读者没在看的页面（state/updates.ts）：和侧栏里那一行的蓝点是同一个点，读者就知道那些点是什么意思 */
+.toast.update::before { background: var(--newDot); }
+.toast button { flex: none; white-space: nowrap; color: #5ea8f2; font-weight: 500; padding: 2px 6px; margin-right: -6px; border-radius: 4px; }
+.toast button:hover { background: rgba(255,255,255,.08); }
+
+/* =========================================================
+   确认对话框
+   ========================================================= */
+.dialog-overlay { align-items: flex-start; padding-top: 18vh; }
+/* 压在另一个对话框（写作偏好、导出）上的确认：下面那个已经被它自己的遮罩压暗了，这一层只淡淡地再压一下，免得两层叠成 84%，下面的对话框就读不出来了 */
+body:has(.pref-overlay, .xf-overlay) .dialog-overlay { background: var(--overlayNested); }
+/* 外壳圆角 16、出现和离开（和暗色一起淡入、淡出）：所有对话框一样，在 styles/base.css */
+.dialog { --ringBase: var(--bacEle); width: min(420px, 100%); padding: 20px 20px 16px; background: var(--bacEle); box-shadow: var(--shaOutScr); }
+.dialog-title { font-size: 16px; font-weight: 600; line-height: 1.4; color: var(--texPri); overflow-wrap: anywhere; }
+.dialog-message { margin-top: 8px; font-size: 14px; line-height: 1.6; color: var(--texSec); overflow-wrap: anywhere; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+/* 弹窗和表单里的按钮（确认对话框、添加在线网页、添加其他 Gallery 项目，导出和写作偏好的按钮同样：transfer.css、preferences.css）：
+   不带线（没有 border、inset 的 box-shadow、outline），平时没有底色，指针在上面时是工作台的灰（--bacIntTra）；
+   主按钮（添加、确认、保存）淡蓝底常显、蓝字，危险的（永久删除）淡红，不用实心的蓝和白字；不能按的淡一些，指针在上面也不变；
+   键盘走到它上面时也是底色，不描边（用户 2026-11-09 又说了一次：界面是扁平的，按钮不带边框线）。
+   圆角 8（控件的圆角，不做成胶囊）；移上立刻出现灰底、移走 100ms 淡掉、按下深一档（styles/base.css 的悬停规则），不缩放 */
+:is(.dialog-btn,.g-btn) { height: 32px; padding: 0 14px; border-radius: var(--r-ctl); font-size: 14px; color: var(--texPri); white-space: nowrap; }
+:is(.dialog-btn,.g-btn):hover:not(:disabled) { background: var(--bacIntTra); }
+:is(.dialog-btn,.g-btn):active:not(:disabled) { background: var(--bacPre); }
+:is(.dialog-btn,.g-btn):focus-visible { outline: none; background: var(--bacTerTra); }
+:is(.dialog-btn,.g-btn).primary { background: var(--btnPriBg); color: var(--btnPriTex); font-weight: 500; }
+:is(.dialog-btn,.g-btn).primary:hover:not(:disabled), :is(.dialog-btn,.g-btn).primary:focus-visible { background: var(--btnPriBgHi); }
+:is(.dialog-btn,.g-btn).primary:active:not(:disabled) { background: var(--btnPriBgPre); }
+:is(.dialog-btn,.g-btn).danger.primary { background: var(--btnDanBg); color: var(--btnDanTex); }
+:is(.dialog-btn,.g-btn).danger.primary:hover:not(:disabled), :is(.dialog-btn,.g-btn).danger.primary:focus-visible { background: var(--btnDanBgHi); }
+:is(.dialog-btn,.g-btn).danger.primary:active:not(:disabled) { background: var(--btnDanBgPre); }
+:is(.dialog-btn,.g-btn):disabled { opacity: var(--off); cursor: default; }
+.trash-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.trash-head .trash-clear { height: 26px; padding: 0 8px; font-size: 12px; border: 0; }
