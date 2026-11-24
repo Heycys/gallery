@@ -198,6 +198,31 @@
         <div class="metric"><p class="metric-value">18</p><p class="metric-label">指标 B</p></div>
         <div class="metric"><p class="metric-value">9</p><p class="metric-label">指标 C</p></div>
       </div>
+
+      <h3>多维表格</h3>
+      <p>记录的表格：列和视图写在 JSON 里，每条记录是表格的一行，读者在页面上切换视图、筛选、改值。</p>
+      <div class="doc-database">
+        <script type="application/json">{
+          "columns": [
+            { "id": "title", "name": "事项", "type": "title" },
+            { "id": "status", "name": "状态", "type": "select", "options": [{ "name": "待开始", "color": "gray" }, { "name": "进行中", "color": "blue" }, { "name": "已完成", "color": "green", "done": true }] },
+            { "id": "due", "name": "日期", "type": "date" },
+            { "id": "count", "name": "数值", "type": "number" }
+          ],
+          "views": [
+            { "id": "all", "name": "全部", "layout": "table" },
+            { "id": "board", "name": "按状态", "layout": "board", "boardBy": "status" }
+          ]
+        }</script>
+        <table>
+          <thead><tr><th data-column="title">事项</th><th data-column="status">状态</th><th data-column="due">日期</th><th data-column="count">数值</th></tr></thead>
+          <tbody>
+            <tr><td>事项 A</td><td>已完成</td><td>2026-11-02</td><td>12</td></tr>
+            <tr><td>事项 B</td><td>进行中</td><td>2026-11-09</td><td>18</td></tr>
+            <tr><td>事项 C</td><td>待开始</td><td>2026-11-16</td><td>9</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
 
     <section class="doc-section">

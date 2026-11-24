@@ -90,11 +90,13 @@ const TOOL_IMPORTS = [
   "changes -> annotate",        // a block's text as the server reads it (anchors.mjs readText)
   "clipboard -> formula",       // the formula a paste makes
   "clipboard -> links",         // the address rule
+  "clipboard -> table",         // a paste's lists in a cell, as the cell's own (lists.mjs placeInCell)
   "format-bar -> formula",      // its formula button opens the box
   "fold -> outline",            // the headings the outline lists (read.mjs), its folds' store (folds.mjs)
   "format-bar -> links",        // its link button opens the card
   "links -> clipboard",         // a bookmark view is built as a pasted block
   "media-menu -> emoji-picker", // the picker's popup layer
+  "page-drop -> links",         // the list of pages and the page block, the "@" menu's
   "table -> block-menu",        // the color rows
   "table -> format-bar",        // the cells' bar is the bar's look
   "table -> formula",           // a formula in a cell

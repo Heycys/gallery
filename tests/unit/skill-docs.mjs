@@ -209,6 +209,7 @@ const BLOCKS = [
   ["a flowchart, a node with an icon", "ol.doc-flow > li > .doc-icon + p > strong"],
   ["Sheet tabs", "section.doc-sheet-shell > div[data-doc-sheet] + div[data-doc-sheet]"],
   ["columns", "div.doc-columns > div.doc-column + div.doc-column"],
+  ["a database, its columns and views as JSON, a record a row", "div.doc-database > script[type=\"application/json\"] + table > thead > tr > th[data-column]"],
   ["a code block with a title and a language", "div.doc-code[data-language] > .doc-code-title"],
   ["a formula block", "div.doc-math-block"],
   ["a file and its size", "figure.doc-file > a.doc-file-link[download] > .doc-file-name + .doc-file-size"],
@@ -696,7 +697,7 @@ assert.equal(older, skill, "withRange writes the range wherever the first sectio
 const built = fs.mkdtempSync(path.join(os.tmpdir(), "skill-docs-built-"));
 try {
   const files = buildSkill(path.join(built, "gallery"), { version: "0.7.2" });
-  assert.deepEqual(files.filter((file) => !file.startsWith("sdk/")), ["agents/openai.yaml", "references/block-script.md", "references/building-blocks.md", "references/charts-and-figures.md", "references/example-report.html", "references/extensions.md", "references/pages-and-data.md", "references/preference-files.md", "references/previews.md", "references/writing-html.md", "SKILL.md"]);
+  assert.deepEqual(files.filter((file) => !file.startsWith("sdk/")), ["agents/openai.yaml", "references/block-script.md", "references/building-blocks.md", "references/charts-and-figures.md", "references/databases.md", "references/example-report.html", "references/extensions.md", "references/pages-and-data.md", "references/preference-files.md", "references/previews.md", "references/writing-html.md", "SKILL.md"]);
   const packaged = fs.readFileSync(path.join(built, "gallery", "SKILL.md"), "utf8");
   assert.ok(packaged.includes("@heycys/gallery@^0.7.2") && packaged.includes("0.7.2 or a later 0.7.x") && packaged.includes("newer than `^0.7.2` takes") && !packaged.includes(range), "the packaged SKILL.md says the version it was made for");
   assert.equal(recordedVersion(packaged), "0.7.2", "and that it is Gallery 0.7.2's");
@@ -834,9 +835,9 @@ try {
   // pages-and-data.md's Working on a custom page: a read-only card over the workspace's or the web's data is a block of the Agent's own.
   const own = sectionOf(read("references/pages-and-data.md"), "## Working on a custom page")?.text ?? "";
   assert.ok(own.includes("a read-only card over the workspace's data or the web's that none of Gallery's shows") && own.includes("start from `heatmap` or `weather` with `--recipe`"), "pages-and-data.md says a read-only card over the workspace's or the web's data is a block of the Agent's own");
-  // The three views of a table Gallery ships are what an Agent uses for a task board or a data dashboard.
-  for (const said of ["`gallery/kanban`, `gallery/metric` or `gallery/chart-view`", "`data-doc-chart-source=\"<key>\"`", "`data-doc-from=\"<key>\"`"]) assert.ok(skill.includes(said), `SKILL.md says ${said}`);
-  for (const said of ["`gallery/kanban`", "`gallery/metric`", "`gallery/chart-view`", "`table.canEdit()`", "it reads the nearest table above it"]) assert.ok(read("references/pages-and-data.md").includes(said), `pages-and-data.md's A view of a table says ${said}`);
+  // Records seen as a board or a chart are a database; a number over a table is the view of it Gallery ships.
+  for (const said of ["多维表格, `div.doc-database`", "`gallery/metric`", "`data-doc-chart-source=\"<key>\"`", "`data-doc-from=\"<key>\"`"]) assert.ok(skill.includes(said), `SKILL.md says ${said}`);
+  for (const said of ["`div.doc-database`", "`gallery/metric`", "`table.canEdit()`", "it reads the nearest table above it"]) assert.ok(read("references/pages-and-data.md").includes(said), `pages-and-data.md's A view of a table says ${said}`);
 }
 
 const counted = (kind) => examples.filter((example) => example.kind === kind).length;

@@ -19,7 +19,7 @@ use(working);
 
 const { LEFT_FOR, handedView, keepLeft, keepView, leaveShown, leaveView, leftKey, shownBefore, shownByVite, takeView } = await import("../../src/shared/kept-view.mjs");
 const { viewKey } = await import("../../src/shared/session.mjs");
-const { earlyMoveScript, elementOf, onReaderMove } = await import("../../src/shared/reading-place.mjs");
+const { earlyMoveScript, elementOf, onReaderMove, placeIn } = await import("../../src/shared/reading-place.mjs");
 
 // ---------- views kept for the next page ----------
 {
@@ -178,6 +178,51 @@ const { earlyMoveScript, elementOf, onReaderMove } = await import("../../src/sha
   page.querySelector('[data-card-id="c1"]').remove();
   assert.equal(elementOf(page, inCard), page.querySelector('[data-card-id="c2"]'), "the path in another card now: its card");
   assert.equal(elementOf(page, { path: [0], id: null, at: 0, card: null, name: null }).id, "new0", "neither: at its path, as before");
+}
+
+// ---------- a place read on a page laid out, found on the page before it is ----------
+{
+  // A table's frame across the window's top: its rows above the window end above it, the 3rd body row the first in it.
+  const { window } = new JSDOM(`<!doctype html><body><main>
+    <p>前面</p>
+    <section><div class="doc-table-wrap" data-block-id="t"><table><thead><tr><th>甲</th></tr></thead><tbody>
+      <tr data-top="-60"><td>1</td></tr><tr data-top="-20"><td>2</td></tr><tr data-top="12"><td>3</td></tr><tr data-top="52"><td>4</td></tr>
+    </tbody></table></div></section>
+  </main></body>`);
+  const doc = window.document;
+  // Each element's box: a row's by its data-top; the section, the frame, the table and its body across the window's
+  // top; anything else (the header row, the paragraph before) ends above the window.
+  window.HTMLElement.prototype.getBoundingClientRect = function box() {
+    const row = this.closest("tr[data-top]");
+    const across = this.matches("section, .doc-table-wrap, table, tbody");
+    const top = row ? Number(row.dataset.top) : across ? -100 : this.closest("thead") ? -140 : -400;
+    const bottom = across ? 400 : top + 30;
+    return { top, bottom, height: bottom - top, left: 0, right: 100, width: 100 };
+  };
+  const wrap = doc.querySelector(".doc-table-wrap");
+  const table = wrap.querySelector("table");
+  const row = doc.querySelectorAll("tbody tr")[2];
+  // The kit, laying the table out, puts its scrollbars layer first in the frame and the columns first in the table.
+  const layOut = () => {
+    wrap.insertAdjacentHTML("afterbegin", '<div class="doc-scrollbars" aria-hidden="true"><div class="doc-scrollbars-frame"></div></div>');
+    table.insertAdjacentHTML("afterbegin", "<colgroup data-doc-columns><col></colgroup>");
+  };
+  const unlay = () => {
+    wrap.querySelector(".doc-scrollbars").remove();
+    table.querySelector("colgroup").remove();
+  };
+  layOut();
+  const { top } = placeIn(window);
+  assert.equal(elementOf(doc, top), row, "read on the page laid out: the first row in the window");
+  assert.ok(top.path.every((step) => typeof step === "string" && /^[a-z]+:\d+$/.test(step)), `each step a tag and its number: ${JSON.stringify(top.path)}`);
+  unlay();
+  assert.equal(elementOf(doc, top), row, "the same row on the page before the kit laid the table out: not the table's top");
+  assert.equal(elementOf(doc, { ...top, path: ["main:9"] }), row, "by its block where its path names nothing");
+  const before = placeIn(window).top;
+  layOut();
+  assert.equal(elementOf(doc, before), row, "and read before, found after");
+  // A place kept before steps named their tag: its numbers, each a child's index, still read.
+  assert.equal(elementOf(doc, { path: [1, 0, 1, 2, 2], id: "t", at: 12, inner: [1, 2, 2] }), row, "a place of numbers: at its path");
 }
 
 // ---------- the reader's own move ----------

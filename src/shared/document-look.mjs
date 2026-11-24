@@ -8,7 +8,7 @@
 // not the default, the field gone when none is; a doc.json each choice that is not the workspace's,
 // the field gone when none is:
 //
-//   "look": { "font": "serif" | "mixed", "size": "small" | "large", "spacing": "compact" | "loose", "width": "narrow" | "wide", "full": "full", "tables": "wide" }
+//   "look": { "font": "serif" | "mixed", "size": "small" | "large", "spacing": "compact" | "loose", "width": "narrow" | "wide", "full": "full", "tables": "wide", "databases": "wide" }
 //
 // A doc.json may say a default too ("font": "sans", "size": "default"…): 默认 chosen on a page while
 // the workspace's default says otherwise. The look a document shows is never written in doc.html: the
@@ -34,7 +34,13 @@ export const LOOK = Object.freeze({
   // in the body itself (no container's), is centred on its line and goes past the text's edges on both sides, as
   // far as the page's area at full width; past that it scrolls in its frame as ever (the kit's tables/across.js).
   // Its attribute is data-doc-tables="wide" (components/page.mjs LOOK_ATTRIBUTES), the reader's display menu has it too.
+  // A table's own data-doc-wide in doc.html (its block menu's 宽表格: ./table-across.mjs WIDE) is over it for that table.
   tables: Object.freeze(["default", "wide"]),
+  // 宽多维表格 (the 更多 menu's switch under 宽表格): a 多维表格 wider than the text, standing in the body itself, is centred
+  // on its line and goes past the text's edges as a wide table does, as far as the page's area at full width; past that
+  // its view scrolls in its own frame as ever (the kit's database/across.js). Its attribute is data-doc-databases="wide";
+  // a database's own data-doc-wide is over it, as a table's is over 宽表格.
+  databases: Object.freeze(["default", "wide"]),
 });
 
 /** The attribute each choice is on <html> by: the page's description says them (components/page.mjs). */
@@ -89,7 +95,7 @@ export function lookOf(value) {
   return look;
 }
 
-/** Each choice of a look, the default where it makes none: { font, size, spacing, width, full, tables }. */
+/** Each choice of a look, the default where it makes none: { font, size, spacing, width, full, tables, databases }. */
 export const fullLook = (value) => ({ ...Object.fromEntries(Object.entries(LOOK).map(([key, [first]]) => [key, first])), ...lookOf(value) });
 
 /** Whether two looks are the same. */

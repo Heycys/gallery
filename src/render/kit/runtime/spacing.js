@@ -58,12 +58,15 @@
 // runtime), the copy's kit putting it back.
 
 import { giveLine } from "../../../shared/components/list.mjs";
-import { INSTANCE, componentAt } from "../../../shared/components/installed.mjs";
+import { DATA_ONLY } from "../../../shared/components/database.mjs";
+import { HOLDER, componentAt } from "../../../shared/components/installed.mjs";
 import { ZWSP, inlineItems, spaceAround } from "../../../shared/inline-spacing.mjs";
 import { holdsLongRun, longRuns } from "../../../shared/long-runs.mjs";
 
-// What a component's: an instance's own region (installed.mjs componentAt), not what its slots hold.
-const inert = (element) => element.closest("pre, svg, [contenteditable], [data-doc-dev], script, style, textarea") || element.matches(INSTANCE) || componentAt(element);
+// What a component's: an instance's own region (installed.mjs componentAt), not what its slots hold; and
+// all of a block of data (a database: its parts and its drawing, components/database.mjs DATA_ONLY) but its
+// records' bodies, which are its slots.
+const inert = (element) => element.closest(`pre, svg, [contenteditable], [data-doc-dev], script, style, textarea`) || element.matches(`${HOLDER}, .${DATA_ONLY}`) || componentAt(element);
 // A number, its unit or percent sign after it (3B, 400M, 23.7%), and one with a dash before it.
 const NUMBER = String.raw`\d(?:[\d.,]*\d)?(?:%|[A-Za-z]{1,3})?`;
 const DASH = "[–—~～]";

@@ -10,7 +10,8 @@
    layer (a popover, so no z-index of the page covers it); z-index is for a browser without popovers. */
 
 .doc-choice,
-.doc-choice-leaving {
+.doc-choice-leaving,
+.doc-popover {
   position: fixed;
   inset: auto;
   left: 0;
@@ -37,20 +38,32 @@
 }
 
 @starting-style {
-  .doc-choice { opacity: 0; scale: .96; }
+  .doc-choice, .doc-popover { opacity: 0; scale: .96; }
 }
 
 .doc-choice.is-keyed { transition: none; }
-/* Leaving: its class no longer the menu's (choice.js), so that nothing finds it as the open menu meanwhile. */
-.doc-choice-leaving { opacity: 0; pointer-events: none; transition: opacity 90ms ease-out; }
+/* Leaving: its class no longer the menu's (choice.js), so that nothing finds it as the open menu meanwhile;
+   a card of DocKit.popover (runtime/popover.js) marked is-leaving. */
+.doc-choice-leaving,
+.doc-popover.is-leaving { opacity: 0; pointer-events: none; transition: opacity 90ms ease-out; }
+
+/* A card of DocKit.popover (runtime/popover.js): the same card holding what a block puts in it, as wide as the
+   caller says or as its content, the window's room at most; the words of its fields selectable. */
+.doc-popover {
+  width: auto;
+  max-width: calc(100vw - 16px);
+  user-select: auto;
+}
 
 @media (prefers-reduced-motion: reduce) {
   /* Only its opacity (the kit's rule for reduced motion, base.css, would take the fade too). */
   @starting-style {
-    .doc-choice { scale: 1; }
+    .doc-choice, .doc-popover { scale: 1; }
   }
-  .doc-choice:not(.is-keyed) { transition-duration: 140ms, 0s !important; }
-  .doc-choice-leaving { transition-duration: 90ms !important; }
+  .doc-choice:not(.is-keyed),
+  .doc-popover:not(.is-leaving) { transition-duration: 140ms, 0s !important; }
+  .doc-choice-leaving,
+  .doc-popover.is-leaving { transition-duration: 90ms !important; }
 }
 
 .doc-choice-row {
@@ -133,5 +146,5 @@
 /* On paper a <select> is the words of its chosen option, no arrow, and the menu is never there. */
 @media print {
   select { appearance: none; background-image: none; }
-  .doc-choice, .doc-choice-leaving { display: none; }
+  .doc-choice, .doc-choice-leaving, .doc-popover { display: none; }
 }

@@ -22,7 +22,7 @@ import { ReportStats, pageMenuEntries, reportMenuEntries } from '../sidebar/repo
 import { RenameInput, startRename, stopRename, useRenaming } from '../sidebar/RenameInput';
 import { closeCrumbPopup, CrumbPopupHost, hoverCrumb, leaveCrumb, openCrumbPopup } from './CrumbPopup';
 import { AnnotateButton } from '../annotate/AnnotateButton';
-import { LookCard, fullWidthEntry, wideTablesEntry } from './LookMenu';
+import { LookCard, fullWidthEntry, holdsWideDatabases, holdsWideTables, wideDatabasesEntry, wideTablesEntry } from './LookMenu';
 import './topbar.css';
 import { t } from '../../../../shared/i18n/index.mjs';
 
@@ -360,8 +360,10 @@ export function Topbar() {
               ...(report.instructions ? [] : [{ kind: 'switch' as const, key: 'outline', icon: 'outline' as const, label: t('目录'), tip: t('在页面右侧显示标题目录，点击标题跳到那里'), value: () => outlineOpen(current), onChange: (on: boolean) => setOutlineOpen(current, on) }]),
               // 全宽：目录下面，同样不在写作偏好那份上；这份文档的样子（look.full），不管正文宽度是多少都全宽显示（LookMenu.tsx）
               ...(report.instructions ? [] : [fullWidthEntry(current)]),
-              // 宽表格：全宽下面；比正文宽的表格居中、左右超出正文（look.tables，LookMenu.tsx wideTablesEntry）
-              ...(report.instructions ? [] : [wideTablesEntry(current)]),
+              // 宽表格：全宽下面；比正文宽的表格居中、左右超出正文（look.tables，LookMenu.tsx wideTablesEntry）；页面里没有它管得到的表格时不放
+              ...(report.instructions || !holdsWideTables() ? [] : [wideTablesEntry(current)]),
+              // 宽多维表格：宽表格下面；比正文宽、直接在正文里的多维表格整块居中、左右超出正文（look.databases，LookMenu.tsx wideDatabasesEntry）；页面里没有时不放
+              ...(report.instructions || !holdsWideDatabases() ? [] : [wideDatabasesEntry(current)]),
               // 上次编辑和字数：底稿的由它所在工作区的服务答（GET /~<ws>/__gallery/workspace/stats，workspace/api.ts 按所有者前缀发）
               { kind: 'sep' as const }, { kind: 'foot' as const, content: <ReportStats slug={current} /> },
             ], { placement: 'bottom-end', ownerKey: 'topbar-more' });

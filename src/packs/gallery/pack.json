@@ -2,7 +2,7 @@
   "id": "gallery",
   "name": { "zh": "Gallery 风格", "en": "Gallery style" },
   "description": { "zh": "Gallery 自己的样子：克制、清楚的首页卡片。", "en": "Gallery's own look: quiet, clear cards for the home page." },
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "Gallery",
   "icon": "🗂️"
 }

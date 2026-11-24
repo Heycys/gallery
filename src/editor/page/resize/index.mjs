@@ -3,7 +3,7 @@ import { SPAN } from "../../../shared/media.mjs";
 import { CENTERED } from "../../components/figure/index.mjs";
 import { RESIZABLE, RESIZABLE_AT, SIZES } from "../../components/registry.mjs";
 import { scrollHeight } from "../../components/table/index.mjs";
-import { acrossLook, areaOf, inBody } from "../../../shared/table-across.mjs";
+import { areaOf, inBody, wideTable } from "../../../shared/table-across.mjs";
 import { cancelOnEscape, endsGesture, gestureLock } from "../gesture.mjs";
 import { kept } from "../kept.mjs";
 import { note, own } from "../overlays.mjs";
@@ -263,8 +263,8 @@ export function createResize({ units, active, look, say, settle = () => {}, owns
         floor: Number(node.dataset.docMinWidth) || 0,
         press: event.clientX,
         atEnd: node.scrollLeft + node.clientWidth >= node.scrollWidth - 2,
-        // 宽表格: the page's area at full width, where the table goes past the text (null: it scrolls in the text).
-        area: acrossLook() && inBody(node) ? areaOf() : null,
+        // 宽表格 (the page's, or the table's own): the page's area at full width, where the table goes past the text (null: it scrolls in the text).
+        area: wideTable(node) && inBody(node) ? areaOf() : null,
       } : null,
       result: null,
       told: null, // what the notice says now

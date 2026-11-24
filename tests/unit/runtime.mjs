@@ -49,9 +49,13 @@ function environment(body = '', head = '', media = () => ({matches: false, addEv
     }
     assert.equal(frames.size, 0);
   }
+  // The frames asked for so far run once (what they ask for in turn waits for the next tick).
+  function tick() {
+    const pending = [...frames.values()]; frames.clear(); pending.forEach((fn) => fn());
+  }
   setup(w);
   load('runtime', 'state', 'tokens');
-  return {dom, w, load, flush};
+  return {dom, w, load, flush, tick};
 }
 
 // Browser restoration wins over an older embedded snapshot; transient fields reset.
@@ -519,6 +523,64 @@ assert.ok(allocate([rareHugeName], {totalWidth:920})[0].width < 100, 'An outlier
   const narrowest = Math.min(...Array.from({length:30}, (_, step) => plain(allocate([prose('书名'), years, prose('看点')], {totalWidth:420 + step*4}))[1].width));
   assert.ok(narrowest >= piece - 1e-6, `Never below its widest piece (${narrowest} < ${piece})`);
 }
+{
+  // A table that does not fit its frame at the floors that keep its columns whole gives up, cheapest
+  // first and as little as brings it inside: a list's words (a list of figures one to a line), its
+  // headers' widths, then its long identifiers; one that scrolls anyway gives up nothing. (No canvas
+  // here: a Latin character 0.55 of the font's 14px, a Chinese one 14px, the cells' padding 24px.)
+  const latin = (text) => text.length * 14 * 0.55 + 24;
+  // A list of figures is no prose: compact, so a short field beside it keeps its whole value (beside
+  // prose it would be as narrow as its words), and 12,345 is one word, as the browser keeps it.
+  const figures = {key:'diff', header:'Δ', cells:['', '+8,214 +19,877 +31,402 +3,118', '+2,907 +14,336 +21,750']};
+  const label = {key:'config', header:'配置', cells:['基线', 'Exp3 仅用 v2', '基线 + Alpha 全量']};
+  assert.equal(plain(allocate([figures], {totalWidth:2000}))[0].kind, 'compact', 'A list of figures is no prose');
+  assert.equal(plain(allocate([label, figures], {totalWidth:100}))[0].softMinWidth, plain(allocate([label], {totalWidth:100}))[0].softMinWidth,
+    'Beside a list of figures a short field keeps its whole value');
+  // The list (its values wrap at its 160px already) gives up its words to fit, never below its widest figure.
+  const block = {key:'block', header:'X', cells:['a'], minWidth:500};
+  const fits = plain(allocate([figures, block], {totalWidth:600}));
+  assert.ok(Math.abs(sumWidths(fits) - 600) < 1e-6 && fits[0].width < 160, `A list gives up its words to fit (${fits[0].width})`);
+  const tight = plain(allocate([figures, block], {totalWidth:581}));
+  assert.ok(tight[0].width >= latin('+31,402') - 1e-6, `Never below its widest figure, 31,402 one word (${tight[0].width})`);
+  const near = (a, b) => Math.abs(a - b) < 1e-6;
+  assert.ok(near(plain(allocate([figures, block], {totalWidth:560}))[0].width, 160), 'A table that scrolls anyway keeps a list at its floor');
+  // Long identifiers (a dataset's names, two to a cell): each kept whole, its column as wide as the widest
+  // (not P90's interpolation a pixel short of it), given up only when that brings the table inside the frame.
+  const name = (tail) => `MIXCOT_bbPolymath_reasoning_en_distilled_${tail}_train`;
+  const names = {key:'datasets', header:'数据集', cells:[`${name('alphaH30XqNoSys8')} ${name('ccMergeAlphaFinal')}`, `${name('betaR2kNoSys')} ${name('ccMergeBetaFinal')}`, ''],
+    cellWidths:[1000, 980, 0], cellWordWidths:[501, 490, 0]};
+  const labelWidth = plain(allocate([label], {totalWidth:2000}))[0].width;
+  const whole = plain(allocate([label, names], {totalWidth:700}));
+  assert.equal(whole[1].kind, 'token-heavy');
+  assert.ok(near(whole[1].softMinWidth, 501) && whole[1].width >= 501 - 1e-6, `Kept whole where the table fits with them (${JSON.stringify(whole[1])})`);
+  const broken = plain(allocate([label, names], {totalWidth:600}));
+  assert.ok(Math.abs(sumWidths(broken) - 600) < 1e-6 && broken[1].width < 501 && near(broken[1].softMinWidth, 320), `Broken only to fit (${JSON.stringify(broken[1])})`);
+  assert.ok(near(plain(allocate([label, names], {totalWidth:600, keepLongWords:true}))[1].width, 501), 'keepLongWords: never broken to fit');
+  assert.ok(near(plain(allocate([label, names], {totalWidth:labelWidth + 300}))[1].width, 501), 'A table that scrolls anyway keeps its identifiers whole');
+  assert.ok(near(plain(allocate([label, {...names, cellWordWidths:[700, 690, 0]}], {totalWidth:2000}))[1].softMinWidth, 320), 'One wider than longWordMaxWidth breaks anyway: the floor as before');
+  assert.ok(near(plain(allocate([label, names], {totalWidth:2000, maxReadableFloor:200}))[1].softMinWidth, 200), 'A narrow screen\'s share is the most any floor needs');
+  // The user's shape: the list gives way first, the names stay whole; only past what the list gives are they broken.
+  const shaped = (totalWidth) => plain(allocate([label, figures, names], {totalWidth}));
+  const listFirst = shaped(labelWidth + 160 + 501 - 40);
+  assert.ok(listFirst[2].width >= 501 && listFirst[1].width < 160, `A list gives way before an identifier breaks (${JSON.stringify(listFirst.map(c => c.width))})`);
+  // A table that scrolls anyway gives up nothing, but a list is still as narrow as its words where that
+  // makes no row taller: its figures one to a line beside as many names, each name a line (no canvas:
+  // the names' widths given, consistent with a space of 7.7px).
+  const many = (count) => count * 376 + (count - 1) * 7.7 + 24;
+  const listed = (third) => [label, {...figures, cells:['+8,214 +19,877 +31,402 +3,118', '+2,907 +14,336 +21,750', third]},
+    {key:'datasets', header:'数据集', cells:[name('a').repeat(1), name('b'), ''].map((text, row) => row === 2 ? '' : text), cellWidths:[many(4), many(3), 0], cellWordWidths:[400, 400, 0]}];
+  const scrolling = plain(allocate(listed(''), {totalWidth:500}));
+  assert.ok(sumWidths(scrolling) > 500 && scrolling[1].width >= latin('+31,402') - 1e-6 && scrolling[1].width <= latin('+31,402') + 1.5 && near(scrolling[2].width, 400), `Scrolling anyway, a list beside as many names is one figure to a line (${scrolling.map(c => c.width)})`);
+  const alone = plain(allocate(listed('+905 +2,310'), {totalWidth:500}));
+  assert.ok(alone[1].width >= latin('+905 +2,310') - 1e-6 && alone[1].width < 160, `but never so narrow as to make a row of its own taller (${alone[1].width})`);
+  // A header much wider than its values wraps at its words to fit; a table that scrolls anyway keeps it whole (the matrix above).
+  const header = (key) => ({key, header:'Requests per second', cells:['840', '1,210', '310'], numeric:true, headerWidth:180, headerWordWidth:90});
+  const headers = plain(allocate(['a', 'b', 'c', 'd'].map(header), {totalWidth:500}));
+  assert.ok(Math.abs(sumWidths(headers) - 500) < 1e-6 && headers.every(column => column.width >= 90 - 1e-6), `Headers give way to fit (${headers.map(c => c.width)})`);
+  assert.ok(plain(allocate(['a', 'b', 'c', 'd'].map(header), {totalWidth:300})).every(column => near(column.width, 160)), 'A table that scrolls anyway keeps its headers');
+  assert.throws(() => allocate([label], {totalWidth:200, keepLongWords:'yes'}), /keepLongWords/);
+  assert.throws(() => allocate([label], {totalWidth:200, longWordMaxWidth:-1}), /longWordMaxWidth/);
+}
 assert.equal(allocate([], {totalWidth:200}).length, 0);
 assert.throws(() => allocate(inputs, {totalWidth:NaN}), /totalWidth/);
 assert.throws(() => allocate([{key:'a', header:'A', cells:[], maxWidth:20}], {totalWidth:200}), /hard minimum/);
@@ -581,6 +643,30 @@ env.dom.window.close();
   const footed = footedLayout('<tfoot><tr><td>Total</td><td>1234567890123456</td></tr></tfoot>');
   assert.ok(footed.columns[1].preferredWidth > bare.columns[1].preferredWidth, 'The total widens its column');
   assert.deepEqual(footed.kinds, footed.columns.map((column) => column.kind), 'Footer cells take their column\'s kind');
+}
+{
+  // A column of identifiers wide enough for each of them keeps them whole (data-column-wrap="words":
+  // a name that does not fit after the one before it starts a line of its own, never broken where that
+  // line ends); one narrower breaks them where its lines end (data-column-wrap="").
+  const name = (tail) => `MIXCOT_reasoning_en_${tail}_train`.padEnd(40, 'x');
+  const wrapOf = (room) => {
+    const page = environment(`<div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>名称</th><th>数据集</th></tr></thead><tbody>${['甲', '乙'].map((label, row) => `<tr><td>${label}</td><td>${name(`alpha${row}`)} ${name(`beta${row}`)}</td></tr>`).join('')}</tbody></table></div>`);
+    page.w.HTMLCanvasElement.prototype.getContext = () => ({font: '', measureText(text) { return {width: text.length * 8}; }});
+    page.load('tables');
+    const table = page.w.document.querySelector('table');
+    table.parentElement.getBoundingClientRect = () => ({width: room});
+    const columns = plain(page.w.DocTables.layout(table));
+    const marks = [...table.tBodies[0].rows].map((row) => row.cells[1].getAttribute('data-column-wrap'));
+    const least = Number(table.parentElement.getAttribute('data-doc-min-width'));
+    page.dom.window.close();
+    return {kind: columns[1].kind, width: columns[1].width, least, floors: columns.map((column) => column.softMinWidth), marks};
+  };
+  const room = wrapOf(600);
+  assert.ok(room.kind === 'token-heavy' && room.width >= 40 * 8 && room.marks.every((mark) => mark === 'words'), `Whole where the column holds them (${JSON.stringify(room)})`);
+  // The frame's least width (the page editor's handle) is the floors with the names given up: narrowed past them, they break.
+  assert.ok(room.least < room.floors[0] + room.floors[1] - 50, `The frame narrows past the whole names (${JSON.stringify(room)})`);
+  const narrow = wrapOf(300);
+  assert.ok(narrow.width < 40 * 8 && narrow.marks.every((mark) => mark === ''), `Broken where it does not (${JSON.stringify(narrow)})`);
 }
 {
   // A word typed in a cell (a change of the table's content the kit hears) measures that cell again,
@@ -657,7 +743,7 @@ env.dom.window.close();
   assert.equal(read.get('plain'), 1, 'laid out once the page is idle, the cell changed measured again alone');
   page.dom.window.close();
 }
-console.log('Checked automatic columns: P90, CJK, balanced wrapping/water filling, readable scrolling floors, a short field beside prose never below its widest piece, ratios, mutations, resize, hidden tables and rehydration, a footer measured with the body, a word typed measuring its cell alone.');
+console.log('Checked automatic columns: P90, CJK, balanced wrapping/water filling, readable scrolling floors, a short field beside prose never below its widest piece, a list of figures no prose and one figure one word, what a table that does not fit gives up (the words of a list, its headers, then its identifiers, kept whole otherwise and in a column wide enough for them), ratios, mutations, resize, hidden tables and rehydration, a footer measured with the body, a word typed measuring its cell alone.');
 
 // Inline fonts/padding and disclosure lifecycle share the regular table allocator.
 const inlinePath = '/datasets/finance/reasoning/multidocument/long-context/validation-set.jsonl';
@@ -906,35 +992,79 @@ Object.defineProperty(frameTarget, 'offsetHeight', {get:() => view.tableHeight})
 frameTarget.tHead.getBoundingClientRect = () => ({height:view.header});
 frameTarget.rows[0].cells[0].getBoundingClientRect = () => ({width:view.first});
 for (const name of ['scrollTop', 'scrollLeft']) Object.defineProperty(frameWrap, name, {get:() => view[name], set:(value) => { view[name] = Math.max(0, value); }});
-const scrolled = () => frameWrap.dispatchEvent(new env.w.Event('scroll'));
+// The frame scrolled (its event, then a frame: jsdom has no scroll timelines, so the kit's script places the thumb
+// where the browser's timeline would, once a frame, never in the scroll event itself), and a size changed (what the
+// scrollbars' observer hears, as the layout's does: placed again; the scroll alone places nothing).
+const scrolled = () => { frameWrap.dispatchEvent(new env.w.Event('scroll')); env.tick(); };
+const resized = () => { for (const observer of resizeCallbacks) if (observer.targets.has(frameWrap) || observer.targets.has(frameTarget)) observer.callback([]); env.tick(); };
 const yRail = layer.querySelector('.doc-scrollbar--y');
 const xRail = layer.querySelector('.doc-scrollbar--x');
 const railValue = (name, rail = yRail) => parseFloat(rail.style.getPropertyValue(name));
 const near = (actual, expected, message) => assert.ok(Math.abs(actual - expected) < 0.01, `${message}: ${actual} ≠ ${expected}`);
-scrolled();
+resized();
 assert.ok(layer.hasAttribute('data-y') && !layer.hasAttribute('data-x'), 'Only an overflowing axis gets a rail');
+assert.ok(!yRail.hasAttribute('data-timeline'), 'With no scroll timelines, the script moves the thumb');
 assert.equal(yRail.style.left, `${frameWrap.clientWidth - 12}px`, 'The rail runs along the right edge');
 assert.equal(yRail.style.top, '45px', 'The track starts below the header, which does not scroll');
 near(railValue('--doc-scrollbar-track'), 400 - 45 - 7, 'The track ends where the bottom corner curves (8px radius, 1px border)');
 const thumb = 348 * (400 - 45) / (1200 - 45);
 near(railValue('--doc-scrollbar-thumb-size'), thumb, 'The thumb is as long as the rows shown, of those that scroll');
+near(railValue('--doc-scrollbar-travel'), 348 - thumb, 'It travels the track less itself (what a timeline moves it by)');
 assert.equal(railValue('--doc-scrollbar-thumb-at'), 0);
-view.scrollTop = 400; scrolled();
-near(railValue('--doc-scrollbar-thumb-at'), (348 - thumb) / 2, 'Halfway down, the thumb is halfway along');
+view.scrollTop = 400; frameWrap.dispatchEvent(new env.w.Event('scroll'));
+assert.equal(railValue('--doc-scrollbar-thumb-at'), 0, 'The scroll event itself writes nothing of the thumb');
+env.tick();
+near(railValue('--doc-scrollbar-thumb-at'), (348 - thumb) / 2, 'Halfway down, the thumb is halfway along, from the next frame');
 assert.ok(layer.hasAttribute('data-active'), 'Scrolling shows the scrollbars');
-view.tableWidth = 1600; scrolled();
+view.tableWidth = 1600; resized();
 assert.ok(layer.hasAttribute('data-x'), 'A wider table gets a bottom rail too');
 near(railValue('--doc-scrollbar-track'), 400 - 45 - 12, 'The vertical track stops above the bottom rail');
 assert.equal(xRail.style.left, '7px', 'The bottom track starts where the left corner\'s curve ends');
 assert.equal(xRail.style.top, '388px', 'The bottom rail runs along the bottom edge');
 near(railValue('--doc-scrollbar-track', xRail), 798 - 7 - 12, 'and stops short of the vertical rail');
-frameTarget.classList.add('doc-table--sticky-first'); scrolled();
+frameTarget.classList.add('doc-table--sticky-first'); resized();
 assert.equal(xRail.style.left, '120px', 'With a sticky first column it starts after that column, which does not scroll');
 near(railValue('--doc-scrollbar-thumb-size', xRail), 666 * (798 - 120) / (1600 - 120), 'its thumb as long as the columns shown, of those that scroll');
 frameTarget.classList.remove('doc-table--sticky-first');
-view.tableWidth = 798; view.tableHeight = 400; scrolled();
+// Pushed past an end sideways, the bottom thumb gives way from that end, the more the further it is
+// pushed but never below half of itself; in the middle, or pushed up or down, it stays whole; the pushing
+// stopped, it springs back, as it does when the frame scrolls back from the end (the curve, the reading of a
+// touchpad's momentum and the spring are tests/unit/scroll-squeeze.mjs's). The thumb is drawn frame by frame
+// (env.tick), after real time has passed.
+{
+  Object.defineProperty(frameWrap, 'scrollWidth', {configurable:true, get:() => view.tableWidth});
+  const squeezeOf = () => parseFloat(xRail.style.getPropertyValue('--doc-scrollbar-squeeze')) || 0;
+  const push = (init) => frameWrap.dispatchEvent(new env.w.WheelEvent('wheel', init));
+  const drawn = (ms) => new Promise((done) => setTimeout(done, ms)).then(() => env.tick());
+  view.scrollLeft = 300; scrolled();
+  const size = railValue('--doc-scrollbar-thumb-size', xRail);
+  push({deltaX:30}); await drawn(20);
+  assert.equal(squeezeOf(), 0, 'in the middle, the wheel sideways scrolls and squeezes nothing');
+  // At the end by a gesture of its own (one that comes there gives its bump: scroll-squeeze.js arrive).
+  await drawn(150);
+  view.scrollLeft = view.tableWidth - frameWrap.clientWidth; scrolled();
+  push({deltaY:120}); await drawn(20);
+  assert.equal(squeezeOf(), 0, 'at the end, the wheel up or down squeezes nothing');
+  // A gesture begun at the end (one that came there within itself is taken as coasting there: scroll-squeeze.js).
+  await drawn(150);
+  push({deltaX:30}); push({deltaX:30}); await drawn(25);
+  const first = squeezeOf();
+  assert.ok(first > 0, `at the end, pushed on, the thumb gives way: ${first}`);
+  assert.equal(xRail.style.getPropertyValue('--doc-scrollbar-squeeze-shift'), xRail.style.getPropertyValue('--doc-scrollbar-squeeze'), 'squeezed from the end it is pushed against, its far end staying put');
+  for (let more = 0; more < 12; more++) { push({deltaX:30}); await drawn(15); }
+  assert.ok(squeezeOf() > first && squeezeOf() <= Math.min(size * 0.5, 96) + 0.01, `pushed further, more, never below half of itself: ${squeezeOf()} of ${size}`);
+  await drawn(600); env.tick();
+  assert.equal(squeezeOf(), 0, 'the pushing stopped: it springs back');
+  view.scrollLeft = 0; scrolled();
+  push({deltaX:-30}); push({deltaX:-30}); await drawn(25);
+  assert.ok(squeezeOf() > 0 && xRail.style.getPropertyValue('--doc-scrollbar-squeeze-shift') === '0px', 'at the start, pushed back, from that end');
+  view.scrollLeft = 50; scrolled();
+  await drawn(450); env.tick();
+  assert.equal(squeezeOf(), 0, 'scrolled back from the end: whole again');
+}
+view.tableWidth = 798; view.tableHeight = 400; resized();
 assert.ok(!layer.hasAttribute('data-y'), 'A rail left below a table that got shorter does not make its frame scroll');
-view.tableHeight = 1200; scrolled();
+view.tableHeight = 1200; resized();
 // A press beside the thumb moves it there; dragging scrolls by the thumb's travel. Neither the
 // page nor an editor (a listener on the document) hears it.
 let heard = 0;

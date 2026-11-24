@@ -90,10 +90,11 @@ export default {
       owner: (panel) => [...(panel.parentElement?.querySelectorAll(SHEETS.tabs) ?? [])].find((tab) => tab.getAttribute(SHEETS.tabKey) === panel.getAttribute(SHEETS.panelKey)) ?? null,
       takenBy: (tab, key) => tab.getAttribute(SHEETS.tabKey) === key,
     },
-    tabs: { role: "tabs", name: t("选项卡栏"), selectAll: { whole: true }, find: (unit) => unit.querySelector(SHEETS.row) },
+    // Its tabs are the area's own controls (pills.mjs): a box selection passes over them.
+    tabs: { role: "tabs", name: t("选项卡栏"), controls: true, selectAll: { whole: true }, find: (unit) => unit.querySelector(SHEETS.row) },
   },
   types: {
-    // A new Sheet area (the "/" menu's 选项卡, 在下方新建: page.mjs newSheets): three tabs, 选项卡 1–3,
+    // A new Sheet area (the "/" menu's 选项卡, 在下方新建: page.mjs newSheets): three tabs, 选项 1–3,
     // their panels empty, written with them under a name of its own (file.mjs).
     sheets: {
       menu: ["advanced", 21], fresh: 6,

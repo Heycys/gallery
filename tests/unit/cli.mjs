@@ -1204,7 +1204,7 @@ try {
     assert.deepEqual(linesOf((await g(["set", "weekly", "--description", "新的说明"])).stdout), ["Nothing to change: weekly has that already."]);
     await fs.writeFile(path.join(tree, "sub", "doc.html"), "<!doctype html><html><head><title>x</title></head><body><main><p>没有标题</p></main></body></html>");
     for (const [args, code, said] of [
-      [["weekly"], 2, 'Say what to set: --title "<title>", --icon <emoji|none|…>, --description "<text>", --font/--size/--spacing/--width <value>, --full on|off, --wide-tables on|off, or --all.'],
+      [["weekly"], 2, 'Say what to set: --title "<title>", --icon <emoji|none|…>, --description "<text>", --font/--size/--spacing/--width <value>, --full on|off, --wide-tables on|off, --wide-databases on|off, or --all.'],
       [["weekly", "--title", "  "], 2, "--title takes the words of the title: a document's title is never empty."],
       [["weekly", "--icon", "abc"], 2, "Not a page icon: abc (an emoji, none, an icon of the 图标 tab as /icons/<name>_<color>.svg, a picture of the document's assets/, or the name of a custom emoji: gallery emoji list lists them)."],
       [["weekly", "--icon", "/icons/nothing-such_blue.svg"], 2, "No such icon of the 图标 tab: /icons/nothing-such_blue.svg."],

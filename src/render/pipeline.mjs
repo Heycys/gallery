@@ -16,7 +16,7 @@ import { BODY, componentOf, matchesNode } from "../shared/components/index.mjs";
 import { FLOW } from "../shared/components/list.mjs";
 import { attr, elementsOf, walk } from "../shared/html-tree.mjs";
 import { GLYPH_SETS, ICON_COLORS, glyphOf, glyphValue, iconKind, iconMarkup, iconValueOf } from "../shared/emoji/icon-value.mjs";
-import { componentFailures, componentNotes } from "./component-checks.mjs";
+import { componentFailures, componentNotes, databaseFixes, databaseReadings } from "./component-checks.mjs";
 import { loadKitFile } from "./kit-build.mjs";
 import { layoutNotes } from "./layout-notes.mjs";
 import { localPathNotes } from "./local-paths.mjs";
@@ -661,13 +661,19 @@ function pageLinkNotes({ slug: self, tree, directory }) {
   return notes;
 }
 
-// The widest the export's copy of a picture of document `slug` (its folder `directory`) may be: twice the reading column
-// its look shows (src/shared/export-pictures.mjs pictureCeiling; its look as doc.json and gallery.json say it).
-function lookCeiling(slug, directory) {
-  let look = {};
+// The look document `slug` (its folder `directory`) shows, as doc.json and gallery.json say it ({} where they do not read).
+function lookAt(slug, directory) {
   try {
-    look = documentLook(slug, path.dirname(directory));
-  } catch {}
+    return documentLook(slug, path.dirname(directory));
+  } catch {
+    return {};
+  }
+}
+
+// The widest the export's copy of a picture of document `slug` may be: twice the reading column its look shows
+// (src/shared/export-pictures.mjs pictureCeiling).
+function lookCeiling(slug, directory) {
+  const look = lookAt(slug, directory);
   const attributes = new Map(lookAttributes(look)); // as the render puts them on its <html>
   return pictureCeiling((name) => attributes.get(name) ?? null);
 }
@@ -677,13 +683,15 @@ function lookCeiling(slug, directory) {
  * is it as the intake makes it in memory, loadReports'), never a failure, in three kinds: `fix`,
  * those an Agent acts on first, each saying what to do (the paths of this machine in the text a
  * reader reads, localPathNotes; the pictures that make its export heavy or that it shows more than
- * once, largePictureNotes); `notes`, the rest worth a look: its layout's, its links to a document or
+ * once, largePictureNotes; a database the page shows read-only, each problem at its line, databaseFixes); `notes`, the rest worth a look: its layout's, its links to a document or
  * a block that is not there (pageLinkNotes), what in a table a chart
  * draws reads oddly (a column of numbers and words, a <tfoot> left out, cells past the header:
  * tableChartReadings), and what strict TypeScript says of a type alone in its own script
  * (`scriptNotes`, which checkReports gives it: advice, the browser runs the script as written); and
  * `readings`, information with nothing to do: how each chart drawn from a table reads it (its rows,
- * each column's values numbers or words), so a report as it should be prints no note.
+ * each column's values numbers or words), so a report as it should be prints no note; and `databases`, information too:
+ * what each database holds and what each of its views shows (databaseReadings), so that a database written as
+ * meant is still said, and an Agent sees what its views show without a browser.
  * `copies`: whether the export makes its pictures' copies as light as the page needs, true, or why not (the
  * command that asks knows: a Chrome or Edge on the machine, --original-images), largePictureNotes'.
  */
@@ -691,9 +699,10 @@ export function notesByKind({ slug, html, directory = documentDirectory(slug, re
   const tree = parseReport(html);
   const charts = tableChartReadings(html);
   return {
-    fix: [...localPathNotes(html, tree), ...largePictureNotes({ html, directory, tree, ceiling: lookCeiling(slug, directory), copies })],
+    fix: [...localPathNotes(html, tree), ...largePictureNotes({ html, directory, tree, ceiling: lookCeiling(slug, directory), copies }), ...databaseFixes(tree)],
     notes: [...layoutNotes(html, { written }), ...componentNotes(tree), ...pageLinkNotes({ slug, tree, directory }), ...charts.notes, ...scriptNotes],
     readings: charts.readings,
+    databases: databaseReadings(tree, { wideLook: lookAt(slug, directory).databases === "wide" }),
   };
 }
 
@@ -706,7 +715,7 @@ export function notesOf(report, options) {
 /**
  * Print the notes of these reports (notesByKind), each a line: first those to act on, "fix <slug>:
  * …", of every report, then the rest, "note <slug>: …", then what each chart drawn from a table
- * reads, "chart <slug>: …", information (an export's notes once listed chart readings first and a
+ * reads, "chart <slug>: …", and what each database holds and shows, "database <slug>: …", information (an export's notes once listed chart readings first and a
  * local path last, both "note": the Agent read past the one it had to change; and a report as it
  * should be, the skill's example among them, printed a note there was nothing to do about).
  * `options`: notesByKind's (`copies`).
@@ -716,6 +725,7 @@ export function reportNotes(reports, options) {
   for (const [slug, { fix }] of kinds) for (const note of fix) console.log(`fix ${slug}: ${note}`);
   for (const [slug, { notes }] of kinds) for (const note of notes) console.log(`note ${slug}: ${note}`);
   for (const [slug, { readings }] of kinds) for (const reading of readings) console.log(`chart ${slug}: ${reading}`);
+  for (const [slug, { databases }] of kinds) for (const reading of databases) console.log(`database ${slug}: ${reading}`);
 }
 
 /**

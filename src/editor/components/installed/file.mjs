@@ -78,7 +78,7 @@ function wholly(node, text, from, to) {
 // Whether `html` can be the inside of `part` (an element of the file `source`): it reads as just that,
 // the part closed by its own end tag at the end of it, and holds nothing refusedInData says. A script
 // of data holds JSON (fitsDataScript).
-function fits(source, part, html) {
+export function fits(source, part, html) {
   if (part.tagName === "script") return isDataScript(part.tagName, part.attrs) && fitsDataScript(html);
   if (noDataPart(part.tagName)) return false;
   const { startTag, endTag } = part.sourceCodeLocation;

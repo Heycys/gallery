@@ -1,17 +1,17 @@
 import { escapeText } from "../../../shared/escape.mjs";
 import { BLOCK_COLORS, cellColorOf, colorLook } from "../../components/colors.mjs";
-import { CELLS_MIME as MIME, CELL_BOLD, OLD_CELLS_MIME, cellsPayload, pictureFile } from "../../components/table/index.mjs";
+import { CELLS_MIME as MIME, CELL_BOLD, OLD_CELLS_MIME, cellNodes, cellsPayload, pictureFile } from "../../components/table/index.mjs";
 import { alignItems, alignLook } from "./aligns.mjs";
 import { insertColumn, insertRow, tableParts, tableSlots, tableState } from "../../components/table/page.mjs";
 import { atEdge, editable } from "../caret.mjs";
 import { pastedLines, serializeInner } from "../core.mjs";
 import { formulaMaker, loadKatex } from "../formula/index.mjs";
 import { FORMAT_KEYS } from "../format-bar/index.mjs";
-import { formatRange, markValue, rangeAt, rangeOffsets } from "../marks.mjs";
+import { formatRange, markValue, outOfMarks, rangeAt, rangeOffsets } from "../marks.mjs";
 import { gestureLock } from "../gesture.mjs";
 import { addStyle } from "../ui.mjs";
 import { createCellBar } from "./cell-bar.mjs";
-import { createCellLists } from "./lists.mjs";
+import { createCellLists, listsIn, placeInCell } from "./lists.mjs";
 import { t } from "../../../shared/i18n/index.mjs";
 
 // Selected cells of a table and the keys in a table (rules decided 2026-10-18),
@@ -35,8 +35,10 @@ import { t } from "../../../shared/i18n/index.mjs";
 //   the caret in one, what the clipboard holds as cells (clipboard/ cellsOf: the page's own, another
 //   program's table with its marks and pictures, a Markdown table, tab-separated lines) fills them
 //   from the top left or the caret's cell (repeated over a selection a whole number of times larger),
-//   rows and columns put in where they overflow; one undo step. With the caret in a cell a single
-//   value is the editor's paste at the caret (but one holding a picture: pictures.mjs).
+//   rows and columns put in where they overflow; one undo step. Each cell's text is what is pasted
+//   for it as the cell's own (components/table/index.mjs cellNodes: its lines, an empty one kept, its
+//   lists), the cells' looks staying theirs. With the caret in a cell a single value is the editor's
+//   paste at the caret (but one holding a picture: pictures.mjs).
 // A cell's color (one, as a block's: components/colors.mjs) and alignment are its classes (its look:
 // components/table/index.mjs); its text changes are the editor's (struct, history.mjs). Where cells
 // are merged (shared/table-slots.mjs), Tab goes from cell to cell, the arrows and Enter step
@@ -502,35 +504,36 @@ export function createCells(tools) {
       } else found = await tools.pictures.resolve(rows.flat(), pasted.from, { same: pasted.same, project: pasted.project });
       // Formulas in what is pasted are drawn at once, KaTeX loaded first where the page has none yet.
       const formula = rows.some((row) => row.some((html) => html.includes("doc-math-inline"))) && (await loadKatex()) ? formulaMaker() : null;
-      const lines = (html) => {
-        const made = pastedLines(document, html, { links: true, formula, picture: tools.pictures.maker(found) });
-        return made.flatMap((line, index) => (index > 0 ? [document.createElement("br"), ...line] : line));
-      };
+      // A cell's text of what is pasted: its lines (an empty one kept), its lists, its pictures.
+      const lines = (html) => cellNodes(document, html, (each) => pastedLines(document, each, { links: true, formula, picture: tools.pictures.maker(found), lineBreaks: true }));
       if (offsets) atCaret(caret, offsets, lines(rows[0][0]));
       else pasteGrid(target, rows, lines);
     })();
   }
 
-  // A value holding a picture pasted at the caret in a cell (its file copied first): in at the caret,
-  // one undo step, the caret after it.
+  // A value holding a picture pasted at the caret in a cell (its file copied first): in at the caret
+  // (its lists as a paste's: lists.mjs placeInCell), one undo step, the caret after it.
   function atCaret({ unit, cell }, offsets, nodes) {
     if (!cell.isConnected || nodes.length === 0) return;
-    let last = null;
+    let caret = null;
     const made = tools.change(unit, () => {
       const range = rangeAt(cell, offsets);
       range.deleteContents();
+      if (listsIn(nodes)) {
+        caret = placeInCell(cell, outOfMarks(cell, range), nodes);
+        return true;
+      }
       const fragment = document.createDocumentFragment();
       fragment.append(...nodes);
-      last = nodes.at(-1);
       range.insertNode(fragment);
+      caret = document.createRange();
+      caret.setStartAfter(nodes.at(-1));
+      caret.collapse(true);
       return true;
     }, null, [cell]);
-    if (made === null || !last?.isConnected) return;
-    const range = document.createRange();
-    range.setStartAfter(last);
-    range.collapse(true);
+    if (made === null || !caret) return;
     getSelection().removeAllRanges();
-    getSelection().addRange(range);
+    getSelection().addRange(caret);
   }
 
   // `pasted`: rows of cells' inline HTML; `lines(html)`: a cell's nodes of one of them.

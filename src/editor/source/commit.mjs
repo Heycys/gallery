@@ -88,12 +88,76 @@ import { frameShell, unitHash, unitShell } from "./units.mjs";
  * (keyedFacts).
  */
 
-export function commitEdits({ current, opening = null, texts = [], units = [], touch = [], ids = true, seal = null, pageIds = null }) {
+// The kinds of box a unit's component makes in the file as a block first goes into one (`slotKinds`, `makeSlot`:
+// a database's record bodies, which the page gives a record as the reader first writes in it).
+const ON_DEMAND = new Set(Object.values(FILES).flatMap((own) => own.slotKinds ?? []));
+
+/**
+ * `current` with the boxes this commit's blocks go into that the file does not hold yet and their unit's
+ * component makes on demand (ON_DEMAND: a record's body, a slot of its database's): each made empty where its
+ * component says (`makeSlot`) before anything else, so that what goes into it finds it as any box. A unit is
+ * found by its id, or with none yet by its hash (the one unit of that kind the file holds so): one found by
+ * neither is left as it is, the block's place then none, as for any box that is not there. Returns { text,
+ * before }: `before` the hash each unit given a slot had, by where it starts in `text`, which is what the page
+ * names it by (an empty slot of its own making is no one else's change of it).
+ */
+function slotsMade(current, units) {
+  const before = new Map();
+  const wanted = units.flatMap((op) => [op?.place?.into, op?.move?.into]).filter((box) => box?.unit && ON_DEMAND.has(box.kind) && typeof box.key === "string");
+  if (wanted.length === 0) return { text: current, before };
+  let text = current;
+  for (const box of wanted) {
+    const scanned = scan(text);
+    const id = typeof box.unit.id === "string" ? box.unit.id : typeof box.unit.blockId === "string" ? box.unit.blockId : null;
+    let hits = id ? scanned.units.filter((unit) => unit.blockId === id) : [];
+    if (hits.length === 0 && typeof box.unit.hash === "string") hits = scanned.units.filter((unit) => FILES[unit.kind]?.makeSlot && unitHash(text, unit) === box.unit.hash);
+    if (hits.length !== 1) continue;
+    const [unit] = hits;
+    if (scanned.boxes.some((each) => each.unit === unit.id && each.kind === box.kind && each.key === box.key)) continue;
+    const splice = FILES[unit.kind]?.makeSlot?.(text, unit.node, box.key);
+    if (!splice) continue;
+    if (!before.has(unit.elStart)) before.set(unit.elStart, unitHash(text, unit));
+    // What starts past the splice moves with it.
+    const moved = splice.text.length - (splice.end - splice.start);
+    for (const [at, hash] of [...before]) {
+      if (at <= splice.start) continue;
+      before.delete(at);
+      before.set(at + moved, hash);
+    }
+    text = text.slice(0, splice.start) + splice.text + text.slice(splice.end);
+  }
+  return { text, before };
+}
+
+/**
+ * `text` (what a commit made of `current`, scanned `now`) with the boxes made on demand (ON_DEMAND) that the commit
+ * emptied taken out, as their component says (`dropSlot`: a record's body whose last block went, the undo of its
+ * first word), so that a body made and undone leaves the file as it was. A box is known across the two by its
+ * unit's id and its key; one the file had empty before stays.
+ */
+function slotsEmptied(now, text) {
+  const held = new Set(now.boxes.filter((box) => ON_DEMAND.has(box.kind) && now.units.some((unit) => unit.box === box.id) && now.units[box.unit]?.blockId).map((box) => `${now.units[box.unit].blockId}\n${box.key}`));
+  if (held.size === 0) return text;
+  for (let pass = 0; pass < 50; pass++) {
+    const scanned = scan(text);
+    const empty = scanned.boxes.find((box) => ON_DEMAND.has(box.kind) && held.has(`${scanned.units[box.unit]?.blockId}\n${box.key}`) && !scanned.units.some((unit) => unit.box === box.id));
+    if (!empty) return text;
+    held.delete(`${scanned.units[empty.unit].blockId}\n${empty.key}`);
+    const unit = scanned.units[empty.unit];
+    const splice = FILES[unit.kind]?.dropSlot?.(text, unit.node, empty.key);
+    if (splice) text = text.slice(0, splice.start) + splice.text + text.slice(splice.end);
+  }
+  return text;
+}
+
+export function commitEdits({ current: given, opening = null, texts = [], units = [], touch = [], ids = true, seal = null, pageIds = null }) {
+  const { text: current, before: madeFrom } = slotsMade(given, units);
   const now = scan(current);
   const open = typeof opening === "string" ? scan(opening) : null;
   const inner = (block) => current.slice(block.innerStart, block.innerEnd);
   let hashes = null;
-  const hashOfUnit = (unit) => (hashes ??= new Map(now.units.map((other) => [other.id, unitHash(current, other)]))).get(unit.id);
+  // A unit given an empty slot by this commit (slotsMade) is named by the hash it had before it.
+  const hashOfUnit = (unit) => (hashes ??= new Map(now.units.map((other) => [other.id, madeFrom.get(other.elStart) ?? unitHash(current, other)]))).get(unit.id);
 
   // ---------- where each thing named is in the file now ----------
   const resolvedUnits = new Map(); // page key -> { unit } | { gone } | { reason }
@@ -611,6 +675,7 @@ export function commitEdits({ current, opening = null, texts = [], units = [], t
   }
 
   // ---------- what the page learns ----------
+  result.text = slotsEmptied(now, result.text);
   const after = scan(result.text);
   // The ids the file has for the units the page named (by the key it named each by), and for the
   // blocks it made or put back (by the key it made each under).

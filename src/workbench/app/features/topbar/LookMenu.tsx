@@ -8,6 +8,7 @@ import { workspaceStore } from '../../workspace/store';
 import type { DocLook } from '../../workspace/types';
 import { LOOK, SERIF_FONT } from '../../../../shared/document-look.mjs';
 import { t } from '../../../../shared/i18n/index.mjs';
+import { holdsBodyDatabases, holdsBodyTables } from '../../../../shared/table-across.mjs';
 
 /**
  * 「更多」里字体与布局的子菜单卡片。四栏，从上到下：
@@ -67,12 +68,51 @@ export function fullWidthEntry(slug: string): MenuEntry {
  * 更多里全宽下面的「宽表格」开关（用户 2026-11-20 说的「表格跨越边界」）：比正文宽、直接在正文里的表格在它那一行居中，
  * 左右都可以超出正文的边，最宽到页面两边（和全宽时一样的边距）；连这么宽都放不下才在表格自己的框里左右滚动。高亮块、分栏、
  * 折叠块、选项卡、列表里的表格不变（容器有自己的框）。默认关；和全宽一样是这份文档的样子（look.tables，chooseLook），导出也带着。
+ * 这是整页的开关：一个表格自己的宽表格在它的块菜单里（写在 doc.html 里那个表格框的 data-doc-wide，比整页的优先）；
+ * 点这里就让每个表格都跟着整页，把各个表格自己的设置去掉（chooseLook 的 follow，页面里的一步撤销）。
  */
+/**
+ * 显示着的这一页里有没有「宽表格」管得到的表格（直接在正文里的表格框，table-across.mjs holdsBodyTables）：没有就不放
+ * 这个开关（用户 2026-11-23：「这两个选项是只有页面里面出现的表格……的时候才对应出现那个选项」）。在点开菜单时看一次；
+ * 读不到这一页（还没载入、另一个源）时照旧放。
+ */
+export function holdsWideTables(): boolean {
+  try {
+    const doc = document.querySelector<HTMLIFrameElement>('iframe.report-frame:not([data-pending])')?.contentDocument;
+    return doc?.querySelector('main') ? holdsBodyTables(doc) : true;
+  } catch {
+    return true;
+  }
+}
+
 export function wideTablesEntry(slug: string): MenuEntry {
   return {
     kind: 'switch', key: 'wide-tables', icon: 'wideTables', label: t('宽表格'), tip: t('比正文宽的表格居中显示，左右可以超出正文，最宽到页面两边；再放不下才左右滚动'),
     value: () => currentLook(slug).tables === 'wide',
-    onChange: (on: boolean) => chooseLook(slug, 'tables', on ? 'wide' : 'default'),
+    onChange: (on: boolean) => chooseLook(slug, 'tables', on ? 'wide' : 'default', true),
+  };
+}
+
+/**
+ * 更多里宽表格下面的「宽多维表格」开关：比正文宽、直接在正文里的多维表格（它的表格、看板这些视图比正文宽时）整块居中，左右超出正文，
+ * 最宽到页面两边，再放不下才在视图自己的框里滚动；容器里的不变（kit 的 database/across.js）。默认关；这份文档的样子（look.databases），
+ * 导出也带着。页面里没有直接在正文里的多维表格时不放（holdsBodyDatabases），和宽表格一样。和宽表格一样是整页的开关：一个多维表格
+ * 自己的在它的块菜单里，点这里就让每个多维表格都跟着整页（follow）。
+ */
+export function holdsWideDatabases(): boolean {
+  try {
+    const doc = document.querySelector<HTMLIFrameElement>('iframe.report-frame:not([data-pending])')?.contentDocument;
+    return doc?.querySelector('main') ? holdsBodyDatabases(doc) : true;
+  } catch {
+    return true;
+  }
+}
+
+export function wideDatabasesEntry(slug: string): MenuEntry {
+  return {
+    kind: 'switch', key: 'wide-databases', icon: 'wideDatabases', label: t('宽多维表格'), tip: t('比正文宽的多维表格整块居中显示，左右可以超出正文，最宽到页面两边；再放不下才左右滚动'),
+    value: () => currentLook(slug).databases === 'wide',
+    onChange: (on: boolean) => chooseLook(slug, 'databases', on ? 'wide' : 'default', true),
   };
 }
 

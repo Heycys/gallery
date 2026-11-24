@@ -1475,12 +1475,11 @@ function measure({ scope, next, ignored = [], place, slack = 4, whole = [], draw
 }
 
 // What the page has, to say in the summary (its detail cards are counted as they are opened). In the
-// page. A chart is a declared one or a chart-view, Gallery's own block that draws a table's rows as bars
-// with markup of its own (testing the skill with Agents, 2026-11-09: "0 charts, 1 table" over a page with one).
+// page. A chart is a declared one; a database (多维表格) is counted apart from the tables, its own block.
 export function inventory() {
   const dev = (node) => Boolean(node.closest("[data-doc-dev]"));
   const count = (selector) => [...document.querySelectorAll(selector)].filter((node) => !dev(node)).length;
-  return { charts: count("[data-doc-chart], [data-doc-component='gallery/chart-view']"), tables: count(".doc-table-wrap"), height: document.documentElement.scrollHeight };
+  return { charts: count("[data-doc-chart]"), tables: count(".doc-table-wrap"), databases: count(".doc-database"), height: document.documentElement.scrollHeight };
 }
 
 // ---------- the browser ----------
@@ -2073,7 +2072,7 @@ export function describeLooks(looks, index, blocks = null, { folder = null, slug
     const ways = [scrolling.right && `→ ${scrolling.right}`, scrolling.down && `↓ ${scrolling.down}`].filter(Boolean).join(", ");
     const scrolls = `${plural(scrolling.all, "table scrolls", "tables scroll")}${ways ? ` (${ways})` : ""}`;
     const cards = counts?.cards ? `, ${plural(counts.cards, "detail card")} (${counts.cardsOpened === counts.cards ? "closed in the file, opened in turn" : `${counts.cardsOpened ?? 0} of them opened`})` : "";
-    const has = look.laptop ? "; only what the 1024px look did not find" : counts ? `; ${plural(counts.charts, "chart")}, ${plural(counts.tables, "table")}, ${disclosuresSaid(counts)}, ${plural(counts.sheets, "Sheet")} shown besides the first${cards}, page ${counts.height}px tall` : "";
+    const has = look.laptop ? "; only what the 1024px look did not find" : counts ? `; ${plural(counts.charts, "chart")}, ${plural(counts.tables, "table")}, ${counts.databases ? `${plural(counts.databases, "database")} (gallery check says what each view shows), ` : ""}${disclosuresSaid(counts)}, ${plural(counts.sheets, "Sheet")} shown besides the first${cards}, page ${counts.height}px tall` : "";
     counted.push({ label, fail: own.fail, warn: own.warn, line: `${look.laptop ? label : `${label.padStart(4)}px`}  fail ${own.fail} · warn ${own.warn} · unverified ${own.unverified} · ${scrolls}${has}` });
   }
   const sorted = [...groups.values()].sort((a, b) => LEVELS.indexOf(a.level) - LEVELS.indexOf(b.level));

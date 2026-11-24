@@ -40,7 +40,7 @@ const REFUSED = Symbol("refused");
 /**
  * changed(now): a change was recorded (`now`: a discrete one, committed without waiting for a
  * pause). refuse(why): an undo or redo was not done, `why` "merged" (it would take out someone else's words merged
- * in) or "pulled" (it is about a container someone else's write took off the page). beforeUndo(): undo or redo is about to run (the "/" menu closes). blocks(): the block
+ * in) or "pulled" (it is about a container someone else's write took off the page). beforeUndo(): undo or redo is about to run (the "/" menu closes, a page object writes what it holds back: a database's drag). blocks(): the block
  * tools (blocks.mjs), whose selection undo and redo bring back. afterText(element): a text step was
  * applied to a block (a code block's line numbers follow). refuse(): an
  * undo or redo that would take out someone else's merged words with the reader's was not done.
@@ -52,13 +52,20 @@ const REFUSED = Symbol("refused");
  * mergedOff(hosts): an undo or redo took off the page blocks someone else's words were merged into after
  * it was recorded (the page shows those words: a pull, page/pull/), which the page claims to have seen none
  * of from then on, so that their deletion is the file's to refuse (commit.mjs unseen).
+ * realize(node): a change of words or of look is about to be recorded in `node` (a text block, a block): what has
+ * to come before it records its own step (a record's body the file has not got yet becoming one of the file's: a
+ * struct step whose `typedInto` is the block, so that the words typed on go with it), the tidiers seeing to the same
+ * in a structural step.
  */
-export function createHistory({ changed, beforeUndo, blocks, afterText, refuse = () => {}, show = () => {}, tidy = () => [], mergedOff = () => {} }) {
+export function createHistory({ changed, beforeUndo, blocks, afterText, refuse = () => {}, show = () => {}, tidy = () => [], mergedOff = () => {}, realize = () => {} }) {
   const lastKnown = new WeakMap(); // block -> innerHTML after the last recorded change, or as the caret found it (editor.mjs onSelectionChange)
   const undoStack = [];
   const redoStack = [];
   let typing = null; // open text step: { type, element, before, after, time }
   let serial = 0; // the order of steps and merges
+  // The source step a component's writes of one gesture go on folding into ({ step, key, at }: sourceStep's
+  // `merge`), while it is the last step and the writes follow one another; none once anything else is done.
+  let merging = null;
   const lastMerge = new WeakMap(); // block -> when someone else's words were last merged into it (merged)
 
   const typingChanged = () => typing !== null && typing.before !== typing.after;
@@ -68,6 +75,8 @@ export function createHistory({ changed, beforeUndo, blocks, afterText, refuse =
     const after = ownHTML(host);
     lastKnown.set(host, after);
     const at = Date.now();
+    // What has to come first records its step first (which closes the run open, if any, so that one begins here).
+    if (before !== after) realize(host);
     if (typing && typing.element === host && at - typing.time < 1000) {
       typing.after = after;
       typing.time = at;
@@ -81,6 +90,7 @@ export function createHistory({ changed, beforeUndo, blocks, afterText, refuse =
   // A change that should be its own undo step (formatting, links, taking the file's version).
   // `selection` (character offsets) is selected again on undo and redo, so formatting can go on.
   function recordStep(host, before, selection = null) {
+    if (before !== ownHTML(host)) realize(host);
     closeTyping();
     push({ type: "text", element: host, before, after: ownHTML(host), selection });
     lastKnown.set(host, ownHTML(host));
@@ -99,6 +109,7 @@ export function createHistory({ changed, beforeUndo, blocks, afterText, refuse =
   }
 
   function push(step) {
+    merging = null;
     step.serial = ++serial;
     undoStack.push(step);
     if (undoStack.length > 200) undoStack.shift();
@@ -130,12 +141,65 @@ export function createHistory({ changed, beforeUndo, blocks, afterText, refuse =
   }
 
   // A component wrote parts (`written`: [[part, what it held]]), one step of its own, which it returns.
-  function sourceStep(written) {
+  // `merge`: the gesture it is one write of (a database's words typed, a character a write): a write of the
+  // same gesture less than a second after the last, while that step is the last one done, goes into it, as
+  // a paragraph's typing goes into one step (what it held before the first write stays its `before`).
+  // The writes of one gesture fold into one step only on the parts of the block it began on (a key is the
+  // writer's own, but two blocks never share a step whatever they say).
+  const sameBlock = (step, written) => written.every(([part]) => step.elements.some((element) => element.parentNode === part.parentNode));
+  function sourceStep(written, { merge = null } = {}) {
     closeTyping();
-    const step = { type: "source", elements: written.map(([part]) => part), before: written.map(([, html]) => html), after: written.map(([part]) => part.innerHTML) };
-    push(step);
+    const last = undoStack.at(-1);
+    let step;
+    if (merge && merging?.key === merge && merging.step === last && Date.now() - merging.at < 1000 && sameBlock(last, written)) {
+      for (const [part, was] of written) {
+        const at = last.elements.indexOf(part);
+        if (at >= 0) last.after[at] = part.innerHTML;
+        else {
+          last.elements.push(part);
+          last.before.push(was);
+          last.after.push(part.innerHTML);
+        }
+      }
+      merging.at = Date.now();
+      redoStack.length = 0;
+      step = last;
+    } else {
+      step = { type: "source", elements: written.map(([part]) => part), before: written.map(([, html]) => html), after: written.map(([part]) => part.innerHTML), ...(merge ? { merge } : {}) };
+      push(step);
+      if (merge) merging = { step, key: merge, at: Date.now() };
+    }
     changed(true);
+    unmade(merge);
     return step;
+  }
+
+  // A gesture's writes that leave its parts as they were before it (words typed and taken back, Esc) are no
+  // step: the steps of that gesture at the top of the undo stack (`merge`, the key they were written by:
+  // one, or several where the writer paused) go, so that the next undo undoes what came before them. Where
+  // the gesture as a whole changed something, a step of it at the top that changes nothing (typed after a
+  // pause and taken back to it: what it recorded before is what it recorded after, every part) goes all the
+  // same, the steps under it, which changed something, staying.
+  function unmade(merge) {
+    if (!merge) return;
+    let from = undoStack.length;
+    while (from > 0 && undoStack[from - 1].type === "source" && undoStack[from - 1].merge === merge) from--;
+    if (from === undoStack.length) return;
+    const run = undoStack.slice(from);
+    const last = run.at(-1);
+    const first = new Map(); // each part, as the gesture found it
+    for (const step of run) step.elements.forEach((part, at) => { if (!first.has(part)) first.set(part, step.before[at]); });
+    // What each holds now: the last step's record of it, just written (a long table is not written out again).
+    const now = (part) => (last.elements.includes(part) ? last.after[last.elements.indexOf(part)] : part.innerHTML);
+    let to = from;
+    if (![...first].every(([part, html]) => part.isConnected && now(part) === html)) {
+      to = undoStack.length;
+      const idle = (step) => step.before.every((html, at) => html === step.after[at]);
+      while (to > from && idle(undoStack[to - 1])) to--;
+      if (to === undoStack.length) return;
+    }
+    const gone = undoStack.splice(to);
+    if (gone.includes(merging?.step)) merging = null;
   }
 
   // What a source step wrote went over someone else's change of its parts (仍然调整): undo goes no lower
@@ -370,14 +434,15 @@ export function createHistory({ changed, beforeUndo, blocks, afterText, refuse =
   // (a color given to the selected blocks); `select` is selected again on undo. Returns whether
   // anything changed.
   function lookStep(element, change, select = null) {
-    closeTyping();
     const elements = Array.isArray(element) ? element : [element];
+    closeTyping();
     // One change for them all, or one each (`change` a list: a table's columns given their widths).
     const changes = Array.isArray(change) ? change : elements.map(() => change);
     const before = elements.map((each, index) => lookOf(each, changes[index]));
     elements.forEach((each, index) => setLook(each, changes[index]));
     const after = elements.map((each, index) => lookOf(each, changes[index]));
     if (JSON.stringify(before) === JSON.stringify(after)) return false;
+    elements.forEach((each) => realize(each));
     push({ type: "look", elements, before, after, select });
     changed(true);
     return true;
@@ -386,6 +451,7 @@ export function createHistory({ changed, beforeUndo, blocks, afterText, refuse =
   function undo() {
     beforeUndo();
     closeTyping();
+    merging = null;
     const step = undoStack.pop();
     if (!step) return;
     const host = apply(step, true);
@@ -402,6 +468,7 @@ export function createHistory({ changed, beforeUndo, blocks, afterText, refuse =
   function redo() {
     beforeUndo();
     closeTyping();
+    merging = null;
     const step = redoStack.pop();
     if (!step) return;
     const host = apply(step, false);

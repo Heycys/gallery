@@ -110,6 +110,19 @@ ${mainOf(result.text)}`);
   ]) assert.ok(main.includes(part), `${part}\n${main}`);
 }
 
+// A table's own 宽表格 written on a plain table (data-doc-wide="on" or "off": src/shared/table-across.mjs WIDE) goes onto
+// the wrapper made for it, where the kit and the page editor read it; a value it does not take stays where it is.
+{
+  const main = mainOf(natural(`    <table data-doc-wide="on"><tr><td>甲</td></tr></table>
+    <table data-doc-wide="off" style="--doc-table-height: none"><tr><td>乙</td></tr></table>
+    <table data-doc-wide="yes"><tr><td>丙</td></tr></table>`).text);
+  for (const part of [
+    '<div class="doc-table-wrap" data-doc-wide="on"><table class="doc-table"><tbody>',
+    '<div class="doc-table-wrap" data-doc-wide="off" style="--doc-table-height: none"><table class="doc-table"><tbody>',
+    '<div class="doc-table-wrap"><table class="doc-table" data-doc-wide="yes"><tbody>',
+  ]) assert.ok(main.includes(part), `${part}\n${main}`);
+}
+
 // A picture's width (<img width="N">, px or a percent) is its figure's share of the reading width
 // (--doc-span: N / 712, or N / 100 of the width it stands in; .1 to 1, three places; at most the
 // width it stands in), the

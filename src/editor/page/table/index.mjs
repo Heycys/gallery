@@ -23,6 +23,8 @@ import { TABLE_ICONS } from "./icons.mjs";
 import { createViews } from "./views.mjs";
 import { createColumnWidths } from "./widths.mjs";
 import { t } from "../../../shared/i18n/index.mjs";
+import { placeInRow } from "../../../shared/drag-place.mjs";
+import { ACROSS, WIDE, acrossLook, contentBox, inBody, wideTable } from "../../../shared/table-across.mjs";
 
 // A table's own tools (since 2026-10-18), for a table written as the kit
 // writes one (the unit the server marked GRID):
@@ -42,7 +44,9 @@ import { t } from "../../../shared/i18n/index.mjs";
 //   column; let go without moving, its menu opens (列: below the grip; 行: right of it), with a
 //   search field: 标题行 / 标题列 (on the first, switched in place), 颜色 ›, 对齐 › (columns), insert
 //   either side (the new one selected), 创建副本, 清除内容, 删除 (not the last). Dragged past 3px, it
-//   moves (a blue line where it goes, a pale copy under the pointer; Esc cancels); moved first, a
+//   moves (a blue line where it goes, a pale copy under the pointer; Esc cancels); where it goes is
+//   by the copy, not the pointer: past a row (column) once the copy's leading edge passes its middle,
+//   those a merged cell ties together passed as one (src/shared/drag-place.mjs); moved first, a
 //   row (column) is the header one.
 // - The + points: at the ends of a column's top edge and a row's left edge, with that
 //   column's (row's) grip, a dot that turns into a blue + with a line across the table: a click puts
@@ -746,6 +750,7 @@ export function createTableEditing({ active, struct, look, selectBlock, resizeTa
       drag.moved = true;
       // The rows (columns) a merged cell ties to it go with it.
       const range = drag.axis === "column" ? columnRange(drag.unit, drag.from) : rowRange(drag.unit, drag.from);
+      drag.parts = partsOf(drag.unit, drag.axis);
       const copy = ghostOf(drag.unit, drag.axis, range);
       drag.ghost = copy.node;
       drag.size = copy.size;
@@ -754,20 +759,36 @@ export function createTableEditing({ active, struct, look, selectBlock, resizeTa
       document.documentElement.setAttribute("data-ge-tdrag", "");
     }
     const g = geometry(drag.unit);
-    const list = drag.axis === "column" ? g.columns.map((c) => [c.left, c.right]) : g.rows.map((r) => [r.top, r.bottom]);
-    const at = drag.axis === "column" ? event.clientX : event.clientY;
-    const to = list.findIndex(([, end]) => at < end);
-    drag.to = to < 0 ? list.length - 1 : to;
-    draw();
     // The copy follows the pointer along its axis, held where it was pressed, within the table in sight.
-    const layer = layerOf(drag.unit);
-    layer.append(drag.ghost); // above what was drawn anew, the line where it goes above it
-    for (const line of layer.querySelectorAll(":scope > .ge-tline")) layer.append(line);
     const { width, height } = drag.size;
     const clamp = (value, low, high) => Math.max(low, Math.min(value, Math.max(low, high)));
     const left = drag.axis === "column" ? clamp(event.clientX - drag.grab, g.view.left, g.view.right - width) : g.view.left;
     const top = drag.axis === "row" ? clamp(event.clientY - drag.grab, g.view.top, g.view.bottom - height) : g.view.top;
+    // Where it goes is by the copy: the place among the rows (columns) nearest to it, those a merged cell ties
+    // together one part; past the part beside it, to its last row (column), before it, to its first.
+    const slots = drag.axis === "column" ? g.columns.map((c) => [c.left, c.right]) : g.rows.map((r) => [r.top, r.bottom]);
+    const parts = drag.parts;
+    const own = parts.findIndex(([first, last]) => drag.from >= first && drag.from <= last);
+    const boxes = parts.map(([first, last]) => ({ start: slots[first][0], end: slots[last][1] }));
+    const place = own < 0 ? own : placeInRow(boxes, own, drag.axis === "column" ? { start: left, end: left + width } : { start: top, end: top + height });
+    drag.to = place === own ? drag.from : place > own ? parts[place][1] : parts[place][0];
+    draw();
+    const layer = layerOf(drag.unit);
+    layer.append(drag.ghost); // above what was drawn anew, the line where it goes above it
+    for (const line of layer.querySelectorAll(":scope > .ge-tline")) layer.append(line);
     drawBox(drag.ghost, layer, { left, top, right: left + width, bottom: top + height });
+  }
+
+  // The rows (columns) of a table in the parts that move as one: each [first, last], a merged cell's together.
+  function partsOf(unit, axis) {
+    const count = axis === "column" ? tableState(unit).columns : tableState(unit).rows.length;
+    const parts = [];
+    for (let at = 0; at < count;) {
+      const last = Math.max(at, (axis === "column" ? columnRange(unit, at) : rowRange(unit, at))[1]);
+      parts.push([at, last]);
+      at = last + 1;
+    }
+    return parts;
   }
 
   // The corner dragged: as many rows put in below (columns right) as it went, or the empty last ones
@@ -932,8 +953,30 @@ export function createTableEditing({ active, struct, look, selectBlock, resizeTa
     ];
   }
 
-  // A table's size: the reading width (in a column 铺满这一栏), and back to the default size
-  // once a width or a scroll height is set (resize/ drags both by the table's edges).
+  // 宽表格 for this table alone (the user's, 2026-11-23: the top bar's switch is the page's, this the table's), for a
+  // table it acts on: its frame standing in the body (inBody, as the page's switch asks: holdsBodyTables), of no width
+  // of its own (a width dragged at its edge keeps a table in its frame: the kit's tables/layout.js), wider than the text
+  // (placed past it now, or scrolling in the text's width), on a screen wider than the kit's narrow layout. Checked
+  // as it shows; a click writes the table's own word (WIDE: "on", "off"), or takes it away where that is what the
+  // page's says, one undo step that selects the table again; the kit lays it out again as it hears it (tables/index.js).
+  // It heads the block menu's rows of the table's look, right above 对齐 (menuLead; the user's, 2026-11-24: 表格的宽表格选项应该
+  // 放到对齐的上面), not among its size's.
+  const NARROW_PAGE = "(max-width: 760px)"; // the kit's narrow layout (its tables/across.js)
+  function offersWide(unit) {
+    if (unit.style.getPropertyValue(SPAN).trim() !== "" || matchMedia(NARROW_PAGE).matches || !inBody(unit)) return false;
+    if (unit.hasAttribute(ACROSS)) return true;
+    const table = tableOf(unit);
+    return Boolean(table) && table.getBoundingClientRect().width > contentBox(unit).width + 1;
+  }
+  function wideRow(unit) {
+    if (!offersWide(unit)) return [];
+    const on = wideTable(unit);
+    const word = on === acrossLook() ? (on ? "off" : "on") : null;
+    return [lookRow({ look, say }, unit, { label: t("宽表格"), icon: MENU_ICONS.wideTable, checked: on, change: { attributes: { [WIDE]: word } }, done: on ? t("已取消宽表格") : t("已设为宽表格") })];
+  }
+
+  // A table's size: the reading width (in a column 铺满这一栏), and back to the default size once a width or a scroll
+  // height is set (resize/ drags both by the table's edges).
   function layoutRows(unit) {
     if (!unit.matches(TABLE.frame)) return [];
     const row = (options) => lookRow({ look, say }, unit, options);
@@ -979,12 +1022,14 @@ export function createTableEditing({ active, struct, look, selectBlock, resizeTa
      * A table's rows of its block menu (its 表格 section, under the menu's one title): a
      * table of the kind these tools manage has 标题行 and 标题列, switches (checked when on); then
      * actions, each applied once (no check): 一键优化 › (自动调整列宽, 识别数字列 in its submenu),
-     * 均分列宽; any table in its frame has its size's rows after them (layoutRows). [] for any other block.
-     * (The table's 对齐 › is the block menu's own row, above 颜色: page/align.mjs, as a text block's.)
+     * 均分列宽; any table in its frame has its size's rows after them (layoutRows: 铺满正文宽度…). [] for any other
+     * block. (The table's 对齐 › is the block menu's own row, above 颜色: page/align.mjs, as a text block's.)
      */
     menuItems(target) {
       if (!target?.matches?.('[data-ge-unit-kind="table"]')) return [];
       return [...(tableAt(target) === target ? toolRows(target) : []), ...layoutRows(target)];
     },
+    /** A table's row heading its look's in the block menu, right above 对齐: 宽表格, where the table goes past the text or would (wideRow). [] for any other block. */
+    menuLead: (target) => (target?.matches?.(TABLE.frame) && target.matches('[data-ge-unit-kind="table"]') ? wideRow(target) : []),
   };
 }

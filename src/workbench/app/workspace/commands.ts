@@ -781,18 +781,20 @@ let lookWrites: Promise<unknown> = Promise.resolve();
  * 字体与布局（顶栏「更多」的子菜单）：明确选择一项（系统默认也是自己的选择）。打开着的报告页马上换上
  * （会话命令 look：页面不重新载入，排版按新的重新量），菜单里也马上标出；再写进 doc.json（POST look，一次一个，
  * 按点的顺序）。写不进去就换回原来的，并说原因。没有撤销步骤：换回去也是在这里再点一次。
+ * follow：宽表格、宽多维表格这两个开关是整页的，点了就让页面里每个表格（多维表格）都跟着它：页面把各个块自己的设置
+ * （块菜单里的同名开关写的 data-doc-wide）去掉，是页面里的一步撤销（会话命令 look 的 follow）。
  */
-export function chooseLook(slug: string, key: keyof DocLook, value: string) {
+export function chooseLook(slug: string, key: keyof DocLook, value: string, follow = false) {
   const before = lookOf(currentLook(slug)) as DocLook;
   const next = lookOf({ ...before, [key]: value }) as DocLook;
-  const show = (look: DocLook) => {
+  const show = (look: DocLook, kinds: string[] = []) => {
     workspaceStore.set(s => (s.reports[slug] ? { ...s, reports: { ...s.reports, [slug]: { ...s.reports[slug], look } } } : s));
     const session = sessionStore.get();
-    if (session.slug === slug && can('look', session)) void command('look', { look });
+    if (session.slug === slug && can('look', session)) void command('look', kinds.length > 0 ? { look, follow: kinds } : { look });
   };
   const mine = { look: next };
   pendingLooks.set(slug, mine);
-  show(next);
+  show(next, follow ? [key] : []);
   const draft = draftParts(slug); // 别处的底稿：写进它所在工作区的 doc.json（它自己的服务）
   lookWrites = lookWrites.then(() => (draft ? api.setLookDraft(draft.ws, draft.slug, key, value) : api.setLook(slug, key, value))).then(
     (report) => {

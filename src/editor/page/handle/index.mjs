@@ -1,7 +1,7 @@
 import { RAIL } from "../../../shared/annotations.mjs";
 import { IN_LAYER } from "../../../shared/layers.mjs";
 import { NOTE_ADD_ICON } from "../../components/icons.mjs";
-import { SHEETS } from "../../components/kit.mjs";
+import { SHEETS, SURFACE, SURFACE_BODY } from "../../components/kit.mjs";
 import { firstLineActs, handleOf, isLead, standsAsPicture, standsBeside } from "../../components/registry.mjs";
 import { UNIT, isEmpty, isHost, nestedBlocks, unitElement, unitsOf, withLeads } from "../core.mjs";
 import { atHeight, blankTarget, extentOf, hoverAt, measure, measuredNode } from "../geometry.mjs";
@@ -10,10 +10,11 @@ import { kept } from "../kept.mjs";
 import { ICONS } from "../menu.mjs";
 import { own } from "../overlays.mjs";
 import { shortcut, tooltip } from "../tooltip.mjs";
-import { drawAt, shapeOf } from "../overlay-layer.mjs";
+import { deviceSize, drawAt, onDevice, shapeOf } from "../overlay-layer.mjs";
 import { addStyle, element, swallowNext } from "../ui.mjs";
 import { nodeBefore } from "../../components/flowchart/index.mjs";
 import { t } from "../../../shared/i18n/index.mjs";
+import { placedIn } from "../../../shared/table-across.mjs";
 
 // A block's handle (docs/editor.md, "Deleting blocks" and "Selecting blocks"). While the pointer
 // is inside a block, or on the empty space beside it (within 150px, geometry.mjs hoverAt), a handle
@@ -36,7 +37,9 @@ import { t } from "../../../shared/i18n/index.mjs";
 // already, annotate/ annotated), whose button's place a marker stands on, or that stands beside another
 // (registry.mjs standsBeside) has the handle across its whole width. A section (分区) has no handle at
 // its left (its heading and a divider line at its top are blocks with handles of their own): with the
-// pointer at its right side a light bar spans it, and the bar is its handle. A Sheet area's stands on
+// pointer at its right side a light bar spans it, and the bar is its handle; where a table or a 多维表格 placed past the
+// text (宽表格, 宽多维表格) crosses it, the bar goes on across the block as a line of round dots, which takes no pointer
+// (the block keeps it there), solid again below it (crossings). A Sheet area's stands on
 // its tab row, with the pointer there (its tabs are pills with no handles,
 // components/sheets/pills.mjs). Typing, or scrolling by the wheel, hides the handle until the pointer
 // moves (a section's bar stays). A press on a divider line (an <hr>) selects it, as its handle does
@@ -77,15 +80,23 @@ const STYLE = `
   .ge-note-add { position: absolute; left: 0; top: 0; z-index: ${IN_LAYER.button}; box-sizing: border-box; display: flex; align-items: center; justify-content: center; width: ${RAIL.marker}px; height: ${RAIL.marker}px; border-radius: 6px; color: var(--ge-ico3); cursor: pointer; pointer-events: auto; user-select: none; }
   .ge-note-add:hover { background: var(--ge-hover); }
   .ge-note-add svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.55; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
-  /* A section's handle: a bar along its right side (the strip is wider than the bar it shows). */
-  .ge-section-bar { position: absolute; left: 0; top: 0; z-index: ${IN_LAYER.handle}; width: 16px; cursor: pointer; touch-action: none; }
-  .ge-section-bar::before { content: ""; position: absolute; top: 0; bottom: 0; left: 6px; width: 4px; border-radius: 2px; background: light-dark(rgb(55 53 47 / 14%), rgb(255 255 255 / 14%)); transition: background 20ms ease-in; }
-  .ge-section-bar:hover::before { background: light-dark(rgb(55 53 47 / 28%), rgb(255 255 255 / 26%)); }
-  .ge-section-bar[data-active]::before { background: color-mix(in srgb, var(--doc-accent, #2678d8) 60%, transparent); }
+  /* A section's handle: a bar along its right side (the strip is wider than the bar it shows), drawn in pieces down it:
+     solid strips, each the pointer's, and across a block placed past the text a stretch of dots, the block's (the bar
+     itself none: the overlay layer's rule gives the pieces it). One colour, the bar's, in every piece. */
+  .ge-section-bar { position: absolute; left: 0; top: 0; z-index: ${IN_LAYER.handle}; width: 16px; cursor: pointer; touch-action: none; --ge-bar-ink: light-dark(rgb(55 53 47 / 14%), rgb(255 255 255 / 14%)); }
+  .ge-section-bar:hover { --ge-bar-ink: light-dark(rgb(55 53 47 / 28%), rgb(255 255 255 / 26%)); }
+  .ge-section-bar[data-active] { --ge-bar-ink: color-mix(in srgb, var(--doc-accent, #2678d8) 60%, transparent); }
+  .ge-section-bar-line, .ge-section-bar-dots { position: absolute; left: 0; width: 16px; }
+  .ge-section-bar-line::before { content: ""; position: absolute; top: 0; bottom: 0; left: 6px; width: 4px; border-radius: 2px; background: var(--ge-bar-ink); transition: background 20ms ease-in; }
+  .ge-section-bar-dots svg { display: block; overflow: visible; }
+  .ge-section-bar-dots path { fill: var(--ge-bar-ink); transition: fill 20ms ease-in; }
 `;
 
 // The grip's dots: 2.5px across, 5px apart across and 6px down (not 5px down, which made the grip 2px too short: the user, 2026-10-26).
 const DOTS = '<svg class="ge-handle-dots" viewBox="0 0 10 16" aria-hidden="true"><circle cx="2.5" cy="2" r="1.25"/><circle cx="7.5" cy="2" r="1.25"/><circle cx="2.5" cy="8" r="1.25"/><circle cx="7.5" cy="8" r="1.25"/><circle cx="2.5" cy="14" r="1.25"/><circle cx="7.5" cy="14" r="1.25"/></svg>';
+// The dots of a section's bar across a block placed past the text: as wide as its solid line (4px, its middle 8px into
+// the 16px strip), 8px from one to the next.
+const DOT = { size: 4, pitch: 8, middle: 8 };
 const MIDDLE_SLACK = 3; // what stands by a block's middle line stays until the pointer is this far past it
 // What floats over the page and owns the pointer while it is on it: no section's strip lights up under it.
 const FLOATING = ".ge-note-card, .ge-format, .ge-pop, .ge-link, .ge-fx, .ge-media-bar, .ge-picker, .ge-board-form";
@@ -103,8 +114,9 @@ function emptyLine(host) {
 /**
  * info: block-info.mjs. active(): whether block tools may show. selection: selection/index.mjs.
  * drag: drag/index.mjs. menu: the menu card (menu.mjs createMenu). openMenu(target, rect, side):
- * the block menu (block-menu/). drawing(): a box selection is being drawn
- * (selection/marquee.mjs). schedule(): the block tools' next frame (blocks.mjs). keeps(node): another
+ * the block menu (block-menu/). drawing(): a box selection is being drawn (selection/marquee.mjs),
+ * or another gesture the handle steps aside for (a part of the block tools `busy`: a Sheet's tab
+ * dragged along its row). schedule(): the block tools' next frame (blocks.mjs). keeps(node): another
  * tool's node over a block (a table's grips and the strips on its lines), where the pointer keeps the
  * handle as it is, as those tools keep themselves. add(target, where): the "+" clicked, an empty
  * block "below" the block (or "above" it: Alt) with the "/" menu open in it. notes: 批注 on blocks,
@@ -183,12 +195,19 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
         ? Boolean(node.data.trim()) && !node.parentElement?.closest(skip) && ownContent(node)
         : (standsAsPicture(node) || blank(node)) && !node.closest(skip) && ownContent(node));
       const walker = document.createTreeWalker(part, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, { acceptNode: (node) => (seen(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP) });
-      const text = walker.nextNode();
+      // The first words drawn: words that take no room on the page (a block's data in a <script>, a table a
+      // drawing stands for, hidden) are passed by, so that a 多维表格's handle stands by its tabs, not 12px from its
+      // top by the words of its data (the user's 2026-11-24).
+      let text = null;
+      let first = null;
+      while ((text = walker.nextNode())) {
+        if (text.nodeType === 1 && !blank(text)) break; // a picture: the handle stands at the block's top
+        const range = document.createRange();
+        range.selectNodeContents(text);
+        first = text.nodeType === 1 ? emptyLine(text) : [...range.getClientRects()].find((r) => r.height > 0);
+        if (first) break;
+      }
       if (!text) continue;
-      if (text.nodeType === 1 && !blank(text)) break; // a picture: the handle stands at the block's top
-      const range = document.createRange();
-      range.selectNodeContents(text);
-      const first = text.nodeType === 1 ? emptyLine(text) : [...range.getClientRects()].find((r) => r.height > 0);
       if (first) offset = (first.top + first.bottom) / 2 - rect.top;
       break;
     }
@@ -196,7 +215,74 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
     return offset;
   }
 
-  // The bar along the right side of the section the pointer is at, or of the one dragged.
+  // Where a section's bar is crossed (宽表格, 宽多维表格: what stands past the text in it, shared/table-across.mjs placedIn,
+  // reaching over `line`, the bar's line, its left and right in the window): each such block's top and bottom (client
+  // coordinates), down the section, those that overlap one stretch. There the pointer is the block's, not the bar's
+  // (barAt), and the bar goes on across it as dots (placeBar).
+  function crossings(section, line) {
+    const spans = placedIn(section).map((each) => each.getBoundingClientRect()).filter((rect) => rect.left < line.right && rect.right > line.left)
+      .map((rect) => ({ top: rect.top, bottom: rect.bottom })).sort((a, b) => a.top - b.top);
+    const merged = [];
+    for (const span of spans) {
+      const last = merged.at(-1);
+      if (last && span.top <= last.bottom) last.bottom = Math.max(last.bottom, span.bottom);
+      else merged.push({ ...span });
+    }
+    return merged;
+  }
+
+  // The bar's pieces down it, `height` tall, crossed by `spans` (relative to its top, which is `top` in the window):
+  // solid strips (the pointer's; the bar of a section crossed by nothing is one) and across each block a stretch of dots
+  // (no pointer: the block's). The dots are as wide as the solid line and DOT.pitch apart, a dot's gap clear of the solid
+  // line's round ends, centred in their stretch; on a scaled screen each is on the same place of the device's pixels
+  // (onDevice, deviceSize: 8px is ten of them at 125%, eighteen at 225%; a dot an odd number of them across has its
+  // middle in the middle of one), so that every dot is drawn as the others, round and sharp. Made again only when
+  // they change.
+  let pieces = "";
+  function drawPieces(spans, height, top) {
+    const parts = [];
+    let at = 0;
+    const snap = (value) => onDevice(value, top); // the pieces' ends on the device's pixels too
+    for (const span of spans) {
+      const from = Math.max(at, Math.min(height, snap(span.top)));
+      const to = Math.max(from, Math.min(height, snap(span.bottom)));
+      if (to - from < 1) continue;
+      if (from - at >= 1) parts.push({ dots: false, top: at, bottom: from });
+      parts.push({ dots: true, top: from, bottom: to });
+      at = to;
+    }
+    if (height - at >= 1 || parts.length === 0) parts.push({ dots: false, top: at, bottom: height });
+    const ratio = globalThis.devicePixelRatio || 1;
+    const size = deviceSize(DOT.size);
+    const pitch = deviceSize(DOT.pitch);
+    const phase = Math.round(size * ratio) % 2 === 1 ? 0.5 / ratio : 0;
+    const shapes = parts.map((part) => {
+      if (!part.dots) return part;
+      const first = part.top + pitch - size / 2; // the first dot's middle: a gap (pitch less a dot) below the line's end
+      const room = part.bottom - pitch + size / 2 - first; // to the last one's, as far above the line's end below
+      const count = room < 0 ? 0 : Math.floor(room / pitch) + 1;
+      const start = onDevice(first + (room - (count - 1) * pitch) / 2, top) + phase;
+      return { ...part, middles: Array.from({ length: count }, (_, index) => start + index * pitch - part.top) };
+    });
+    const key = JSON.stringify([size, shapes]);
+    if (key === pieces && bar.childElementCount === shapes.length) return;
+    pieces = key;
+    const radius = size / 2;
+    bar.replaceChildren(...shapes.map((part) => {
+      const node = element("div", { class: part.dots ? "ge-section-bar-dots" : "ge-section-bar-line" });
+      Object.assign(node.style, { top: `${part.top}px`, height: `${part.bottom - part.top}px` });
+      if (part.dots) {
+        const circle = (y) => `M${DOT.middle - radius} ${y}a${radius} ${radius} 0 1 0 ${2 * radius} 0a${radius} ${radius} 0 1 0 ${-2 * radius} 0`;
+        node.innerHTML = `<svg width="16" height="${part.bottom - part.top}" aria-hidden="true"><path d="${part.middles.map(circle).join("")}"/></svg>`;
+      }
+      return node;
+    }));
+  }
+
+  // The bar along the right side of the section the pointer is at, or of the one dragged: at the text's right edge,
+  // where it always stands, a table or a 多维表格 placed past the text in it or not (the user's, 2026-11-24: 原本就是在
+  // 标准正文宽度内的就仍然是和之前一样的右边，然后仍然是竖线，并且穿过宽表，只是穿过的部分变成了圆点虚线，穿出的恢复正常), on the
+  // device's pixels.
   function placeBar() {
     const picked = selection.picked;
     const candidates = [drag.target, barOver].filter((node) => node && barred(node));
@@ -205,9 +291,15 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
     barShown = shape ? target : null;
     if (!shape) return void bar.remove();
     own(bar, "section bar", { owner: target, alive: () => barShown === target && target.isConnected });
-    const { rect } = shape;
-    drawAt(bar, shape.layer, rect.right + BAR.gap, rect.top);
-    bar.style.height = `${Math.max(24, Math.round(rect.bottom - rect.top))}px`;
+    const { rect, origin } = shape;
+    drawAt(bar, shape.layer, rect.right + BAR.gap, rect.top, origin);
+    const height = Math.max(24, Math.round(rect.bottom - rect.top));
+    bar.style.height = `${height}px`;
+    // Where drawAt put it in the window, and its line there.
+    const left = origin.left + onDevice(Math.round(rect.right + BAR.gap), origin.left);
+    const top = origin.top + onDevice(Math.round(rect.top), origin.top);
+    const spans = crossings(target, { left: left + DOT.middle - DOT.size / 2, right: left + DOT.middle + DOT.size / 2 });
+    drawPieces(spans.map((span) => ({ top: span.top - top, bottom: span.bottom - top })), height, top);
     bar.toggleAttribute("data-active", picked.includes(target));
   }
 
@@ -360,7 +452,9 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
     for (const section of sections()) {
       if (!barred(section) || section.closest("[data-ge-dragging]")) continue;
       const rect = box(section);
-      if (rect && y >= rect.top && y <= rect.bottom && x >= rect.right - 2 && x <= rect.right + BAR.reach) found = section;
+      if (!rect || y < rect.top || y > rect.bottom || x < rect.right - 2 || x > rect.right + BAR.reach) continue;
+      // Over a block placed past the text there (宽表格, 宽多维表格) the pointer is the block's: its cells, its scroll bar.
+      if (!crossings(section, { left: x, right: x }).some((span) => y >= span.top && y <= span.bottom)) found = section;
     }
     return found;
   }
@@ -374,6 +468,9 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
     // Between the blocks of a container (their margins) the nearest block wins over the
     // container; in a Sheet's tab row, the nearest tab.
     const container = target.closest("[data-ge-box]");
+    // The body a surface of the document over the page shows (a database's record details) is its page: its blank
+    // is the page's, the block beside it found as on the page (besideAt), never the block around it.
+    if (container === target && container.parentElement?.matches(SURFACE)) return null;
     if (container === target && container.getAttribute("data-ge-box-kind") !== "nest") {
       const children = [...container.children].map((child) => unitElement(child)).filter((child) => child && child.parentElement === container);
       const row = container.matches(SHEETS.rowAt);
@@ -407,8 +504,10 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
   // The block beside empty space at the pointer (geometry.mjs hoverAt): only what reaches its
   // height is measured. Sections, Sheet areas and rows of columns have no handle there; their blocks do.
   const skip = (node) => none(node.kind);
-  function besideAt(x, y) {
-    const main = document.querySelector("main");
+  // `target`: what the pointer is on; in a surface of the document over the page (a database's record details), the
+  // body it shows is the page, never a block behind it.
+  function besideAt(x, y, target) {
+    const main = target?.closest?.(SURFACE)?.querySelector(SURFACE_BODY) ?? document.querySelector("main");
     if (!main) return null;
     const top = y + scrollY;
     return atPointer(hoverAt(measure(main, { top, bottom: top }), x + scrollX, top, { skip }), x, y);
@@ -474,7 +573,7 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
       const block = blockAt(target, x, y);
       // On empty space, the block beside it: found on the next frame, not on every move; the handle
       // stays where it is until then, so crossing the gap between two blocks never makes it blink.
-      beside = !block && blankTarget(target) ? { x, y } : null;
+      beside = !block && blankTarget(target) ? { x, y, target } : null;
       if (!beside) hovered = block;
     }
     schedule();
@@ -589,7 +688,7 @@ export function createHandle({ info, active, selection, drag, menu, openMenu, dr
     /** A frame: the block beside empty space found, one taken off the page forgotten. */
     track() {
       if (beside) {
-        hovered = areaOf(besideAt(beside.x, beside.y));
+        hovered = areaOf(besideAt(beside.x, beside.y, beside.target));
         beside = null;
       }
       if (hovered && !hovered.isConnected) hovered = null;

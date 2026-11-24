@@ -242,6 +242,7 @@ for (const { id, tag, element, attribute } of kitTags) {
     code: '<div class="doc-code"><div class="doc-code-title"></div><pre><code>x</code></pre></div>',
     diff: '<div class="doc-diff"></div>',
     math: '<div class="doc-math-block"></div>',
+    database: '<div class="doc-database"></div>',
   };
   for (const component of COMPONENTS.filter((entry) => entry.match && entry.assets)) {
     assert.ok(samples[component.id], `a sample of ${component.id}`);

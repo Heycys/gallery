@@ -3,7 +3,7 @@ import { begin, done, made } from "./made.mjs";
 import { formatRange } from "./marks.mjs";
 import { HEADING, LEFT_OUT } from "./outline/read.mjs";
 import { menuEntry, pageOfType, variantKeys } from "./page-objects.mjs";
-import { ATTRIBUTES, BLOCK_TYPES, FRESH, HEADING_TYPES, HOLDERS, IDENTITY, TEXT_TYPES, TOGGLES, TURN_INTO, accepts, blockTypeOf, textTypeOf, turnsEmpty } from "../components/registry.mjs";
+import { ATTRIBUTES, BLOCK_TYPES, FRESH, HEADING_TYPES, HOLDERS, IDENTITY, TEXT_TYPES, TOGGLES, TURN_INTO, accepts, blockTypeOf, refusedWithin, textTypeOf, turnsEmpty } from "../components/registry.mjs";
 import { pageBuild } from "../components/builders.mjs";
 import { iconElement } from "../components/icon/index.mjs";
 import { retagList } from "../components/list/page.mjs";
@@ -125,6 +125,10 @@ export function turnTargets(host) {
   return TURN_INTO.filter((type) => (LIST_TYPES.includes(type) || TAKES_AS_IS.has(type)) && takesType(box, type));
 }
 
+// What a box around `node` refuses however far in (`except`: a database's record body, no database in a callout in
+// it either) no menu offers there.
+const noneRefused = (types, node) => types.filter((key) => !refusedWithin(node, BLOCK_TYPES[String(key).split(":")[0]]?.kind));
+
 // The types made as an empty block standing for an empty one (FRESH) that a box takes, after `types`.
 const withFresh = (types, box) => [...types, ...FRESH.filter((type) => !types.includes(type) && takesType(box, type))];
 
@@ -141,7 +145,7 @@ const variantsIn = (box) => variantKeys().filter((key) => takesType(box, menuEnt
 export function belowTargets(target) {
   const own = isHost(target) ? wrapperOf(target) ?? target : target;
   const box = boxKind(own.parentElement);
-  return [...withFresh(TURN_INTO.filter((type) => takesType(box, type)), box), ...variantsIn(box)];
+  return noneRefused([...withFresh(TURN_INTO.filter((type) => takesType(box, type)), box), ...variantsIn(box)], own);
 }
 
 // A unit that holds nothing to carry (`turnsEmpty`: a divider line): what it is turned into is an
@@ -562,10 +566,10 @@ export function convertContainer(unit, type) {
  * types it can be turned into, and those made as an empty block (a divider, an image...) only when the block held nothing else (`whole`).
  */
 export function typedTargets(host, whole) {
-  const types = targetsOf(host);
+  const types = noneRefused(targetsOf(host), host);
   if (!whole || !convertible(host)) return types;
   const box = host.parentElement?.getAttribute("data-ge-box-kind");
-  return [...withFresh(types, box), ...variantsIn(box)];
+  return noneRefused([...withFresh(types, box), ...variantsIn(box)], host);
 }
 
 // ---------- several blocks at once ----------

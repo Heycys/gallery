@@ -1,7 +1,8 @@
 // The elements KaTeX leaves as they are (code samples, scripts, styles, form fields) are the
 // components' list, which also tells which reports load no KaTeX (render/assets.mjs); the commands
 // of LaTeX packages KaTeX lacks are the components' too (MATH_MACROS).
-import { INSTANCE, componentAt } from "../../shared/components/installed.mjs";
+import { DATA_ONLY } from "../../shared/components/database.mjs";
+import { HOLDER, INSTANCE, componentAt } from "../../shared/components/installed.mjs";
 import { MATH_IGNORED_TAGS, MATH_MACROS } from "../../shared/components/math.mjs";
 import { untie } from "./runtime/spacing.js";
 
@@ -14,7 +15,7 @@ import { untie } from "./runtime/spacing.js";
   // (formulas already rendered are skipped). What stands in the own region of an instance of a
   // component package is its component's: KaTeX passes an element by by its class alone, so each
   // carries one for the walk. Its slots are flows of the document's (installed.mjs heldBy), each the
-  // outermost of its own layer, drawn on its own.
+  // outermost of its own layer, drawn on its own; so are a database's records' bodies, the rest of it data.
   const flows = () => [...global.DocKit.flows, "[data-doc-math]"].join(", ");
   const SKIPPED = "doc-math-skip";
 
@@ -32,7 +33,7 @@ import { untie } from "./runtime/spacing.js";
     const dollar = all.filter((candidate) => candidate.hasAttribute("data-doc-math-dollar"));
     // Outermost, an instance between two being a layer's edge: the walk around it skips the instance.
     const outermost = all.filter((candidate) => {
-      const between = candidate.parentElement?.closest(INSTANCE);
+      const between = candidate.parentElement?.closest(HOLDER);
       return !candidate.hasAttribute("data-doc-math-dollar")
         && !all.some((other) => other !== candidate && other.contains(candidate) && !other.hasAttribute("data-doc-math-dollar") && !(between && other.contains(between)));
     });
@@ -66,7 +67,7 @@ import { untie } from "./runtime/spacing.js";
   function markInvalidIn(target, macros) {
     // The target's own formulas: none an instance in it drew (its slots are targets of their own).
     const own = (node) => {
-      const instance = node.closest(INSTANCE);
+      const instance = node.closest(HOLDER);
       return !instance || instance.contains(target);
     };
     for (const error of target.querySelectorAll(`.katex-error:not(.${INVALID})`)) if (own(error)) markInvalid(error, error.textContent, null);
@@ -118,7 +119,8 @@ import { untie } from "./runtime/spacing.js";
         trust: false,
         macros,
         ignoredTags: [...MATH_IGNORED_TAGS],
-        ignoredClasses: ["katex", "katex-display", INVALID, SKIPPED],
+        // A block of data (a database) holds no formula to draw: its cells are values, its drawing React's.
+        ignoredClasses: ["katex", "katex-display", INVALID, SKIPPED, DATA_ONLY],
         errorCallback(message, error) {
           console.warn("[DocMath]", message, error);
         },

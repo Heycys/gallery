@@ -4,6 +4,7 @@ import { hideTooltip, tooltip } from "./tooltip.mjs";
 import { blockPreview, hideBlockPreview, keyedBlockPreview } from "./block-preview.mjs";
 import { SECTION_ICON, svg } from "../components/icons.mjs";
 import { t } from "../../shared/i18n/index.mjs";
+import { UI_ICONS } from "../../shared/ui-icons.mjs";
 
 // The editor's menu card, used by the "/" menu (slash-menu/: block types, filtered as the reader
 // types) and by the block menu a block's handle opens (block-menu/: a header with the block's type,
@@ -49,10 +50,12 @@ const STYLE = `
   /* A list that goes on past the card's edge fades out over its last 34px there: drawn by a strip of the
      card's own color standing at that edge (sticky, taking no room, nothing under it caught) rather than a
      mask on the scroller, so the card keeps its shadow; below a search field
-     the top one stands under it. data-fade-b / data-fade-t: rows remain below / above (fades()). */
-  .ge-pop[data-fade-b]::after, .ge-pop[data-fade-t]::before { content: ""; position: sticky; z-index: 1; display: block; height: 34px; pointer-events: none; }
-  .ge-pop[data-fade-b]::after { bottom: 0; margin-top: -34px; background: linear-gradient(to bottom, transparent, var(--ge-bg)); }
-  .ge-pop[data-fade-t]::before { top: 0; margin-bottom: -34px; background: linear-gradient(to top, transparent, var(--ge-bg)); }
+     the top one stands under it. data-fade-b / data-fade-t: rows remain below / above (fades()). A sticky box
+     keeps inside its scroller's padding: the strip is offset by the card's padding to reach its very edge, and as
+     wide as the card, or a row past the fade shows whole in that band, as if the fade stood off the edge. */
+  .ge-pop[data-fade-b]::after, .ge-pop[data-fade-t]::before { content: ""; position: sticky; z-index: 1; display: block; height: 34px; margin-inline: calc(-1 * var(--ge-card-pad)); pointer-events: none; }
+  .ge-pop[data-fade-b]::after { bottom: calc(-1 * var(--ge-card-pad)); margin-top: -34px; background: linear-gradient(to bottom, transparent, var(--ge-bg)); }
+  .ge-pop[data-fade-t]::before { top: calc(-1 * var(--ge-card-pad)); margin-bottom: -34px; background: linear-gradient(to top, transparent, var(--ge-bg)); }
   .ge-pop:has(> .ge-pop-search)[data-fade-t]::before { top: 38px; }
   /* A group's title: its words where a row's words without an icon are (9px in), 4px over its first row, 8px under the
      row before it, as the workbench's menus' and the kit's have it. */
@@ -126,9 +129,9 @@ const SECTION_LINES = '<path d="M3.25 5.25h13.5M3.25 9.75h9"/>';
 
 /** Icons of the editor's menus (a block type's own is in its component's description). */
 export const ICONS = {
-  plus: svg('<path d="M10 4.25v11.5M4.25 10h11.5"/>'),
-  copy: svg('<rect x="7.25" y="7.25" width="9.5" height="9.5" rx="2"/><path d="M12.75 7.25V5.5a2 2 0 0 0-2-2h-5.5a2 2 0 0 0-2 2V11a2 2 0 0 0 2 2h2"/>'),
-  trash: svg('<path d="M3.75 5.75h12.5M8 5.75V4.5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v1.25M5.25 5.75l.7 9.6a1.5 1.5 0 0 0 1.5 1.4h5.1a1.5 1.5 0 0 0 1.5-1.4l.7-9.6"/>'),
+  plus: svg(UI_ICONS.plus.body),
+  copy: svg(UI_ICONS.copy.body),
+  trash: svg(UI_ICONS.trash.body),
   outer: svg('<rect x="3.25" y="3.25" width="13.5" height="13.5" rx="2.5" stroke-dasharray="2.2 2.2"/><rect x="6.5" y="6.5" width="7" height="7" rx="1.25"/>'),
   section: svg(`${SECTION_LINES}<path d="M14.5 12v5M12 14.5h5"/>`),
   dissolve: svg(`${SECTION_LINES}<path d="m12.75 12.75 3.5 3.5M16.25 12.75l-3.5 3.5"/>`), // section's plus, turned 45°
@@ -136,11 +139,15 @@ export const ICONS = {
   center: svg('<rect x="5.25" y="4.25" width="9.5" height="11.5" rx="1.75"/><path d="M2.75 4v12M17.25 4v12"/>'),
   full: svg('<rect x="3.25" y="4.25" width="13.5" height="11.5" rx="1.75"/><path d="m6.5 10h7M6.5 10l1.75-1.75M6.5 10l1.75 1.75M13.5 10l-1.75-1.75M13.5 10l-1.75 1.75"/>'),
   reset: svg('<path d="M4.75 6.75A6 6 0 1 1 4 10.5"/><path d="M4.5 3.5v3.5H8"/>'), // 恢复默认大小: back as it was
+  // 宽表格 and 宽多维表格 of one block: a table (a database) across two short lines, the text's edges, the drawings of
+  // the page's switches of the same names (the workbench's 更多, an export's display menu)
+  wideTable: svg('<rect x="2.75" y="6.25" width="14.5" height="7.5" rx="1.5"/><path d="M2.75 10h14.5M10 6.25v7.5M6.25 2.75v2M13.75 2.75v2M6.25 15.25v2M13.75 15.25v2"/>'),
+  wideDatabase: svg('<rect x="2.75" y="6.25" width="14.5" height="7.5" rx="1.5"/><path d="M2.75 8.75h14.5M6.75 8.75v5M9.25 11.25h4.5M6.25 2.75v2M13.75 2.75v2M6.25 15.25v2M13.75 15.25v2"/>'),
   swap: svg('<path d="M4.25 7.25h11.5M12.75 4.25l3 3-3 3"/><path d="M15.75 12.75H4.25M7.25 9.75l-3 3 3 3"/>'), // 替换: two arrows, one each way
-  check: svg('<path d="m3.5 8.5 3 3 6-7"/>', 16),
+  check: svg(UI_ICONS.check.body, 16),
   frame: svg('<rect x="3.25" y="4.25" width="13.5" height="11.5" rx="3"/><path d="M6.25 7.75h3"/>'),
-  rename: svg('<path d="M11.75 4.75l3.5 3.5"/><path d="M13.25 3.25a1.5 1.5 0 0 1 2.12 0l1.38 1.38a1.5 1.5 0 0 1 0 2.12L7.5 16H4v-3.5z"/>'),
-  chevron: svg('<path d="m6.25 4.25 3.75 3.75-3.75 3.75"/>', 16), // the workbench's menus' › (components/icons.ts), drawn alike
+  rename: svg(UI_ICONS.rename.body),
+  chevron: svg(UI_ICONS.chevron.body, 16), // the workbench's menus' › (components/icons.ts), drawn alike
   face: svg('<circle cx="10" cy="10" r="6.75"/><path d="M7.5 11.5a3 3 0 0 0 5 0"/><circle cx="7.9" cy="8.5" r=".9" fill="currentColor" stroke="none"/><circle cx="12.1" cy="8.5" r=".9" fill="currentColor" stroke="none"/>'),
 };
 

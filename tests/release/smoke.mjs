@@ -244,7 +244,7 @@ try {
   const readView = gallery(["read", "smoke"]).stdout;
   assert.ok(readView.includes("┌─ 图形 · 图表 slope") && readView.includes("┌─ 选项卡区块「pages」") && /全部 \d+ 块都在上面，没有省略。\s*$/.test(readView), readView);
   assert.ok(gallery(["read", "smoke", "--format", "markdown"]).stdout.startsWith("# "));
-  assert.ok(gallery(["read", "smoke", "--outline"]).stdout.includes("标题 10 个"));
+  assert.ok(gallery(["read", "smoke", "--outline"]).stdout.includes("标题 11 个"));
   assert.ok(fs.readFileSync(path.join(folder, "doc.html")).equals(handedIn), "gallery read writes nothing");
   // This machine's workspaces (the test's registry: its workspace, in the OS temp folder, listed as the
   // current one and never registered) and a search of the documents of them all.

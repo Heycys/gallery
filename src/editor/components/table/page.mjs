@@ -1,11 +1,11 @@
-import { escapeText } from "../../../shared/escape.mjs";
 import { loadScript } from "../../page/ui.mjs";
 import { BLOCK_COLORS } from "../colors.mjs";
 import { capsFor } from "../registry.mjs";
 import { tableOf } from "./grid.mjs";
-import { CELL_LOOKS, COLUMN_WIDTH, GRID, HEADER_LOOK, NUMBERS, TABLE_HEIGHT, rowNames, scrollHeight, tableTiling, widthOf } from "./index.mjs";
+import { CELL_LOOKS, COLUMN_WIDTH, GRID, HEADER_LOOK, NUMBERS, TABLE_HEIGHT, cellNodes, lookOf, rowNames, scrollHeight, tableTiling, widthOf } from "./index.mjs";
 import { columnWidths as widthsOf, slotsOf, widthHolder } from "../../../shared/table-slots.mjs";
 import { CHART_SOURCE } from "../../../shared/table-chart.mjs";
+import { WIDE } from "../../../shared/table-across.mjs";
 import { cellFrom, cellsIn, closeRect, setSpan } from "./slots.mjs";
 
 // 表格 on the page: a new one, made by a paste (clipboard/) or the "/" menu (convert.mjs), its cells
@@ -82,45 +82,14 @@ export function newTable(doc, { rows, header = false, column = false, numbers = 
   return wrap;
 }
 
-// A cell's nodes: its inline HTML as `inline` makes it, and its lists (part of the cell's text:
-// index.mjs tableData), each item's text made again as any inline HTML.
-function cellNodes(doc, html, inline) {
-  const template = doc.createElement("template");
-  template.innerHTML = html;
-  const nodes = [];
-  let text = "";
-  const flush = () => {
-    if (text) nodes.push(...inline(text));
-    text = "";
-  };
-  for (const child of template.content.childNodes) {
-    if (child.nodeType !== 1 || (child.localName !== "ul" && child.localName !== "ol")) {
-      text += child.nodeType === 1 ? child.outerHTML : escapeText(child.textContent ?? "");
-      continue;
-    }
-    flush();
-    const list = doc.createElement(child.localName);
-    for (const item of child.children) {
-      if (item.localName !== "li") continue;
-      const entry = doc.createElement("li");
-      const made = inline(item.innerHTML);
-      entry.append(...(made.length > 0 ? made : [doc.createElement("br")])); // an empty item keeps a line break for its caret
-      list.append(entry);
-    }
-    if (list.children.length > 0) nodes.push(list);
-  }
-  flush();
-  return nodes;
-}
-
 /**
  * A table made again from the clipboard's description (its type's `build`, builders.mjs): each cell's
  * nodes as made, its formulas chips the page draws at once (as HTML again they would be their TeX
  * until the page opened again), its lists the cell's. One from elsewhere comes in 一键优化'd: a header
  * row, its names' column a header column, its numeric columns read (the page's own copy as it was).
  */
-export function build({ doc, block, inline }) {
-  const rows = block.rows.map((row) => row.map((html) => cellNodes(doc, html, (text) => inline(text, { pictures: true })))); // a cell's pictures its own
+export function build({ doc, block, lines }) {
+  const rows = block.rows.map((row) => row.map((html) => cellNodes(doc, html, (text) => lines(text, { pictures: true })))); // a cell's pictures its own
   const table = newTable(doc, { rows, header: Boolean(block.header), column: Boolean(block.column), numbers: block.numbers !== false, looks: block.looks, widths: block.widths, spans: block.spans, chart: block.chart });
   if (block.outside) optimizeTable(table);
   return table;
@@ -152,11 +121,22 @@ export function make({ doc, put }) {
 }
 
 /** The table's page object: page/table/ is its editing, in the tools' folders for its size. */
-export function create({ tables }) {
+export function create({ tables, look, active }) {
   return {
     create: make,
+    // The page's 宽表格 flipped in the workbench's 更多 (the session's `look` with `follow`: doc-wide-follow) sets every
+    // table of the page: each one's own word (WIDE, the block menu's 宽表格) taken away, one undo step.
+    install() {
+      addEventListener("doc-wide-follow", (event) => {
+        if (!active() || !event.detail?.kinds?.includes("tables")) return;
+        const units = [...document.querySelectorAll(`main [data-ge-unit-kind="table"][${WIDE}]`)];
+        if (units.length > 0) look(units, { attributes: { [WIDE]: null } });
+      });
+    },
     /** Its rows of the block menu: its tools' (page/table/), made once the block tools are. */
     menuItems: (target) => tables()?.menuItems(target) ?? [],
+    /** Its row heading the block menu's rows of its look, right above 对齐 (page/table/: 宽表格). */
+    menuLead: (target) => tables()?.menuLead(target) ?? [],
     /** A space typed in a cell at a line's start: "- " or "1. " makes a list of the line (table/lists.mjs). True when it did. */
     shortcut: (host, data) => tables()?.typed(host, data) ?? false,
   };
@@ -258,6 +238,21 @@ export function columnRange(unit, from, to = from) {
   return [rect.c0, rect.c1];
 }
 
+// The look the cells a new one is put in among all wear (index.mjs lookOf: their color, alignments
+// and bold), "" when they are all plain, null when they differ or there are none. A new row's cell
+// wears its column's in the body rows, a new column's cell its row's beside the header column (the
+// user's, 2026-11-22: a look set on a whole column or row is meant for what is put in it too).
+function sharedLook(cells) {
+  const looks = new Set([...new Set(cells)].filter(Boolean).map(lookOf));
+  return looks.size === 1 ? [...looks][0] : null;
+}
+// A new cell wearing `look` (sharedLook's): its look classes those alone, its other classes kept.
+function wearLook(cell, look) {
+  if (look === lookOf(cell)) return;
+  cell.classList.remove(...CELL_LOOKS);
+  if (look) cell.classList.add(...look.split(" "));
+}
+
 // The cell a new row has in column `c`: as the row it is made beside has it there (a header
 // column's th, plain), never a header row's th.
 const cellLike = (doc, slots, r, c) => {
@@ -265,7 +260,11 @@ const cellLike = (doc, slots, r, c) => {
   return model?.localName === "th" && model.getAttribute("scope") === "row" && c === 0 ? newCell(doc, "th", "row") : newCell(doc);
 };
 
-/** A new row at `at` (0 … rows): in the tbody (in the thead only between its rows). Returns it. */
+/**
+ * A new row at `at` (0 … rows): in the tbody (in the thead only between its rows). A body row's cell
+ * wears the look its column's body cells all share (sharedLook), a header row's that of the cell
+ * above it (lookLike). Returns it.
+ */
 export function insertRow(unit, at) {
   const { rows, body, head, columns, slots } = tableState(unit);
   const doc = unit.ownerDocument;
@@ -285,14 +284,22 @@ export function insertRow(unit, at) {
       grown.add(across);
       continue;
     }
-    row.append(inHead ? newCell(doc, "th", null, slots.matrix[at - 1][c]) : cellLike(doc, slots, model, c));
+    const cell = inHead ? newCell(doc, "th", null, slots.matrix[at - 1][c]) : cellLike(doc, slots, model, c);
+    const look = inHead ? null : sharedLook(slots.matrix.slice(heads).map((cells) => cells[c]));
+    if (look !== null) wearLook(cell, look);
+    row.append(cell);
   }
   if (inHead) head.insertBefore(row, head.rows[at]);
   else body.insertBefore(row, body.rows[offset] ?? null);
   return row;
 }
 
-/** A new column at `at` (0 … columns): a cell in each row (a header row's th, a header column's when it is the first). Returns its cells. */
+/**
+ * A new column at `at` (0 … columns): a cell in each row (a header row's th, a header column's when it
+ * is the first). Each wears the look its row's cells beside the header column all share (sharedLook;
+ * a header row's cell the cell's before it when they differ, lookLike), but a new header column's
+ * cell, which is plain. Returns its cells.
+ */
 export function insertColumn(unit, at) {
   const { rows, columns, headerColumn, slots } = tableState(unit);
   const doc = unit.ownerDocument;
@@ -310,7 +317,10 @@ export function insertColumn(unit, at) {
     const head = row.parentElement.localName === "thead";
     const first = slots.matrix[r][0];
     const beside = slots.matrix[r][Math.max(0, at - 1)];
-    const cell = head ? newCell(doc, "th", null, beside) : at === 0 && headerColumn ? newCell(doc, "th", "row") : newCell(doc);
+    const header = !head && at === 0 && headerColumn;
+    const cell = head ? newCell(doc, "th", null, beside) : header ? newCell(doc, "th", "row") : newCell(doc);
+    const look = header ? null : sharedLook(slots.matrix[r].slice(headerColumn ? 1 : 0));
+    if (look !== null) wearLook(cell, look);
     row.insertBefore(cell, cellFrom(slots, row, at));
     made.push(cell);
     // A header column stays the first: the cell that was first is a plain one now.

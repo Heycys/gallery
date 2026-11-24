@@ -52,7 +52,7 @@
 // slots) is not watched. The tables a key names have a watcher of their own (table-reading.js
 // createKeyedTables, DocKit.tables), for every chart drawn from one and every view of one.
 
-import { ARRIVING, ATTRIBUTE, CONTROLS, CONTROL_MARK, DATA_SHOWN, FALLBACK, INSTANCE, NOTE, PACKAGE_ID, SCHEMA, SLOT, SLOT_PART, componentAt, heldBy, heldWithin, isDataScript, schemaAhead, slotsIn } from "../../../shared/components/installed.mjs";
+import { ARRIVING, ATTRIBUTE, CONTROLS, CONTROL_MARK, DATA_SHOWN, FALLBACK, HOLDER, INSTANCE, NOTE, PACKAGE_ID, SCHEMA, SLOT, SLOT_PART, componentAt, heldBy, heldWithin, isDataScript, schemaAhead, slotsIn } from "../../../shared/components/installed.mjs";
 import { CARD, CARD_ID, PAGE, drawnCells } from "../../../shared/card-size.mjs";
 import { SOURCE_ATTRIBUTES, lookChanged } from "../../../shared/component-source.mjs";
 import { jsonIn } from "../../../shared/json-layout.mjs";
@@ -82,6 +82,9 @@ export function createKit({ descriptions }) {
 
   const selectorOf = (def) => def.selector ?? descriptions.get(def.id)?.match;
   const ofPackage = (def) => PACKAGE_ID.test(def.id);
+  // A component of the kit's own whose drawing writes parts of its host (a database: its JSON and its
+  // table), which its context reads and asks to write as a package's does (packageContext).
+  const writesData = (def) => !ofPackage(def) && Object.values(descriptions.get(def.id)?.parts ?? {}).some((part) => part.edit === "data");
   const listening = (signal) => [...instances.entries()].filter(([, instance]) => instance.def.on?.includes(signal));
   let owned = ""; // the hosts whose content is the kit's drawing
 
@@ -294,8 +297,11 @@ export function createKit({ descriptions }) {
   // Whether an element is of an instance's own region: none of what an instance in it holds, nor of what its slots hold.
   const ownedBy = (node, host) => node.parentElement.closest(INSTANCE) === host && heldBy(node) === host;
   // A part's elements in an instance: of its own region, no instance itself. A part edited as flow is
-  // its slot, the element and no more (what it holds is the document's); no other part is a slot.
-  const partsIn = (host, at, edit = null) => [...host.querySelectorAll(at)].filter((node) => !node.matches(INSTANCE) && ownedBy(node, host) && (edit === "flow") === node.matches(SLOT_PART));
+  // its slot, the element and no more (what it holds is the document's); no other part is a slot. In
+  // the host of a component of the kit's (writesData), its own, in the region it stands in; in a database
+  // (a holder: installed.mjs HOLDER), of its own region, none of its records' bodies.
+  const partsIn = (host, at, edit = null) => [...host.querySelectorAll(at)].filter((node) => !node.matches(INSTANCE)
+    && (host.matches(INSTANCE) ? ownedBy(node, host) : host.matches(HOLDER) ? heldBy(node) === host : heldBy(node) === heldBy(host)) && (edit === "flow") === node.matches(SLOT_PART));
   // Where an instance is (context.place): on a custom page (its host's markup, card-size.mjs PAGE, which
   // the page's host serves), in an exported file (its generator or its export id says so), else in a
   // document as Gallery shows it.
@@ -412,9 +418,12 @@ export function createKit({ descriptions }) {
       };
       return { parts, run };
     };
-    const edit = (names, change) => {
+    // `options.merge` (the kit's own drawings: a database's words typed, each character a write) names the
+    // gesture an edit is one write of, which the page editor folds into one step of undo (history.mjs sourceStep).
+    const edit = (names, change, options) => {
       if (!canEdit(def, host)) return false;
       const detail = asked(names, change);
+      if (detail && typeof options?.merge === "string") detail.merge = options.merge;
       return detail !== null && !host.dispatchEvent(new CustomEvent("doc-component-edit", { bubbles: true, cancelable: true, detail }));
     };
     // An edit of a part of JSON (a script of data): `change` is handed what it holds, parsed, and changes
@@ -679,8 +688,9 @@ export function createKit({ descriptions }) {
       frame: (run) => schedule(host, run),
       fail: (error) => report(def, host, error),
     };
-    // A package's members as they are, a getter (size) a getter still.
-    if (packaged) Object.defineProperties(context, Object.getOwnPropertyDescriptors(packageContext(def, host, instance)));
+    // A package's members as they are, a getter (size) a getter still; a component of the kit's that
+    // writes parts of its host has them too (its parts, its state, what it may write).
+    if (packaged || writesData(def)) Object.defineProperties(context, Object.getOwnPropertyDescriptors(packageContext(def, host, instance)));
     instance.context = context;
     let failure = null;
     let made = null;
@@ -873,11 +883,11 @@ export function createKit({ descriptions }) {
   const sourceParts = (host, id) => Object.values(descriptions.get(id)?.parts ?? {})
     .filter(({ edit }) => edit === "text" || edit === "data" || edit === "flow").flatMap(({ at, edit }) => partsIn(host, at, edit));
   // Whether a change at `target` is in what a component owns (`owned`, a selector): in a chart's
-  // drawing, say, or in the own region of a package's instance, where its slots are none of it.
+  // drawing, say, or in the own region of a package's instance or a database, where its slots are none of it.
   const ownedHere = (target) => {
     const host = target.closest(owned);
     if (!host) return false;
-    if (!host.matches(INSTANCE)) return true;
+    if (!host.matches(HOLDER)) return true;
     return target === host || (componentAt(target) && heldBy(target) === host);
   };
   // Whether a change in a part of `host` is one of what the file says: in its own region (a part's

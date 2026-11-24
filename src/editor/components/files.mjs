@@ -1,6 +1,7 @@
 import bookmark from "./bookmark/file.mjs";
 import code from "./code/file.mjs";
 import columns from "./columns/file.mjs";
+import database from "./database/file.mjs";
 import details from "./details/file.mjs";
 import dialog from "./dialog/file.mjs";
 import embed from "./embed/file.mjs";
@@ -49,9 +50,14 @@ import table from "./table/file.mjs";
 //   source(node, { packages, written })  the markup of a block made on the page that the file writes
 //                           whole, from what the server holds or what it checked here: as `written(text)`
 //                           makes it, ids taken out as a copy's are, or null when it cannot be written
+//   boxes(node, packages)   the boxes a unit holds besides what its markup tells (an instance's slots, a
+//                           database's record bodies): [{ element, kind, key }]
+//   slotKinds, makeSlot(source, node, key)  the kinds of those boxes the file holds only once a block goes in
+//                           (a record's body), and the splice that makes an empty one of `key` in the unit
+//                           (source/commit.mjs, before the commit's blocks go in), or null
 //
 // Only the server loads these (the preview never serves a file.mjs or this module).
-export const FILES = { ...bookmark, ...code, ...columns, ...details, ...dialog, ...embed, ...file, ...flowchart, ...image, ...installed, ...list, ...sheets, ...table };
+export const FILES = { ...bookmark, ...code, ...columns, ...database, ...details, ...dialog, ...embed, ...file, ...flowchart, ...image, ...installed, ...list, ...sheets, ...table };
 
 const FIELD_OWNERS = Object.entries(FILES).flatMap(([type, own]) => (own.fields ?? []).map((field) => [field, type]));
 

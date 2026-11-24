@@ -10,6 +10,7 @@
                   keeps its own margins (a column's, a disclosure's and a detail card's edges
                   take none whatever the block: flow.css)
      table        before details: a table in a disclosure fits it
+     scrollbar    before table: a table frame's rails are shown and hidden as its frame says
    The rules for narrow widths and print stand at the end of each file, after what they override. */
 
 @import "./tokens.css";
@@ -37,6 +38,7 @@
 @import "./chart.css";
 @import "./dialog.css";
 @import "./zoom.css";
+@import "./scrollbar.css";
 @import "./table.css";
 @import "./callout.css";
 @import "./details.css";

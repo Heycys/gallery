@@ -1,0 +1,67 @@
+/* A scrollbar the kit draws (scrollbar.js): a rail (.doc-scrollbar, 12px thick, as long as its track:
+   --doc-scrollbar-track) along one axis of what scrolls, placed by its owner (tables/scrollbars.js over a table's
+   frame, database/ui/rail.js under a database's table view and its board), a thin thumb in it 3px in from the edge it
+   runs along. Its owner's stylesheet says when it shows under the pointer; it shows too while what it scrolls
+   scrolls or is pushed (data-active, on it or on what its owner marks) and while its thumb is dragged (data-drag).
+
+   The thumb's place is the scroll's, drawn by the browser: a scroll-driven animation (data-timeline, which the
+   script sets where the browser has timelines) moves it from the track's start to its end (--doc-scrollbar-travel:
+   the track less the thumb, written when a size changes) along the timeline of its axis that the scroller names
+   (scroll-timeline: --doc-scrollbar-x x, --doc-scrollbar-y y, in the owner's stylesheet; a rail not inside its
+   scroller has a common ancestor of the two hoist the names to it: timeline-scope), so it moves on the compositor
+   in the same frame as the content and never waits for the page's script. Without timelines the
+   script writes its place (--doc-scrollbar-thumb-at) once a frame as it scrolls. Either way it is the thumb's
+   `translate`; pushed past an end it gives way (--doc-scrollbar-squeeze: that much shorter, shifted by
+   --doc-scrollbar-squeeze-shift so its far end stays against the end it is pushed to: its `transform`), drawn frame
+   by frame by the script while it springs, and the two compose: no transition of its size or place. */
+
+.doc-scrollbar {
+  position: absolute;
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+.doc-scrollbar:is([data-active], [data-drag]) { opacity: 1; }
+.doc-scrollbar--x { width: var(--doc-scrollbar-track, 0px); height: 12px; }
+.doc-scrollbar--y { width: 12px; height: var(--doc-scrollbar-track, 0px); }
+.doc-scrollbar-thumb {
+  position: absolute;
+  border-radius: 999px;
+  background: var(--doc-scrollbar-thumb);
+  transition: background-color 120ms ease;
+}
+.doc-scrollbar--x > .doc-scrollbar-thumb {
+  bottom: 3px;
+  left: 0;
+  width: calc(var(--doc-scrollbar-thumb-size, 0px) - var(--doc-scrollbar-squeeze, 0px));
+  height: 6px;
+  translate: var(--doc-scrollbar-thumb-at, 0px) 0;
+  transform: translateX(var(--doc-scrollbar-squeeze-shift, 0px));
+}
+.doc-scrollbar--y > .doc-scrollbar-thumb {
+  top: 0;
+  right: 3px; /* clear of the edge, where the page editor's handles of a table frame's edges are */
+  width: 6px;
+  height: calc(var(--doc-scrollbar-thumb-size, 0px) - var(--doc-scrollbar-squeeze, 0px));
+  translate: 0 var(--doc-scrollbar-thumb-at, 0px);
+  transform: translateY(var(--doc-scrollbar-squeeze-shift, 0px));
+}
+.doc-scrollbar:is(:hover, [data-drag]) > .doc-scrollbar-thumb { background: var(--doc-scrollbar-thumb-active); }
+
+/* Moved by the scroll's timeline: from the track's start (no scroll) to its end (scrolled to the end), linearly, over
+   the whole of the scroll range (a duration of 1ms where `auto` is not known: on a timeline of progress it is the
+   whole of it all the same). The timeline is the one of that name nearest the rail: its own scroller's. */
+.doc-scrollbar[data-timeline] > .doc-scrollbar-thumb {
+  animation-duration: 1ms;
+  animation-duration: auto;
+  animation-timing-function: linear;
+  animation-fill-mode: both;
+}
+.doc-scrollbar--x[data-timeline] > .doc-scrollbar-thumb { animation-name: doc-scrollbar-along-x; animation-timeline: --doc-scrollbar-x; }
+.doc-scrollbar--y[data-timeline] > .doc-scrollbar-thumb { animation-name: doc-scrollbar-along-y; animation-timeline: --doc-scrollbar-y; }
+@keyframes doc-scrollbar-along-x { from { translate: 0 0; } to { translate: var(--doc-scrollbar-travel, 0px) 0; } }
+@keyframes doc-scrollbar-along-y { from { translate: 0 0; } to { translate: 0 var(--doc-scrollbar-travel, 0px); } }
+
+/* On paper nothing scrolls: no rails. */
+@media print {
+  .doc-scrollbar { display: none; }
+}

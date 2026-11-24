@@ -196,7 +196,7 @@ try {
     fs.copyFileSync(path.join(packsDirectory, "gallery-soft", "pack.json"), path.join(root, "components", "gallery-soft", "pack.json"));
     const listed = workspacePacks(root);
     assert.deepEqual(listed.map(({ id, kind, blocks, enabled }) => [id, kind, blocks, enabled]), [["local", "default", 1, true], ["gallery-soft", "official", 0, true], ["my-cards", "installed", 2, true]], "the default pack first (local/, where a block of no pack named goes), Gallery's own, then installed (a pack of no blocks too)");
-    assert.deepEqual([listed[0].name, listed[0].description.zh], [{ zh: "默认块包", en: "Default pack" }, "文档里常用的图表、看板和指标，以及 Agent 写自定义块时没有指定块包的块。只写一个块，不用另建块包。"], "the default pack: its name and words, no pack.json");
+    assert.deepEqual([listed[0].name, listed[0].description.zh], [{ zh: "默认块包", en: "Default pack" }, "文档里常用的卡片和指标，以及 Agent 写自定义块时没有指定块包的块。只写一个块，不用另建块包。"], "the default pack: its name and words, no pack.json");
     assert.deepEqual(listed.find(({ id }) => id === "my-cards"), { id: "my-cards", name: { zh: "我的卡片", en: "My cards" }, description: { zh: "两张自己画的卡片：问候和便签。", en: "Two cards of one's own: a greeting and a note." }, version: "1.0.0", author: "小林", homepage: null, icon: "🃏", kind: "installed", problem: null, blocks: 2, enabled: true, changed: [], newer: null }, "what its card says");
     fs.writeFileSync(path.join(root, "components", "local", "pack.json"), "{ broken");
     assert.equal(workspacePacks(root).find(({ id }) => id === "local").problem.en, "pack.json is not JSON", "a pack.json that does not read: why");
@@ -249,9 +249,9 @@ try {
     // Gallery's own blocks for documents count in the default pack (packOf), Gallery 风格 holding its page cards alone, though one folder holds them all.
     const counted = Object.fromEntries(workspacePacks(root, { directory: shipped }).map(({ id, blocks }) => [id, blocks]));
     const forDocuments = gallery.filter(({ places }) => !places.includes("page")).map(({ id }) => id).sort();
-    assert.deepEqual(forDocuments, ["gallery/card", "gallery/chart-card", "gallery/chart-view", "gallery/kanban", "gallery/metric"], "Gallery's own blocks for documents alone");
+    assert.deepEqual(forDocuments, ["gallery/card", "gallery/chart-card", "gallery/metric"], "Gallery's own blocks for documents alone");
     assert.deepEqual([counted.local, counted.gallery], [forDocuments.length, gallery.length - forDocuments.length], "组件列表: those in the default pack, Gallery 风格 its page cards alone");
-    assert.ok(forDocuments.every((id) => fs.existsSync(path.join(root, "components", ...id.split("/"), "component.json"))) && first.packs[0].added.includes("gallery/kanban"), "installed by Gallery 风格's install into components/gallery/<name>/, their ids as ever");
+    assert.ok(forDocuments.every((id) => fs.existsSync(path.join(root, "components", ...id.split("/"), "component.json"))) && first.packs[0].added.includes("gallery/metric"), "installed by Gallery 风格's install into components/gallery/<name>/, their ids as ever");
     const states = packageStates(readCatalog(root));
     assert.deepEqual(states.filter(({ pack }) => pack === "local").map(({ id }) => id), forDocuments, "each row's pack: the default pack's");
     heard.length = 0;
@@ -271,17 +271,17 @@ try {
     fs.appendFileSync(path.join(shipped, "gallery", "note", "style.css"), "/* newer */\n");
     setVersion(path.join(shipped, "gallery", "note", "component.json"), "9.0.0");
     fs.cpSync(SOFT_NOTE, path.join(shipped, "gallery-soft", "note"), { recursive: true });
-    setVersion(path.join(shipped, "gallery", "pack.json"), "1.1.0");
+    setVersion(path.join(shipped, "gallery", "pack.json"), "1.3.0");
     heard.length = 0;
     const later = await installOfficialPacks(root, { directory: shipped, env: {}, log: (line) => heard.push(line) });
     const [own, soft] = later.packs;
     assert.deepEqual([own.did, own.updated, own.kept, own.skipped], ["updated", ["gallery/today"], ["gallery/note"], ["gallery/habit"]], "a block as installed updated, one changed kept, one taken away left away");
     assert.deepEqual([soft.did, soft.added], ["updated", ["gallery-soft/note"]], "a block new in a pack added");
     assert.ok(fs.readFileSync(path.join(root, "components", "gallery", "today", "style.css"), "utf8").endsWith("/* newer */\n") && fs.readFileSync(path.join(workspaceNote, "style.css"), "utf8").endsWith("/* mine */\n") && !fs.existsSync(path.join(root, "components", "gallery", "habit")));
-    assert.equal(JSON.parse(fs.readFileSync(path.join(root, "components", "gallery", "pack.json"), "utf8")).version, "1.1.0", "its pack.json the new one's");
+    assert.equal(JSON.parse(fs.readFileSync(path.join(root, "components", "gallery", "pack.json"), "utf8")).version, "1.3.0", "its pack.json the new one's");
     assert.ok(heard.some((line) => line.includes("updated to this Gallery's: gallery/today")) && heard.some((line) => line.includes("has new blocks: gallery-soft/note")), heard.join("\n"));
     const listed = workspacePacks(root, { directory: shipped }).find(({ id }) => id === "gallery");
-    assert.deepEqual([listed.changed, listed.newer], [["gallery/note"], "1.1.0"], "组件列表: the pack changed since, by its note, and Gallery's newer version not put over it");
+    assert.deepEqual([listed.changed, listed.newer], [["gallery/note"], "1.3.0"], "组件列表: the pack changed since, by its note, and Gallery's newer version not put over it");
 
     // An older workspace whose blocks gallery block add put in: the first install takes them as they are.
     const older = await workspace("official-older");
@@ -302,10 +302,10 @@ try {
     installPack(root, filesOf(FIXTURE));
     fs.mkdirSync(path.join(root, "components", "gallery"), { recursive: true });
     fs.cpSync(path.join(packsDirectory, "gallery", "note"), path.join(root, "components", "gallery", "note"), { recursive: true });
-    fs.cpSync(path.join(packsDirectory, "gallery", "kanban"), path.join(root, "components", "gallery", "kanban"), { recursive: true });
+    fs.cpSync(path.join(packsDirectory, "gallery", "metric"), path.join(root, "components", "gallery", "metric"), { recursive: true });
     fs.copyFileSync(path.join(packsDirectory, "gallery", "pack.json"), path.join(root, "components", "gallery", "pack.json"));
     const on = readCatalog(root);
-    assert.deepEqual(menuOf(on).filter(({ id }) => id.startsWith("gallery/")).map(({ id, pack }) => [id, pack]), [["gallery/kanban", { id: "local", name: { zh: "默认块包", en: "Default pack" } }], ["gallery/note", { id: "gallery", name: { zh: "Gallery 风格", en: "Gallery style" } }]], "Gallery's board counts in the default pack, its note in Gallery 风格 (packOf), one folder holding both");
+    assert.deepEqual(menuOf(on).filter(({ id }) => id.startsWith("gallery/")).map(({ id, pack }) => [id, pack]), [["gallery/metric", { id: "local", name: { zh: "默认块包", en: "Default pack" } }], ["gallery/note", { id: "gallery", name: { zh: "Gallery 风格", en: "Gallery style" } }]], "Gallery's metric counts in the default pack, its note in Gallery 风格 (packOf), one folder holding both");
     assert.deepEqual(menuOf(on).filter(({ id }) => id.startsWith("my-cards/")).map(({ id, state, pack }) => [id, state, pack]), [["my-cards/greet", "hidden", { id: "my-cards", name: { zh: "我的卡片", en: "My cards" } }], ["my-cards/note", "normal", { id: "my-cards", name: { zh: "我的卡片", en: "My cards" } }]], "the page's map: each block's pack and its name");
     const library = (catalog) => createPageService({ root, edits: null, stateDirectory: path.join(root, ".gallery", "state"), catalog: () => catalog, shipped: path.join(temp, "no-packs") }).library("zh");
     assert.deepEqual(library(on).map(({ id, pack, of }) => [id, pack.name?.zh ?? null, of ?? null]), [["gallery/note", "Gallery 风格", null], ["my-cards/note", "我的卡片", null], ["my-cards/greet", "我的卡片", null]], "the library: a pack's blocks together (a section each in the menu), each saying its pack, no grey name");
@@ -315,19 +315,19 @@ try {
     const off = readCatalog(root);
     assert.deepEqual([off.settings.packsOff, off.stamp === on.stamp], [["my-cards"], false], "the catalog's settings and stamp say it");
     assert.deepEqual(menuOf(off).filter(({ id }) => id.startsWith("my-cards/")).map(({ state }) => state), ["hidden", "hidden"], "no menu offers its blocks");
-    assert.deepEqual([...off.packages.keys()].sort(), ["gallery/kanban", "gallery/note", "my-cards/greet", "my-cards/note"], "they load all the same: what is written of them shows");
+    assert.deepEqual([...off.packages.keys()].sort(), ["gallery/metric", "gallery/note", "my-cards/greet", "my-cards/note"], "they load all the same: what is written of them shows");
     assert.deepEqual(library(off).map(({ id }) => id), ["gallery/note"], "the library: none of its blocks");
     assert.equal(settingsLine(off.settings), "settings      my-cards ", "the line a page hears: its sixth list");
     assert.equal(inDocumentMenus(["document"], { packsOff: ["my-cards"] }, "my-cards/note"), false, "the one rule the server and the page run");
     assert.equal(inDocumentMenus(["document"], { packsOff: ["my-cards"] }, "local/note"), true);
-    assert.deepEqual([inDocumentMenus(["document"], { packsOff: ["gallery"] }, "gallery/kanban"), inDocumentMenus(["document"], { packsOff: ["local"] }, "gallery/kanban"), inDocumentMenus(["page"], { shown: ["gallery/note"], packsOff: ["gallery"] }, "gallery/note")], [true, false, false],
+    assert.deepEqual([inDocumentMenus(["document"], { packsOff: ["gallery"] }, "gallery/metric"), inDocumentMenus(["document"], { packsOff: ["local"] }, "gallery/metric"), inDocumentMenus(["page"], { shown: ["gallery/note"], packsOff: ["gallery"] }, "gallery/note")], [true, false, false],
       "Gallery 风格 off leaves Gallery's own blocks for documents in the menus, the default pack off takes them out; its page cards go with Gallery 风格");
     assert.equal(packageStates(off).find(({ id }) => id === "my-cards/note").menu, true, "a block's own switch says what it would be: the pack's is a switch of its own");
     // 组件列表: read and write.
     const settings = createComponentSettings({ root, taken: () => forgetCatalog(root) });
     const read = settings.read();
-    assert.deepEqual(read.packs.map(({ id, enabled, blocks }) => [id, enabled, blocks]), [["local", true, 1], ["gallery", true, 1], ["my-cards", false, 2]], "the pack cards: the default pack first, holding Gallery's board");
-    assert.deepEqual(read.packages.map(({ id, pack }) => [id, pack]), [["gallery/kanban", "local"], ["gallery/note", "gallery"], ["my-cards/greet", "my-cards"], ["my-cards/note", "my-cards"]], "each row's pack");
+    assert.deepEqual(read.packs.map(({ id, enabled, blocks }) => [id, enabled, blocks]), [["local", true, 1], ["gallery", true, 1], ["my-cards", false, 2]], "the pack cards: the default pack first, holding Gallery's metric");
+    assert.deepEqual(read.packages.map(({ id, pack }) => [id, pack]), [["gallery/metric", "local"], ["gallery/note", "gallery"], ["my-cards/greet", "my-cards"], ["my-cards/note", "my-cards"]], "each row's pack");
     // A workspace whose Gallery's own blocks are those for documents alone (gallery block add card, no pack installed): no card of Gallery 风格, the block in the default pack's.
     const bare = await workspace("documents-only");
     fs.cpSync(path.join(packsDirectory, "gallery", "card"), path.join(bare, "components", "gallery", "card"), { recursive: true });
@@ -365,7 +365,7 @@ try {
     assert.deepEqual(lines(listed.stdout), [
       `工作区：${root}`,
       "默认块包 / Default pack  (local, the default pack: Gallery's own blocks for documents, and where a block made with no pack named goes, on, 0 blocks)",
-      "  说明：文档里常用的图表、看板和指标，以及 Agent 写自定义块时没有指定块包的块。只写一个块，不用另建块包。 / The chart, board and metric documents use, and an Agent's custom block when it names no pack: a single block needs no pack of its own.",
+      "  说明：文档里常用的卡片和指标，以及 Agent 写自定义块时没有指定块包的块。只写一个块，不用另建块包。 / The card and metric documents use, and an Agent's custom block when it names no pack: a single block needs no pack of its own.",
       "我的卡片 / My cards  (my-cards 1.0.0, a pack installed, on, 2 blocks, by 小林)",
       "  说明：两张自己画的卡片：问候和便签。 / Two cards of one's own: a greeting and a note.",
     ], "the default pack first, then the pack installed");

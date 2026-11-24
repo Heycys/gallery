@@ -20,9 +20,17 @@ export function pageLanguage(html) {
  * data-doc-width="full", the one attribute the kit's page, the editor's room and the display menu's
  * 全宽显示 (the reader's own switch in an export) all read: one way to be wide, not two. 宽表格 (under
  * 全宽) is data-doc-tables="wide", which the kit's tables (tables/across.js) and the display menu's switch of the
- * same name read.
+ * same name read; 宽多维表格 (under it) is data-doc-databases="wide", which the kit's databases (database/across.js) and
+ * the display menu's switch of that name read.
  */
-export const LOOK_ATTRIBUTES = Object.freeze({ font: "data-doc-font", size: "data-doc-size", spacing: "data-doc-spacing", width: "data-doc-measure", full: "data-doc-width", tables: "data-doc-tables" });
+export const LOOK_ATTRIBUTES = Object.freeze({ font: "data-doc-font", size: "data-doc-size", spacing: "data-doc-spacing", width: "data-doc-measure", full: "data-doc-width", tables: "data-doc-tables", databases: "data-doc-databases" });
+
+/**
+ * The reader's own 宽表格 and 宽多维表格 chosen in an export's display menu (the kit's ui.js), on its <html> beside the
+ * look's attribute: as the page's switch does, their choice sets every table (database), a block's own word in the
+ * file (data-doc-wide: src/shared/table-across.mjs) aside.
+ */
+export const READER_WIDE = Object.freeze({ tables: "data-doc-reader-tables", databases: "data-doc-reader-databases" });
 
 export default {
   id: "page",
@@ -41,6 +49,8 @@ export default {
     "data-doc-tip": "words the kit's tooltip shows while the pointer rests on the element",
     "data-doc-tip-sub": "a second, dimmer line under data-doc-tip's words",
     "data-doc-tip-cut": "the element's own text in the tooltip, only while it is cut short",
+    // A block's own 宽表格 or 宽多维表格 (src/shared/table-across.mjs WIDE), one choice of the page's look (LOOK_ATTRIBUTES) made for one block.
+    "data-doc-wide": "on or off, on a table's frame (.doc-table-wrap) or a database (div.doc-database) standing in the body: that block's own 宽表格 or 宽多维表格 over the page's (wider than the text, it goes past the text's edges, or stays in it)",
   },
   classes: ["doc-page", "doc-header", "doc-kicker", "doc-title", "doc-button"],
   runtime: {
@@ -50,8 +60,8 @@ export default {
     root: { attrs: ["data-doc-ready", "data-doc-drawn", "data-doc-controls", "data-doc-effective-theme", "data-doc-platform"] },
     // The reader's theme (ui.js) and the document's look (字体与布局 and 全宽: its doc.json's, put on by
     // the render, src/shared/document-look.mjs; the reader's own 全宽显示 is the same data-doc-width), which
-    // a copy of the view keeps; never written in doc.html.
-    state: { html: ["data-doc-theme", ...Object.values(LOOK_ATTRIBUTES)] },
+    // a copy of the view keeps, and the reader's own 宽表格 and 宽多维表格 (READER_WIDE); never written in doc.html.
+    state: { html: ["data-doc-theme", ...Object.values(LOOK_ATTRIBUTES), ...Object.values(READER_WIDE)] },
     internal: ["doc-display*", "data-doc-export-copy", "doc-copy-card*", "data-doc-copy", "data-doc-source", "data-theme", "doc-export-id", "doc-reveal", "doc-kit-error", "doc-net-consent*", "data-doc-snapshot", "doc-tip-*",
       // A consent bar on a card under 240px of content (runtime/net.js), its line over its button.
       "data-doc-net-narrow",

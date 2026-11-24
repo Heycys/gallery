@@ -1,11 +1,11 @@
 /* Every selector starts at the instance and goes down a step at a time (>), so that nothing here
    reaches the rest of the page or the table in the slot, which reads as the page's. The frame is
    gallery/card's (the kit's card's, .doc-figure), 10px under its title as there; the bars the script draws
-   take the kit's series colors, which follow the theme, and are laid out in percents of the card's width,
-   as gallery/chart-view draws its own (a bar 16px high, 4px corners; two series or more 12px each, one
-   under another). Where the drawing is narrow (a phone, a column of a row), each name stands over its bars
-   and the bars take its width: the drawing is a container of its own (the instance is none, so that
-   nothing of the slot's table, which is the page's, is held to it). */
+   take the kit's series colors, which follow the theme, and are laid out in percents of the card's width
+   (a bar 16px high, 4px corners; two series or more 12px each, one under another). Where the drawing is
+   narrow (a phone, a column of a row), each name stands over its bars and the bars take its width: the
+   drawing is a container of its own (the instance is none, so that nothing of the slot's table, which is
+   the page's, is held to it). */
 [data-doc-component="gallery/chart-card"] {
   --doc-surface: var(--doc-figure-ground, var(--doc-bg));
   margin: var(--doc-component-gap) 0;

@@ -1,6 +1,6 @@
 # 表格图表卡片 (gallery/chart-card)
 
-Gallery leaves this block out of the menus ("/", 在下方新建, the handle's grid) until the user turns it on in 设置 › 组件列表, and a document that has it shows and edits it as ever. Do not write it into a document: for a chart of a table, draw one of the document's own from the table (references/writing-html.md, "Figures and charts"), or write an ordinary table and `gallery/chart-view` after it.
+Gallery leaves this block out of the menus ("/", 在下方新建, the handle's grid) until the user turns it on in 设置 › 组件列表, and a document that has it shows and edits it as ever. Do not write it into a document: for a chart of a table, draw one of the document's own from the table (references/writing-html.md, "Figures and charts"), or write a 多维表格 (`div.doc-database`) whose view is a chart (references/writing-html.md, "Databases").
 
 A card with a title, a table, and the bar chart the block draws from that table, with no script of the document's. Use it for a comparison of a few numbers by name (channels, teams, months) that the reader may change; for any other chart, write a chart of the document's own (references/writing-html.md, "Figures and charts").
 

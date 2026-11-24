@@ -1,5 +1,6 @@
 import { createBindings } from "./bindings.js";
 import { choose, startChoices } from "./choice.js";
+import { popover } from "./popover.js";
 import { dehydrateEmbed, showEmbed } from "./embeds.js";
 import { FLOWCHART, dehydrateFlowchart, startFlowchart } from "./flowchart.js";
 import { dragIn, fieldIn, textIn } from "./gestures.js";
@@ -38,8 +39,9 @@ if (!globalThis.DocKit) {
   // `flows`: the selectors of the elements blocks stand in (the descriptions' flows), for the kit's other scripts (the formulas).
   // `reveal`: what hides an element opened (reveal.js), which the page editor's jumps use too.
   // `input`, `text` and `drag`: the gestures a package's component would each write anew (gestures.js);
-  // `choose`: the kit's menu of choices (choice.js), which every <select> of the page opens as well.
-  globalThis.DocKit = Object.freeze({ ...kit, bindings: store, flows: __COMPONENT_FLOWS__, reveal, input: fieldIn, text: textIn, drag: dragIn, choose });
+  // `choose`: the kit's menu of choices (choice.js), which every <select> of the page opens as well;
+  // `popover`: the same card holding what a block puts in it (popover.js).
+  globalThis.DocKit = Object.freeze({ ...kit, bindings: store, flows: __COMPONENT_FLOWS__, reveal, input: fieldIn, text: textIn, drag: dragIn, choose, popover });
   globalThis.ReportKit = globalThis.DocKit; // its old name (before 2026-10-26), for a script no tool rewrote (shared/old-names.mjs)
   // Inline code and formulas an ordinary space apart from the words beside them, number ranges and
   // the marks after a formula held on their lines, long runs in spans that break anywhere, an item of

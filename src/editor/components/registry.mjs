@@ -2,6 +2,7 @@ import bookmark from "./bookmark/index.mjs";
 import callout from "./callout/index.mjs";
 import code from "./code/index.mjs";
 import columns from "./columns/index.mjs";
+import database from "./database/index.mjs";
 import details from "./details/index.mjs";
 import dialog from "./dialog/index.mjs";
 import divider from "./divider/index.mjs";
@@ -50,7 +51,9 @@ import { t } from "../../shared/i18n/index.mjs";
 //               view's rows: read-rows.mjs), label?(node) (its name as it shows: 开头概括, 编号列表), title?(node,
 //               view) (a container's name: a tab's), words?(node, view) (its lines in the words alone; none: its
 //               blocks'), data?(node, view) (its JSON's data), lost?(node) (what the export's Markdown leaves
-//               out of it, a phrase with {n}), alone?(node, writer) (its Markdown read by itself) }.
+//               out of it, a phrase with {n}), alone?(node, writer) (its Markdown read by itself), outline?
+//               (true: gallery read --outline lists each block of it after the headings, by its title and id: a
+//               database, which an Agent reads alone by --block) }.
 //               match: rules an element matches by its tag (one of `tag`), its class and its
 //               attribute, and by the element it stands in (`parent`: { tag?, class? }, a flowchart's
 //               step being an li whose parent is an ol.doc-flow), whichever are given; every
@@ -103,21 +106,27 @@ import { t } from "../../shared/i18n/index.mjs";
 //               controls are its tools): a box selection, ↑/↓ and
 //               Shift+↑/↓, Ctrl+A and select() itself pass over it, and Ctrl+Shift+arrows move no block past it.
 //   boxes       the box kinds it defines (containers whose children are units): { [kind]: { role,
-//               name?, classes?, find?, owner?, takenBy?, also?, leaveByEnter?, endIsPadding?, lead?, firstLineActs?, firstBlock?, groups?, holdsOne?, emptyIsNothing?, outer?, selectAll? } }, classes being the kit's classes that make an element one
+//               name?, classes?, find?, owner?, takenBy?, also?, except?, leaveByEnter?, endIsPadding?, lead?, controls?, firstLineActs?, firstBlock?, groups?, holdsOne?, emptyIsNothing?, outer?, selectAll? } }, classes being the kit's classes that make an element one
 //               (rank order, as above); the others the server knows by their tag (findUnits). find: where
 //               a unit's box of this kind is (a list item's lists, a disclosure's content, a Sheet area's
 //               panels, an instance's slots by their name: `find(unit, key)`); owner: the element of its unit that takes the box along (a Sheet panel's tab:
 //               boxOwner); takenBy: whether a unit's element is that one, for a box of this key, told from
 //               the element alone, which may be off the page with the box (takesBox);
 //               also: the unit kinds it takes besides what its role takes (a highlight block's icon);
+//               except: the unit kinds it takes none of though its role takes them, in it or in any box in it however far
+//               in (a database's record body: no database): accepts() says so of the box itself, refusedWithin of
+//               what stands inside it;
 //               leaveByEnter: Enter on its empty last block moves that block out after it (typing/leave.mjs);
 //               endIsPadding: what is under its last block is its own padding (a highlight block, a
 //               callout, a disclosure's content): a click there makes no block, it is a gap like any other
 //               (geometry.mjs endOf, insert/ clickBlank);
 //               lead: the kind of unit it opens with as its fixed head, which is no block to fall
 //               between (a highlight block's icon: a box selection passes over it, a place before it is
-//               the place after it); firstLineActs: its first block shows the container's handle, not a
-//               handle of its own (a highlight block's, a callout's, a quote's);
+//               the place after it); controls: its units are the block's own controls (a Sheet area's
+//               tabs, its pills): a box selection passes over them, as over a lead, so a box touching
+//               them alone takes the block they are in (geometry.mjs pick);
+//               firstLineActs: its first block shows the container's handle, not a handle of its own
+//               (a highlight block's, a callout's, a quote's);
 //               firstBlock: the type its first block (after its lead) always is, its first line (a
 //               flowchart's node: "paragraph", its title), which is turned into no other type (no
 //               转换为, no Markdown shortcut there) and has nothing made, dropped or pasted before it;
@@ -147,7 +156,7 @@ import { t } from "../../shared/i18n/index.mjs";
 //               own. Every component's rules are tried in `rank` order, with the page's (PAGE below),
 //               and the first match wins: a rule ranked below the page's 80 goes before any control's,
 //               and is the one that can claim a button as its own.
-//   hosts       the kinds of text block it defines (data-ge-kind): { [kind]: { name, caps, tex?, wrapped?, parts?, opensBefore?, textFilters?, formula?, closed?, inner?, pictures?, blankSays?, placeholder?, untitled?, opensBody? } }, caps
+//   hosts       the kinds of text block it defines (data-ge-kind): { [kind]: { name, caps, tex?, wrapped?, parts?, opensBefore?, textFilters?, formula?, closed?, inner?, pictures?, lines?, blankSays?, placeholder?, untitled?, opensBody? } }, caps
 //               ({ bound, blockLevel }) giving what such a text block can do (source/); opensBefore:
 //               Enter at its very start, with words in it, puts an empty paragraph before its block
 //               where it does not split, as one that splits does (typing/); textFilters: false, what
@@ -159,6 +168,9 @@ import { t } from "../../shared/i18n/index.mjs";
 //               nodes say (a code block's code); pictures: it holds pictures amid its words (a table
 //               cell's), { show(root) (the file's made the page's: where the server serves them),
 //               write(element) (one's markup, "" for one of no file, null for no picture) } (core.mjs);
+//               lines: its text is lines and lists of its own (a table cell's), which a paste keeps,
+//               { nodes(doc, html, lines) (its text made of what is pasted: clipboard/ pasteIntoCell),
+//               blocks(doc, html) (text copied in it holding its lists as blocks, where blocks go: linedBlocks) };
 //               parts: the parts of components ([component id, part name]: a part of its shared
 //               description edited as text, src/shared/components/) whose elements are text blocks
 //               of this kind, found so by the server's scan; tex: its text is a formula's TeX alone; wrapped: the page makes the text block a
@@ -269,13 +281,15 @@ import { t } from "../../shared/i18n/index.mjs";
 //               check(block, what): whether the clipboard's JSON, which is not trusted, is such a block; a
 //               type that is no `text` type and has no hook is never pasted. holds(block): the
 //               blocks it holds where those are no `blocks`. build(what): the block made again, `what`
-//               being { doc, block, host(type?), box(type?), inline(html), inner(blocks), one(block),
+//               being { doc, block, host(type?), box(type?), inline(html), lines(html) (its lines apart,
+//               an empty one kept: a table cell's), inner(blocks), one(block),
 //               colored(element), pending(figure, src) }; a text type needs none, and a container
 //               with no hook is filled with its blocks. Where it needs the page's modules it
 //               is the `build` of its page.mjs, listed in builders.mjs: it runs with no editor too
 //               (the transfer worker, the unit tests), so it is on no page object.
 //               text(block, lines): its lines of text for a place that cannot split (clipboard/own/
-//               blocks.mjs joinedHtml). grid(data, columns, cell): a table's rows as a Markdown table's.
+//               blocks.mjs joinedHtml). cell(block): how a list goes into a table cell's text, whose
+//               lists are its own ({ tag } a list of the cell's, { from } its items lines numbered from it). grid(data, columns, cell): a table's rows as a Markdown table's.
 //               files(block): the files of the document's folder a description names, each { path, kind }
 //               (`kind` the upload kind it is kept as: image, file, embed), which a paste into another
 //               document copies into that one's folder first (clipboard/carry.mjs); `build` then has them by
@@ -321,7 +335,8 @@ import { t } from "../../shared/i18n/index.mjs";
 // around the block, nearest first, after the block's own component; mergeRefused(block), what it says
 // of a block of it holding blocks that Backspace could not join to the line above; menuItems(target), the rows of the block
 // menu that a block of the component has, by the kind of unit it is, each row as
-// menu.mjs takes it; nameOf(target), what the reader calls this block where that is no kind's name (an
+// menu.mjs takes it; menuLead(target), the rows heading its rows of the block's look, right above 对齐 and 颜色 (a
+// table's 宽表格); nameOf(target), what the reader calls this block where that is no kind's name (an
 // instance, its package's), iconOf(target), the mark at the head of its menu;
 // menu(target, { rect, reason, remove }), a menu in place of the block menu ({ items,
 // label, width }, or null; reason: why the block may not go, remove(): delete it); rowBeside(target),
@@ -369,12 +384,13 @@ import { t } from "../../shared/i18n/index.mjs";
 // saying what is no press elsewhere;
 // nodes, the elements of it to keep in the top
 // layer when a modal dialog opens; install(), called once the block tools are there; blockTools(tools),
-// a part of it made with the block tools, { holds(node), hide(), nodes }; tidy(parents), what a
+// a part of it made with the block tools, { holds(node), hide(), nodes, busy? } (busy: a gesture of its
+// own under way, which the handle steps aside for); tidy(parents), what a
 // structural step may leave untidy (history.mjs), each asked in turn; nestBlocks(units, delta),
 // selected blocks indented or outdented; addNear(unit, before), the handle's "+" on a block of it,
 // undefined to leave it to the page; openAt(pre, point), code closed opened (caret.mjs).
 // A new kit component gets a folder of its own and a line below.
-export const COMPONENTS = [paragraph, heading, list, flowchart, quote, callout, highlight, details, code, divider, section, sheets, table, figure, image, file, bookmark, embed, columns, math, dialog, widget, icon, installed];
+export const COMPONENTS = [paragraph, heading, list, flowchart, quote, callout, highlight, details, code, divider, section, sheets, table, database, figure, image, file, bookmark, embed, columns, math, dialog, widget, icon, installed];
 
 // The "/" menu's groups, in order (MENU_GROUPS below says the same).
 const MENU_GROUP_ORDER = ["basic", "advanced"];
@@ -495,6 +511,12 @@ export const textFilters = (host) => HOSTS[host.getAttribute("data-ge-kind")]?.t
 
 /** Whether a text block takes an inline formula (`formula`: not an instance's text part, where the kit draws none). */
 export const takesFormula = (host) => HOSTS[host.getAttribute("data-ge-kind")]?.formula !== false;
+
+/**
+ * Text copied in a text block whose text holds lists of its own (its kind's `lines`: a table cell's) as
+ * blocks, for where blocks go (a paragraph: clipboard/), its lists lists; null for text holding none.
+ */
+export const linedBlocks = (doc, html) => Object.values(HOSTS).reduce((found, host) => found ?? host.lines?.blocks?.(doc, html) ?? null, null);
 
 /** Whether a text block's text is a formula's TeX alone (`tex`: a formula block's), which changes in the formula editor alone. */
 export const texOnly = (host) => Boolean(HOSTS[host?.getAttribute("data-ge-kind")]?.tex);
@@ -787,6 +809,7 @@ export const replacedByFile = (kind) => Boolean(UNITS[kind]?.replacedByFile);
 export const turnsEmpty = (kind) => Boolean(UNITS[kind]?.turnsEmpty);
 
 const ALSO = Object.fromEntries(Object.entries(BOXES).filter(([, box]) => box.also).map(([kind, box]) => [kind, new Set(box.also)]));
+const EXCEPT = Object.fromEntries(Object.entries(BOXES).filter(([, box]) => box.except).map(([kind, box]) => [kind, new Set(box.except)]));
 
 /** The kind of unit a box of this kind opens with as its fixed head (`lead`), or null. */
 export const leadOf = (boxKind) => BOXES[boxKind]?.lead ?? null;
@@ -795,6 +818,9 @@ export const isLead = (boxKind, kind) => {
   const lead = leadOf(boxKind);
   return lead !== null && kind === lead;
 };
+
+/** Whether the units of a box of this kind are the block's own controls, which a box selection passes over (`controls`). */
+export const holdsControls = (boxKind) => Boolean(BOXES[boxKind]?.controls);
 
 /** Whether the first block of a box of this kind shows the box's handle (`firstLineActs`). */
 export const firstLineActs = (boxKind) => Boolean(BOXES[boxKind]?.firstLineActs);
@@ -852,6 +878,7 @@ export const handleOf = (kind) => UNITS[kind]?.handle ?? "line";
 /** Whether a box of this kind takes a unit of this kind. */
 export function accepts(boxKind, unitKind) {
   if (ALSO[boxKind]?.has(unitKind)) return true; // a highlight block's icon, the page's icon in the header (it comes first: source/apply.mjs)
+  if (EXCEPT[boxKind]?.has(unitKind)) return false; // a box that refuses a kind (`except`)
   switch (boxRole(boxKind)) {
     case "root": return CHAPTER.has(unitKind) || !FIXED.has(unitKind); // chapters, and body text as a flow takes it
     case "flow": return !FIXED.has(unitKind);
@@ -865,6 +892,24 @@ export function accepts(boxKind, unitKind) {
     case "tabs": return unitKind === "tab";
     default: return false;
   }
+}
+
+/**
+ * Whether a unit of `unitKind` may not stand at `node` (an element of the page, a block or a box) for a box around it,
+ * however far out, that refuses that kind (`except`: a database's record body holds no database, in a callout in it
+ * neither). What the menus, a paste and a drop ask before they put one there.
+ */
+export function refusedWithin(node, unitKind) {
+  for (let box = (node?.nodeType === 1 ? node : node?.parentElement)?.closest?.("[data-ge-box-kind]"); box; box = box.parentElement?.closest("[data-ge-box-kind]")) {
+    if (EXCEPT[box.getAttribute("data-ge-box-kind")]?.has(unitKind)) return true;
+  }
+  return false;
+}
+
+/** Whether a box of the server's scan (`box`, of `boxes` and `units`: { kind, unit }, a unit's { box }) or one around it refuses `unitKind` (`except`). */
+export function refusedInBoxes(box, unitKind, boxes, units) {
+  for (let at = box; at; at = at.unit === null || at.unit === undefined ? null : boxes[units[at.unit]?.box]) if (EXCEPT[at.kind]?.has(unitKind)) return true;
+  return false;
 }
 
 // ---------- sizes, class switches and attributes ----------

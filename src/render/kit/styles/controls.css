@@ -111,6 +111,7 @@
 
 /* A section the page has nothing for (the words copied, of a page that carries none: ui.js) is not there, nor its line. */
 .doc-display-section[hidden] { display: none; }
+.doc-display-item[hidden] { display: none; } /* 宽表格, 宽多维表格 on a page with no table, no database it acts on (ui.js) */
 
 .doc-display-section:not([hidden]) ~ .doc-display-section { margin-top: 11px; }
 

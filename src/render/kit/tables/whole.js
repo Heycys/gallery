@@ -15,7 +15,7 @@ export const WHOLE_ROWS = 20;
  * its body cells' texts measured on one line in the table's font, together }). A column of words is
  * the column allocator's narrative kind (auto-column-widths.ts columnKind: its cells four words or
  * a line as wide as the Latin alphabet on average, about thirteen Chinese characters, and not
- * mostly paths, links or long identifiers). So the length of what a table's sentences say, not how
+ * mostly paths, links or long identifiers, nor mostly numbers: a list of figures). So the length of what a table's sentences say, not how
  * many of its cells hold one, makes it read as words: a table of a date, a title, a group and a note
  * a sentence long is whole at any length, a long list of names, numbers, paths or links is not.
  */

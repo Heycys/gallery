@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { parse } from "parse5";
 import { createMediaStore } from "../editor/media-store.mjs";
 import { headerChanged } from "../editor/source.mjs";
 import { siteIcon } from "../editor/unfurl.mjs";
@@ -8,6 +9,8 @@ import { glyphSvg } from "../render/emoji.mjs";
 import { LOOK, effectiveLook, fullLook, ownLookOf } from "../shared/document-look.mjs";
 import { iconKind } from "../shared/emoji/icon-value.mjs";
 import { writeAtomic } from "../shared/files.mjs";
+import { hasClass, walk } from "../shared/html-tree.mjs";
+import { WIDE } from "../shared/table-across.mjs";
 import { newNames } from "../shared/new-names.mjs";
 import { reportsDirectory } from "../shared/paths.mjs";
 import { findPreviewServer } from "../shared/preview-server.mjs";
@@ -36,8 +39,8 @@ import { throughServer } from "./tree.mjs";
 // the user's: never set. Says what changed; exits 1 for a document that is
 // not there or has no title in its page, a picture that is not in its folder, a doc.json that does not read.
 //
-// 字体与布局 (--font, --size, --spacing, --width, --full, --wide-tables, and --all): the page's 字体与布局 menu and its
-// 全宽 and 宽表格 switches, by the workspace service's own commands (POST look, one field a time, and looks for
+// 字体与布局 (--font, --size, --spacing, --width, --full, --wide-tables, --wide-databases, and --all): the page's 字体与布局
+// menu and its 全宽, 宽表格 and 宽多维表格 switches, by the workspace service's own commands (POST look, one field a time, and looks for
 // 应用到全部文档), so the open page changes at once: through the shared server while one runs (its queue;
 // the watcher tells the page), else here by the same functions (src/workbench/service.mjs). Only the
 // fields named are written, in doc.json's `look`; every other choice of the document's own stays, and a
@@ -54,10 +57,10 @@ const tidy = (value) => value.replace(/\s+/g, " ").trim();
 const unbashed = (value) => value.replace(/^[a-z]:\/(?:[^/]+\/)*?(?=icons\/(?:tabler\/)?[^/]+$)/i, "/");
 const quoted = (value) => (value === null ? "none" : JSON.stringify(value));
 
-// 字体与布局: the option of each choice and the values it takes (LOOK's, the default first; 全宽 and 宽表格
+// 字体与布局: the option of each choice and the values it takes (LOOK's, the default first; 全宽, 宽表格 and 宽多维表格
 // are switches, on or off: SWITCHES, the value each takes on).
-const LOOK_OPTIONS = { "--font": "font", "--size": "size", "--spacing": "spacing", "--width": "width", "--full": "full", "--wide-tables": "tables" };
-const SWITCHES = { full: { on: "full", label: "full width" }, tables: { on: "wide", label: "wide tables" } };
+const LOOK_OPTIONS = { "--font": "font", "--size": "size", "--spacing": "spacing", "--width": "width", "--full": "full", "--wide-tables": "tables", "--wide-databases": "databases" };
+const SWITCHES = { full: { on: "full", label: "full width" }, tables: { on: "wide", label: "wide tables" }, databases: { on: "wide", label: "wide databases" } };
 const switchOf = (option) => SWITCHES[LOOK_OPTIONS[option]] ?? null;
 const valuesOf = (option) => (switchOf(option) ? ["on", "off"] : LOOK[LOOK_OPTIONS[option]]);
 // The value an option's word gives its field (a switch's on or off, else the word itself).
@@ -65,6 +68,23 @@ const valueOf = (option, word) => (switchOf(option) ? (word === "on" ? switchOf(
 // A choice as a line says it, and its field's name there.
 const lookWord = (field, value) => (SWITCHES[field] ? (value === SWITCHES[field].on ? "on" : "off") : value);
 const fieldLabel = (field) => SWITCHES[field]?.label ?? field;
+
+// doc.html's `text` with the own 宽表格 (fields "tables": data-doc-wide on a table's frame) and 宽多维表格 ("databases": on a
+// database) of every block taken away, each attribute with the blank before it, nothing else touched: { text, count }.
+function withoutOwnWide(text, fields) {
+  const classes = fields.map((field) => (field === "tables" ? "doc-table-wrap" : "doc-database"));
+  const places = [];
+  walk(parse(text, { sourceCodeLocationInfo: true }), (node) => {
+    const place = node.sourceCodeLocation?.attrs?.[WIDE];
+    if (place && classes.some((name) => hasClass(node, name))) places.push(place);
+  });
+  let out = text;
+  for (const { startOffset, endOffset } of places.sort((a, b) => b.startOffset - a.startOffset)) {
+    const start = startOffset - (/[ \t\r\n]*$/.exec(out.slice(0, startOffset))?.[0].length ?? 0);
+    out = `${out.slice(0, start)}${out.slice(endOffset)}`;
+  }
+  return { text: out, count: places.length };
+}
 
 // A workspace command (the service's run), through the shared server when one runs, else here.
 async function command(name, body) {
@@ -85,9 +105,9 @@ async function customEmojiNamed(value) {
 
 export async function run(argv) {
   const { positional, options, values } = commandArguments({ options: ["--all"], values: ["--title", "--icon", "--description", ...Object.keys(LOOK_OPTIONS)], argv });
-  if (positional.length !== 1) throw new UsageError("Name one document, then what to set: --title, --icon, --description, --font, --size, --spacing, --width, --full, --wide-tables.");
+  if (positional.length !== 1) throw new UsageError("Name one document, then what to set: --title, --icon, --description, --font, --size, --spacing, --width, --full, --wide-tables, --wide-databases.");
   const looks = Object.keys(LOOK_OPTIONS).filter((option) => values.has(option));
-  if (!["--title", "--icon", "--description"].some((option) => values.has(option)) && looks.length === 0 && !options.has("--all")) throw new UsageError('Say what to set: --title "<title>", --icon <emoji|none|…>, --description "<text>", --font/--size/--spacing/--width <value>, --full on|off, --wide-tables on|off, or --all.');
+  if (!["--title", "--icon", "--description"].some((option) => values.has(option)) && looks.length === 0 && !options.has("--all")) throw new UsageError('Say what to set: --title "<title>", --icon <emoji|none|…>, --description "<text>", --font/--size/--spacing/--width <value>, --full on|off, --wide-tables on|off, --wide-databases on|off, or --all.');
   for (const option of looks) {
     if (!valuesOf(option).includes(values.get(option))) throw new UsageError(`${option} takes ${valuesOf(option).join(", ")}, not ${values.get(option)}.`);
   }
@@ -186,6 +206,25 @@ export async function run(argv) {
   }
   let ownAfter = ownLookOf(next.look);
   if (choices.length > 0) ownAfter = ownLookOf(JSON.parse(await fs.readFile(json, "utf8").catch(() => "{}")).look);
+  // --wide-tables and --wide-databases are the page's switches, which set every table (database) of the page, as the
+  // workbench's do: each one's own word in doc.html (data-doc-wide, the block menu's switch) taken away, written as
+  // the title is (read again right before, the rest of the file as it is).
+  const followed = choices.map(([field]) => field).filter((field) => field === "tables" || field === "databases");
+  let freed = 0;
+  for (let attempt = 1; followed.length > 0; attempt++) {
+    const written = await fs.readFile(html, "utf8");
+    const { text, count } = withoutOwnWide(written, followed);
+    if (count === 0) break;
+    if (await writeAtomic(html, text, { expect: written })) {
+      freed = count;
+      wrotePage = true;
+      break;
+    }
+    if (attempt === 3) {
+      console.error(`${shown(html)} kept changing while it was being written: the look is set, but some blocks keep their own setting. Run gallery set again.`);
+      process.exit(1);
+    }
+  }
   let everywhere = null; // the look every document without its own choice shows now (--all)
   if (options.has("--all")) {
     const answer = await command("looks", { slug });
@@ -209,6 +248,7 @@ export async function run(argv) {
     if (lookBefore[field] !== lookAfter[field]) said.push(`  ${label}: ${lookWord(field, lookBefore[field])} → ${lookWord(field, lookAfter[field])} (${path.basename(json)}'s look.${field})`);
     else said.push(`  ${label}: ${lookWord(field, value)} kept as the document's own choice (${path.basename(json)}'s look.${field}; the page already showed it)`);
   }
+  if (freed > 0) said.push(`  ${freed} ${freed === 1 ? "block's" : "blocks'"} own ${followed.map(fieldLabel).join(" and ")} setting taken away (data-doc-wide in ${name}): every one goes by the page's now`);
   if (everywhere) {
     const chosen = Object.entries(everywhere).filter(([field, value]) => value !== LOOK[field][0]).map(([field, value]) => `${fieldLabel(field)} ${lookWord(field, value)}`);
     said.push(`  all documents: ${chosen.length ? chosen.join(", ") : "the system's defaults"} (the look every document shows that has no choice of its own for it; kept with the user's settings, no document's file; documents with their own choices keep them)`);

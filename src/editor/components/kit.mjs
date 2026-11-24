@@ -36,6 +36,22 @@ export const DIALOG = Object.freeze({
   openContent: `${component("dialog").match}[open] ${stepOf(part("dialog", "content"))}`, // its content, where it scrolls
 });
 
+/**
+ * A surface of the document's in the top layer that is no modal dialog: a database's record details showing its body
+ * (the kit's database/peek.js marks its pages so while they are the details). The editor draws its tools there, as
+ * in an open detail card, so that they stand over what it shows.
+ */
+export const SURFACE = "[data-doc-surface]";
+
+/** In such a surface, the body it shows (the slot of the record the details are of, peek.js SHOWN): its page. */
+export const SURFACE_BODY = ":scope > [data-doc-slot][data-doc-shown]";
+
+/**
+ * A database's record's body (a slot of its pages: src/shared/database.mjs), the document's blocks shown in its record's
+ * details alone: no heading of one is the page's outline's (outline/read.mjs LEFT_OUT), as none of a detail card is.
+ */
+export const RECORD_BODY = ".doc-database-pages > [data-doc-slot]";
+
 export const DETAILS = Object.freeze({
   match: component("details").match,
   label: part("details", "label"),

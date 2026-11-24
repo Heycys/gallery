@@ -33,7 +33,9 @@ export default {
   readOnly: [mediaReadOnly("file")],
   units: {
     file: {
-      name: t("文件"), match: [{ rank: 44, tag: "figure", class: "doc-file" }], boxed: true,
+      // Colored as a text block is (the user's of 2026-11-24): a text color (its name's) and a background (the
+      // figure's, its caption in it, round as its row: the kit's file.css).
+      name: t("文件"), match: [{ rank: 44, tag: "figure", class: "doc-file" }], boxed: true, colors: ["text", "background"],
       // gallery read (../read-rows.mjs): boxed, its link, the name it is saved as and the size its card says, its file, its caption.
       read: {
         name: "文件",

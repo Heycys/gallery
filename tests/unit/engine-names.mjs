@@ -206,7 +206,7 @@ const ENGINE_NAMES = {
   "src/cli/usage-sections.mjs": 3, // no component: block and page, the commands whose usage it keeps by subcommand, and list, the subcommand of each
   "src/cli/page-check.mjs": 4, // no component: a custom page's own markup as gallery page check reads it (its main.gallery-page, a script it may not hold, a picture that does not load, and the <embed> among the elements that show a file of assets/ in a frame)
   "src/cli/qa-baseline.mjs": 6, // what gallery qa looks at in the reading view, the kit's markup
-  "src/cli/qa.mjs": 82, // what gallery qa looks at in the reading view, the kit's markup
+  "src/cli/qa.mjs": 84, // what gallery qa looks at in the reading view, the kit's markup (its summary counts the databases: 2)
   "src/cli/release-build.mjs": 2, // no component: esbuild's platform
   "src/cli/sandbox.mjs": 2, // "list" is the sandbox subcommand, not the document list block
   "src/cli/set.mjs": 2, // no component: the words of gallery set, which writes a document's header (it says h1.doc-title, the page's title, in a message) and names an icon's kinds, image and icon
@@ -221,6 +221,7 @@ const ENGINE_NAMES = {
   "src/editor/page/annotate/anchors.mjs": 5,
   "src/editor/page/annotate/card.mjs": 2,
   "src/editor/page/annotate/index.mjs": 10,
+  "src/editor/page/page-drop/index.mjs": 1, // no component: inline code and a link, which hold no page block (as no "@" opens in them)
   "src/editor/page/at-menu/index.mjs": 1, // no component: inline code and a link, in which no "@" opens (a picture in the text, which leaves no room for its hint: typed-field.mjs)
   "src/editor/page/block-info.mjs": 1,
   "src/editor/page/block-menu/colors.mjs": 2,
@@ -312,9 +313,10 @@ const ENGINE_NAMES = {
   "src/editor/source/whole.mjs": 7, // no component: HTML's tags, those written in pairs and those that hold no markup
   "src/editor/unfurl.mjs": 1, // no component: a link's rel
   "src/render/asset-references.mjs": 19, // what the build and the checks read of the reading view, the kit's markup as the shared descriptions say it, no editor component's
-  "src/render/assets.mjs": 3, // the kit's scripts by id, the code block's, the Sheet area's and the formulas' among them, which stay with the others: the component system moves none of them by default
+  "src/render/assets.mjs": 4, // the kit's scripts by id, the code block's, the Sheet area's, the formulas' and the database's among them, which stay with the others: the component system moves none of them by default
   "src/render/chart-declarations.mjs": 14, // what the build and the checks read of the reading view, the kit's markup as the shared descriptions say it, no editor component's
   "src/render/component-checks.mjs": 11, // what the build and the checks read of the reading view, the kit's markup as the shared descriptions say it, no editor component's
+  "src/render/database-checks.mjs": 35, // what gallery check notes and reads of a database: its records' bodies (its pages, a slot each, no database in one), its own table's tags (table, tr, th, td, script), its kinds of column (title, text, date…) and its layouts, the format's words, no editor component's
   "src/render/component-runtime.mjs": 1, // no component: esbuild's platform
   "src/render/embeds.mjs": 3, // what the build and the checks read of the reading view, the kit's markup as the shared descriptions say it, no editor component's
   "src/render/emoji.mjs": 5, // the page's icon as the build shows it: the kit's markup, the kind of its value, and data-ge-icon, which the preview writes for the icon's editor to read it back

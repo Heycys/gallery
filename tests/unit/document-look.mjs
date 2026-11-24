@@ -20,11 +20,15 @@ import { documentLook, ownLookAt, workspaceLook, writeWorkspaceLook } from "../.
 // without a look.
 
 // What a look is: its known choices that are not the default.
-assert.deepEqual(Object.keys(LOOK), ["font", "size", "spacing", "width", "full", "tables"]);
-assert.deepEqual(LOOK_ATTRIBUTES, { font: "data-doc-font", size: "data-doc-size", spacing: "data-doc-spacing", width: "data-doc-measure", full: "data-doc-width", tables: "data-doc-tables" }, "正文宽度's is data-doc-measure; 全宽 is the kit's one data-doc-width, the reader's display menu's too; 宽表格 data-doc-tables");
+assert.deepEqual(Object.keys(LOOK), ["font", "size", "spacing", "width", "full", "tables", "databases"]);
+assert.deepEqual(LOOK_ATTRIBUTES, { font: "data-doc-font", size: "data-doc-size", spacing: "data-doc-spacing", width: "data-doc-measure", full: "data-doc-width", tables: "data-doc-tables", databases: "data-doc-databases" }, "正文宽度's is data-doc-measure; 全宽 is the kit's one data-doc-width, the reader's display menu's too; 宽表格 data-doc-tables, 宽多维表格 data-doc-databases");
 assert.deepEqual(LOOK.full, ["default", "full"]);
 // 宽表格 (2026-11-20): off unless doc.json says "wide"; a choice of its own beside 全宽.
 assert.deepEqual(LOOK.tables, ["default", "wide"]);
+// 宽多维表格 (2026-11-23): the same, for a 多维表格.
+assert.deepEqual(LOOK.databases, ["default", "wide"]);
+assert.deepEqual(lookOf({ databases: "wide", tables: "wide" }), { tables: "wide", databases: "wide" });
+assert.equal(withLook('<html lang="zh">', { databases: "wide" }), '<html lang="zh" data-doc-databases="wide">');
 assert.deepEqual(lookOf({ tables: "wide", full: "full" }), { full: "full", tables: "wide" });
 assert.deepEqual(lookOf({ tables: "default" }), {});
 assert.deepEqual(lookOf({ tables: true }), {}, "a value of another kind is the default");
@@ -37,7 +41,7 @@ assert.deepEqual(lookOf({ full: "wide" }), {}, "a value it does not know is the 
 assert.deepEqual(lookOf({ full: true }), {}, "a value of another kind is the default");
 assert.deepEqual(lookOf({ font: "serif", size: "default", spacing: "loose", width: "huge", other: 1 }), { font: "serif", spacing: "loose" });
 for (const value of [null, undefined, "serif", ["serif"], 3]) assert.deepEqual(lookOf(value), {});
-assert.deepEqual(fullLook({ size: "small" }), { font: "sans", size: "small", spacing: "default", width: "default", full: "default", tables: "default" });
+assert.deepEqual(fullLook({ size: "small" }), { font: "sans", size: "small", spacing: "default", width: "default", full: "default", tables: "default", databases: "default" });
 assert.ok(sameLook({ font: "serif", size: "default" }, { font: "serif" }) && !sameLook({ font: "serif" }, {}));
 assert.equal(lookWord({ font: "mixed", width: "wide" }), "font=mixed&width=wide");
 assert.equal(lookWord({}), "");

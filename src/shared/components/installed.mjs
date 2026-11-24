@@ -28,8 +28,15 @@ export const SLOT = "data-doc-slot";
 /** Where slots are: a block-level div or section so marked. */
 export const SLOT_PART = `div[${SLOT}], section[${SLOT}]`;
 
-// The edges of a region: an instance, where the component's begins, and a slot, where the document's may again.
-const REGION = `${INSTANCE}, ${SLOT_PART}`;
+/**
+ * Where a component's region begins whose slots are the document's again: an instance of a package, and a
+ * database (多维表格, div.doc-database: its records' bodies are slots of its, src/shared/database.mjs, the
+ * rest of it its drawing's). The one rule below holds for both.
+ */
+export const HOLDER = `${INSTANCE}, div.doc-database`;
+
+// The edges of a region: a holder, where the component's begins, and a slot, where the document's may again.
+const REGION = `${HOLDER}, ${SLOT_PART}`;
 
 // The nearest edge of a region around a node (itself left out), or null.
 const edgeAround = (node) => node?.parentElement?.closest(REGION) ?? null;
@@ -46,7 +53,7 @@ export function heldBy(node) {
   const edge = edgeAround(node);
   if (!edge) return null;
   const owner = heldBy(edge);
-  if (edge.matches(INSTANCE)) return owner ?? edge;
+  if (edge.matches(HOLDER)) return owner ?? edge;
   return owner !== null && edgeAround(edge) === owner ? null : owner;
 }
 
@@ -59,7 +66,7 @@ export function heldBy(node) {
 export function heldWithin(element) {
   if (!element.matches(REGION)) return heldBy(element);
   const owner = heldBy(element);
-  if (element.matches(INSTANCE)) return owner ?? element;
+  if (element.matches(HOLDER)) return owner ?? element;
   return owner !== null && edgeAround(element) === owner ? null : owner;
 }
 

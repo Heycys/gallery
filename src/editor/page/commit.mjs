@@ -535,7 +535,8 @@ export function createCommits({ root, map, baselines, units, boxes, getLayout, s
     // waits stands where the file has it).
     const pending = { texts: new Map(), units: new Map(), made: new Map(), restores: new Map(), html: new Map(), snapshot, moves: new Set(changes.filter((change) => change.move).map((change) => change.id)) };
     // Every new text block's html as sent: what it starts from once committed.
-    for (const host of root.querySelectorAll("[data-ge-new][contenteditable='true'], [data-ge-convert] [contenteditable='true'], [contenteditable='true'][data-ge-convert]")) pending.html.set(host, serializeInner(host));
+    // (Each of its three kinds asked apart: a list of them has the browser match every element of the page to each.)
+    for (const selector of ["[data-ge-new][contenteditable='true']", "[data-ge-convert] [contenteditable='true']", "[contenteditable='true'][data-ge-convert]"]) for (const host of root.querySelectorAll(selector)) if (!pending.html.has(host)) pending.html.set(host, serializeInner(host));
     // A unit takes along what its component says (a Sheet tab, its panel: boxOwner), so a change in
     // such a box is a change of that unit too (its hash covers the box).
     const touchOwner = (box) => {
@@ -2299,6 +2300,21 @@ export function createCommits({ root, map, baselines, units, boxes, getLayout, s
     unitElementOf: (id) => unitElement(id),
     /** The id a unit of the page has in the file, or the one it proposes for it; null for none. */
     fileId: (unit) => map.units[unit]?.blockId ?? map.units[unit]?.proposed ?? null,
+    /**
+     * A box made on the page in a unit of the map that the file holds once a block goes in (a record's body: its
+     * database's component makes its slot then, source/commit.mjs): `node`, of `kind` and `key`, a box of the map
+     * from now on, empty in the layout, so that what the reader puts in goes into it with the next commit as into any
+     * box. Returns the box's id, or null where it stands in no unit of the map.
+     */
+    madeBox(node, kind, key) {
+      if (boxOf(node) !== null) return boxOf(node);
+      const unit = unitAround(node.parentElement);
+      if (unit === null) return null;
+      const id = registerBox(node, kind, key);
+      getLayout()?.orders.set(id, []);
+      marks();
+      return id;
+    },
     /** The hash a unit of the page has in the file now (its map's, kept by every answer); null for none (changes/ finds the Agent's blocks by it). */
     fileHash: (unit) => map.units[unit]?.hash ?? null,
     /** save(pending) as JSON, with the page's body (sync-state.mjs pack). */

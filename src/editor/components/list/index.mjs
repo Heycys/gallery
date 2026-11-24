@@ -90,10 +90,14 @@ function across(unit, { walk }) {
   const list = listType(unit);
   return walk(unit).map((block) => (block.type === "item" ? { list, ...block } : block));
 }
+// How a list goes into a table cell's text (`cell`: clipboard/own/ joinedHtml `lists`), whose lists are
+// bulleted or numbered from 1 and hold no list: { tag } a list of the cell's, or { from } its items lines,
+// each with its number from `from` (a numbered list from another number).
 const CLIPBOARDS = {
-  bullets: { kind: "bullet", read: readList, check, across },
+  bullets: { kind: "bullet", read: readList, check, across, cell: () => ({ tag: "ul" }) },
   numbers: {
     kind: "number", read: readList, check, across,
+    cell: (block) => (validStart(block.start) && Number(block.start) > 1 ? { from: Number(block.start) } : { tag: "ol" }),
     // Its first number (a document's list that goes on after a block).
     build({ block, box, inner }) {
       const list = box();
@@ -102,7 +106,7 @@ const CLIPBOARDS = {
       return list;
     },
   },
-  todo: { kind: "todo", read: readList, check, across },
+  todo: { kind: "todo", read: readList, check, across, cell: () => ({ tag: "ul" }) }, // its boxes no part of a cell's list
 };
 
 // An li as a text block, in a list or a step written the short way: copied with what it holds after

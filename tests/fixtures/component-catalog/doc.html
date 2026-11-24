@@ -555,6 +555,20 @@
             </table>
           </div>
         </section>
+        <section class="doc-section">
+          <h2 id="tables-database">多维表格</h2>
+          <div class="doc-database">
+            <script type="application/json">{"columns":[{"id":"title","name":"任务","type":"title"},{"id":"status","name":"状态","type":"select","options":[{"name":"待开始","color":"gray"},{"name":"进行中","color":"blue"},{"name":"已完成","color":"green","done":true}]},{"id":"due","name":"截止","type":"date"},{"id":"hours","name":"工时","type":"number"}],"views":[{"id":"all","name":"全部","layout":"table","calc":{"hours":"sum"},"showCalc":true},{"id":"board","name":"看板","layout":"board","boardBy":"status"}]}</script>
+            <table>
+              <thead><tr><th data-column="title">任务</th><th data-column="status">状态</th><th data-column="due">截止</th><th data-column="hours">工时</th></tr></thead>
+              <tbody>
+                <tr><td>登录页改版</td><td>已完成</td><td>2026-11-12</td><td>12</td></tr>
+                <tr><td>接口限流</td><td>进行中</td><td>2026-11-28</td><td>16</td></tr>
+                <tr><td>导出 CSV</td><td>待开始</td><td></td><td>6</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       <div data-doc-sheet="interaction">

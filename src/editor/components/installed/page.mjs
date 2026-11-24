@@ -1,4 +1,4 @@
-import { ARRIVING, ATTRIBUTE, DATA_MOST, DATA_SHOWN, FALLBACK, FIELDS, INSTANCE, TEXT_TYPED, NO_TEXT, PACKAGE_MARK, SCHEMA, SLOT, SLOT_PART, componentAt, fitsDataScript, heldBy, instanceMatch, isDataScript, noDataPart, refusedInData, schemaAhead, slotsIn } from "../../../shared/components/installed.mjs";
+import { ARRIVING, ATTRIBUTE, DATA_MOST, DATA_SHOWN, FALLBACK, FIELDS, INSTANCE, TEXT_TYPED, NO_TEXT, PACKAGE_MARK, SCHEMA, SLOT, SLOT_PART, componentAt, heldBy, instanceMatch, schemaAhead, slotsIn } from "../../../shared/components/installed.mjs";
 import { referencedIds } from "../../../shared/copy-ids.mjs";
 import { jsonIn } from "../../../shared/json-layout.mjs";
 import { CHART_SOURCE, VIEW_FROM } from "../../../shared/table-chart.mjs";
@@ -15,6 +15,7 @@ import { openSettings } from "../../page/board/settings.mjs";
 import { bindAbove, keyOf, tableChoices } from "../../page/table/binding.mjs";
 import { addStyle } from "../../page/ui.mjs";
 import { accepts, capsFor } from "../registry.mjs";
+import { draftedParts } from "../data-parts.mjs";
 import { SETTINGS_ICON } from "../icons.mjs";
 import { ICON } from "./index.mjs";
 import { followCatalog, followSettings, isBehind } from "./served.mjs";
@@ -166,25 +167,6 @@ function textParts(instance) {
   return parts.filter((part) => !parts.some((other) => other !== part && other.contains(part))).sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
 }
 
-// All an element holds, what a <template> keeps apart among it.
-const allIn = (root) => [...root.querySelectorAll("*")].flatMap((node) => (node.localName === "template" ? [node, ...allIn(node.content)] : [node]));
-
-// Why what a component made of a draft of `part` cannot go in, as the server would say (file.mjs
-// `rewrite`), for who writes the component, or null.
-function draftProblem(part, draft) {
-  if (draft.cloneNode(false).outerHTML !== part.cloneNode(false).outerHTML) return "a part's own tag and attributes are the file's: a change writes what it holds";
-  const html = draft.innerHTML;
-  if (new TextEncoder().encode(html).length > DATA_MOST) return `it holds more than the ${DATA_MOST} bytes one commit writes`;
-  const attributes = [...part.attributes];
-  if (part.localName === "script") return isDataScript(part.localName, attributes) && fitsDataScript(html) ? null : "a script of data holds JSON, with nothing in it that ends a script: write < as \\u003c";
-  if (noDataPart(part.localName)) return `a <${part.localName}> is no part a component can write`;
-  const read = part.cloneNode(false);
-  read.innerHTML = html;
-  if (read.innerHTML !== html) return "what it holds does not read back as itself (a row with no tbody, a block in a paragraph): a file would hold something else";
-  const refused = allIn(draft).find((node) => refusedInData(node.localName, [...node.attributes]));
-  return refused ? `a data part holds no <${refused.localName}> of that kind: no script, handler, frame, address of code, data-block-id or data-ge-*` : null;
-}
-
 /**
  * What a component asks to write (`{ parts, run }`, the kit's: the parts it names and its change, handed a
  * draft of each by name), on `instance`: { changed, put } where it can go in, `changed` the parts it
@@ -196,41 +178,17 @@ function draftProblem(part, draft) {
  * (`write` of create), or the table's change it goes with (page/table/views.mjs, by the page object's
  * `drafted`: a view's change of its table and of its own parts, one step).
  */
-function drafted({ parts, run }, instance) {
+function drafted(detail, instance) {
   const id = instance.getAttribute(ATTRIBUTE);
-  const refuse = (problem) => {
-    console.error(`[DocKit] ${id}: context.edit: ${problem}`);
-    return null;
-  };
-  if (!Array.isArray(parts) || typeof run !== "function" || !parts.every(({ part }) => part?.nodeType === 1 && instance.contains(part))) return refuse("it names no part of its own");
-  const before = parts.map(({ part }) => part.innerHTML);
-  const drafts = parts.map(({ part }) => part.cloneNode(true));
-  const ran = run(Object.fromEntries(parts.map(({ name }, index) => [name, drafts[index]])));
-  const live = parts.findIndex(({ part }, index) => part.innerHTML !== before[index]);
-  if (live >= 0) {
-    parts.forEach(({ part }, index) => { if (part.innerHTML !== before[index]) part.innerHTML = before[index]; });
-    return refuse(`it wrote the part ${parts[live].name} on the page: a change writes the draft it is handed, which goes onto the page when it returns`);
-  }
-  if (!ran) return null;
-  for (const [index, { name, part }] of parts.entries()) {
-    const problem = draftProblem(part, drafts[index]);
-    if (problem) return refuse(parts.length > 1 ? `${name}: ${problem}` : problem);
-  }
-  const changed = parts.map(({ name, part }, index) => [part, before[index], drafts[index], name]).filter(([, was, draft]) => draft.innerHTML !== was);
-  return {
-    changed,
-    put() {
-      if (changed.length === 0) return;
-      for (const [part, , draft] of changed) part.replaceChildren(...draft.cloneNode(true).childNodes);
-      instance.setAttribute(WRITTEN_BY, brought.get(id)?.definition ?? "");
-      if (changed.length > 1) {
-        const names = new Set(changed.map(([, , , name]) => name));
-        const groups = writtenTogether(instance);
-        const joined = groups.filter((group) => group.some((name) => names.has(name)));
-        instance.setAttribute(WRITTEN_TOGETHER, JSON.stringify([...groups.filter((group) => !joined.includes(group)), [...new Set([...names, ...joined.flat()])]]));
-      }
-    },
-  };
+  return draftedParts(detail, instance, id, (changed) => {
+    instance.setAttribute(WRITTEN_BY, brought.get(id)?.definition ?? "");
+    if (changed.length > 1) {
+      const names = new Set(changed.map(([, , , name]) => name));
+      const groups = writtenTogether(instance);
+      const joined = groups.filter((group) => group.some((name) => names.has(name)));
+      instance.setAttribute(WRITTEN_TOGETHER, JSON.stringify([...groups.filter((group) => !joined.includes(group)), [...new Set([...names, ...joined.flat()])]]));
+    }
+  });
 }
 
 // What the text blocks of an instance are to contenteditable: an instance the kit shows as it stands,
@@ -606,7 +564,8 @@ export function create({ map, newParagraph, active, sourceStep, struct, look }) 
         const id = tag.getAttribute(PACKAGE_MARK);
         brought.set(id, { stamp: entryOf(id)?.stamp ?? null, definition: entryOf(id)?.definition });
       }
-      document.addEventListener("doc-component-edit", (event) => { if (write(event.detail, event.target)) event.preventDefault(); });
+      // An instance's edit; another block's (a database: its own page object) is not one.
+      document.addEventListener("doc-component-edit", (event) => { if (event.target.matches?.(INSTANCE) && write(event.detail, event.target)) event.preventDefault(); });
       new MutationObserver((records) => {
         for (const { type, target, addedNodes, removedNodes, nextSibling } of records) {
           if (type === "attributes") followFallback(target);

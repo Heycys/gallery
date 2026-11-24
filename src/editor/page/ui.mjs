@@ -1,4 +1,4 @@
-import { DIALOG } from "../components/kit.mjs";
+import { DIALOG, SURFACE } from "../components/kit.mjs";
 import { TOKENS } from "./look.mjs";
 import { t } from "../../shared/i18n/index.mjs";
 // Small DOM helpers for the editor's own UI (panels, cards, the formatting bar). Every node the
@@ -68,9 +68,13 @@ export function textButton(label, action, { primary = false, danger = false, qui
   return node;
 }
 
-// Editor UI lives in the top layer with an open modal dialog, otherwise it would be inert.
+// Editor UI lives in the top layer with an open modal dialog, otherwise it would be inert; and in a surface of the
+// document's standing there (data-doc-surface: a database's record details showing its body), over what it shows.
+/** The attribute that marks such a surface (what the editor watches to move its UI there). */
+export const SURFACE_MARK = SURFACE.slice(1, -1);
+
 export function layer() {
-  return document.querySelector(DIALOG.open) ?? document.body;
+  return document.querySelector(DIALOG.open) ?? document.querySelector(SURFACE) ?? document.body;
 }
 
 export function mount(node) {

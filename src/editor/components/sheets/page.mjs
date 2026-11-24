@@ -149,7 +149,7 @@ export function create({ lastKnown, recordText, closeTyping, say, look, openMedi
 }
 
 /**
- * A new Sheet area (选项卡, a tabs block): a frame holding a row of three tabs, 选项卡 1–3,
+ * A new Sheet area (选项卡, a tabs block): a frame holding a row of three tabs, 选项 1–3,
  * each with an empty panel, under a name of its own on the page (the reader's chosen tab is kept
  * under it). The kit's sheets.js comes too when the page has none (ensureSheetsKit).
  */
@@ -165,8 +165,8 @@ export function newSheets(doc, given = null) {
   for (const [attribute, value] of [["aria-label", t("选项卡")], ["data-ge-box", ""], ["data-ge-box-kind", "tabs"]]) row.setAttribute(attribute, value);
   shell.append(row);
   // given: [{ title, icon, blocks }] (a copy pasted), else three empty tabs.
-  for (const [index, wanted] of (given ?? [1, 2, 3].map((number) => ({ title: t("选项卡 {0}", number) }))).entries()) {
-    const { tab, panel } = newTab(shell, wanted.title || t("选项卡 {0}", index + 1));
+  for (const [index, wanted] of (given ?? [1, 2, 3].map((number) => ({ title: t("选项 {0}", number) }))).entries()) {
+    const { tab, panel } = newTab(shell, wanted.title || t("选项 {0}", index + 1));
     if (wanted.icon) tab.setAttribute("data-tab-icon", wanted.icon);
     panel.append(...(wanted.blocks ?? []));
     row.append(tab);

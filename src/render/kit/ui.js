@@ -6,6 +6,7 @@ import { cssReferences, cssWithAddresses } from "../../shared/css-references.mjs
 import { COPY_DATA, EXPORT_CSP, isolateUmd, scriptText, styleText } from "../../shared/export-wrap.mjs";
 import { fromFile, hosted, pageAddress, workbenchHash } from "../../shared/page-address.mjs";
 import { LOOK_ATTRIBUTES, lookOf, setLookOn } from "../../shared/document-look.mjs";
+import { READER_WIDE, holdsBodyDatabases, holdsBodyTables } from "../../shared/table-across.mjs";
 import { sayDisplay as say } from "./words.js";
 
 (function initReportUI() {
@@ -28,7 +29,7 @@ import { sayDisplay as say } from "./words.js";
     id: "display", // this report's (DocState scopes it by data-doc-id)
     version: 1,
     // tables: the reader's 宽表格 ("wide" or "default"), null while they have not chosen (the file's look stands).
-    defaults: { theme: null, width: "reading", tables: null, exportVersion: 0 },
+    defaults: { theme: null, width: "reading", tables: null, databases: null, exportVersion: 0 },
   }) : null;
   // The reader's own choice of theme on this document (its display menu), or null: the system's.
   const chosenTheme = () => {
@@ -82,6 +83,8 @@ import { sayDisplay as say } from "./words.js";
     width: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 10h14M6 7l-3 3 3 3M14 7l3 3-3 3"/></svg>',
     // A table across two short lines above and below it (the text's edges): the workbench's 宽表格 (icons.ts wideTables).
     tables: '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.75" y="6.25" width="14.5" height="7.5" rx="1.5"/><path d="M2.75 10h14.5M10 6.25v7.5M6.25 2.75v2M13.75 2.75v2M6.25 15.25v2M13.75 15.25v2"/></svg>',
+    // A database (its header row, a column, a record's line) across the same two short lines: the workbench's 宽多维表格 (icons.ts wideDatabases).
+    databases: '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.75" y="6.25" width="14.5" height="7.5" rx="1.5"/><path d="M2.75 8.75h14.5M6.75 8.75v5M9.25 11.25h4.5M6.25 2.75v2M13.75 2.75v2M6.25 15.25v2M13.75 15.25v2"/></svg>',
     download: '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3.5v9M6.5 9l3.5 3.5L13.5 9M4.5 16.5h11"/></svg>',
     // Two sheets, one over the other: the words as they are.
     copy: '<svg viewBox="0 0 20 20" aria-hidden="true"><rect x="7.25" y="7.25" width="9.5" height="9.5" rx="2"/><path d="M12.75 7.25V5.25a2 2 0 0 0-2-2h-5.5a2 2 0 0 0-2 2v5.5a2 2 0 0 0 2 2h2"/></svg>',
@@ -150,6 +153,9 @@ import { sayDisplay as say } from "./words.js";
   // tables/across.js), on as the file was made (the look its render put on <html>), the reader's to change.
   const tablesItem = menuItem("menuitemcheckbox", icons.tables, say("wide-tables"), '<span class="doc-display-switch" aria-hidden="true"><span></span></span>');
   tablesItem.dataset.docTables = "";
+  // 宽多维表格 (the look `databases`, data-doc-databases="wide": the kit's database/across.js), the same way.
+  const databasesItem = menuItem("menuitemcheckbox", icons.databases, say("wide-databases"), '<span class="doc-display-switch" aria-hidden="true"><span></span></span>');
+  databasesItem.dataset.docDatabases = "";
   const exportButton = menuItem("menuitem", icons.download, say("export-view"));
   // A copy of the page as the reader sees it now, with its reading state (Sheet, disclosures, notes);
   // the report's source is never changed by it. The preview's workbench session uses the hook.
@@ -180,7 +186,7 @@ import { sayDisplay as say } from "./words.js";
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", takeWords, { once: true });
   else takeWords();
 
-  menu.append(copySection, menuSection(say("appearance"), ...themeItems), menuSection(null, widthItem, tablesItem), menuSection(null, exportButton));
+  menu.append(copySection, menuSection(say("appearance"), ...themeItems), menuSection(null, widthItem, tablesItem, databasesItem), menuSection(null, exportButton));
   display.append(menuButton, menu);
   document.body.prepend(display);
   root.dataset.docControls = "ready";
@@ -192,11 +198,20 @@ import { sayDisplay as say } from "./words.js";
 
   const storedWidth = displayState.get("width");
   if (storedWidth === "full") root.dataset.docWidth = "full";
-  // The reader's own 宽表格, either way, over the file's (none chosen: the file's stands).
+  // The reader's own 宽表格, either way, over the file's (none chosen: the file's stands): as the page's switch does,
+  // it sets every table, whatever a table's own word in the file (READER_WIDE on <html>: src/shared/table-across.mjs).
   const TABLES = LOOK_ATTRIBUTES.tables;
-  const storedTables = displayState.get("tables");
-  if (storedTables === "wide") root.setAttribute(TABLES, "wide");
-  else if (storedTables === "default") root.removeAttribute(TABLES);
+  const DATABASES = LOOK_ATTRIBUTES.databases;
+  const readerWide = (kind, value) => {
+    const name = LOOK_ATTRIBUTES[kind];
+    if (value === "wide") root.setAttribute(name, "wide");
+    else root.removeAttribute(name);
+    root.setAttribute(READER_WIDE[kind], "");
+  };
+  for (const kind of ["tables", "databases"]) {
+    const stored = displayState.get(kind);
+    if (stored === "wide" || stored === "default") readerWide(kind, stored);
+  }
 
   // The reader's own choice of look is checked (a theme a workbench shows is not theirs). A function
   // declared, so that the theme's request (above) calls it; on a custom page (no menu) it does nothing.
@@ -212,6 +227,7 @@ import { sayDisplay as say } from "./words.js";
 
   function updateTablesItem() {
     tablesItem.setAttribute("aria-checked", String(root.getAttribute(TABLES) === "wide"));
+    databasesItem.setAttribute("aria-checked", String(root.getAttribute(DATABASES) === "wide"));
   }
 
   function reportFileName() {
@@ -418,10 +434,14 @@ import { sayDisplay as say } from "./words.js";
   // The menu: the button opens and closes it; a press anywhere else, Esc, the window losing the
   // focus or a copy being made closes it. Opened from the keyboard, the focus goes into it, and
   // ↑/↓ (Home, End) move along its rows.
-  const items = () => [...menu.querySelectorAll(".doc-display-item")].filter((item) => !item.parentElement.hidden);
+  const items = () => [...menu.querySelectorAll(".doc-display-item")].filter((item) => !item.hidden && !item.parentElement.hidden);
   function openMenu(fromKeyboard) {
     // Opened from the keys it is there at once, no growing out of its corner (controls.css).
     menu.classList.toggle("doc-display-menu--keys", fromKeyboard);
+    // 宽表格 only where the page holds a table it acts on (one standing in the body: table-across.mjs holdsBodyTables;
+    // the user's 2026-11-23), looked at each time the menu opens.
+    tablesItem.hidden = !holdsBodyTables(document);
+    databasesItem.hidden = !holdsBodyDatabases(document);
     menu.hidden = false;
     menuButton.setAttribute("aria-expanded", "true");
     if (fromKeyboard) (items().find((item) => item.getAttribute("aria-checked") === "true") ?? items()[0])?.focus();
@@ -509,10 +529,17 @@ import { sayDisplay as say } from "./words.js";
   });
 
   // 宽表格: shown at once (the tables laid out again: doc-layout-change), kept for this document in this browser.
+  // 宽多维表格: the same, the databases placed again (doc-layout-change).
+  databasesItem.addEventListener("click", () => {
+    const on = root.getAttribute(DATABASES) !== "wide";
+    readerWide("databases", on ? "wide" : "default");
+    displayState.set("databases", on ? "wide" : "default");
+    updateTablesItem();
+    dispatchEvent(new Event("doc-layout-change"));
+  });
   tablesItem.addEventListener("click", () => {
     const on = root.getAttribute(TABLES) !== "wide";
-    if (on) root.setAttribute(TABLES, "wide");
-    else root.removeAttribute(TABLES);
+    readerWide("tables", on ? "wide" : "default");
     displayState.set("tables", on ? "wide" : "default");
     updateTablesItem();
     dispatchEvent(new Event("doc-layout-change"));

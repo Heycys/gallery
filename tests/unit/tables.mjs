@@ -6,7 +6,7 @@ import { createCommits } from "../../src/editor/page/commit.mjs";
 import { commitEdits, hashOf, instrument } from "../../src/editor/source.mjs";
 import { duplicateRows, insertColumn, newTable, insertRow, mergeCells, moveColumn, moveRow, removeColumns, removeRows, setHeaderColumn, setHeaderRow, splitCell, tableState } from "../../src/editor/components/table/page.mjs";
 import { applyEdits } from "../../src/editor/source.mjs";
-import { CELL_ALIGNS, CELL_BOLD, CELL_VALIGNS, rowNames } from "../../src/editor/components/table/index.mjs";
+import { CELL_ALIGNS, CELL_BOLD, CELL_VALIGNS, lookOf, rowNames } from "../../src/editor/components/table/index.mjs";
 import { alignItems, alignLook, sharedAlign } from "../../src/editor/page/table/aligns.mjs";
 import tableDescription from "../../src/shared/components/table.mjs";
 import fs from "node:fs";
@@ -248,6 +248,77 @@ const rowsOf = (file) => [...file.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((m
     assert.notEqual(receipt.units[0].status, "applied", `look ${JSON.stringify(look.slice(0, 40))} refused`);
     assert.equal(receipt.text ?? s.file, before);
   }
+}
+
+// A row put in wears, in each column, the look that column's body cells all share (the header row
+// aside), a column put in, in each row, the look that row's cells share (the header column aside); where
+// they differ, or in a new header column's cell, plain. Only the look: no words, no spans. Written.
+{
+  const s = studio(page(`  <div class="doc-table-wrap">
+    <table class="doc-table">
+      <thead>
+        <tr><th class="doc-bold doc-highlight-gray">名称</th><th class="doc-bold doc-highlight-gray">数值</th><th class="doc-bold doc-highlight-gray">备注</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="doc-text-red doc-bold">一</td><td class="doc-align-right doc-valign-middle">1</td><td class="doc-highlight-yellow">甲</td></tr>
+        <tr><td class="doc-bold doc-text-red">二</td><td class="doc-valign-middle doc-align-right">2</td><td>乙</td></tr>
+      </tbody>
+    </table>
+  </div>
+`));
+  const row = insertRow(s.table(), 3);
+  assert.deepEqual([...row.cells].map(lookOf), ["doc-bold doc-text-red", "doc-align-right doc-valign-middle", ""], "a row: each column's shared look, plain where they differ (the header row's not counted)");
+  const above = insertRow(s.table(), 1);
+  assert.deepEqual([...above.cells].map(lookOf), ["doc-bold doc-text-red", "doc-align-right doc-valign-middle", ""], "the same put in first, under the header row");
+  const column = insertColumn(s.table(), 3);
+  assert.deepEqual(column.map(lookOf), ["doc-bold doc-highlight-gray", "", "", "", ""], "a column: the header row's shared look; the body rows' looks differ, plain");
+  s.commit();
+  assert.deepEqual(rowsOf(s.file), [
+    '<th class="doc-bold doc-highlight-gray">名称</th><th class="doc-bold doc-highlight-gray">数值</th><th class="doc-bold doc-highlight-gray">备注</th><th class="doc-bold doc-highlight-gray"></th>',
+    '<td class="doc-bold doc-text-red"></td><td class="doc-align-right doc-valign-middle"></td><td></td><td></td>',
+    '<td class="doc-text-red doc-bold">一</td><td class="doc-align-right doc-valign-middle">1</td><td class="doc-highlight-yellow">甲</td><td></td>',
+    '<td class="doc-bold doc-text-red">二</td><td class="doc-valign-middle doc-align-right">2</td><td>乙</td><td></td>',
+    '<td class="doc-bold doc-text-red"></td><td class="doc-align-right doc-valign-middle"></td><td></td><td></td>',
+  ], "written with their looks, the rest as it was");
+}
+{
+  const s = studio(page(`  <div class="doc-table-wrap">
+    <table class="doc-table">
+      <thead>
+        <tr><th class="doc-bold doc-highlight-gray">名称</th><th class="doc-bold doc-highlight-gray">一月</th><th class="doc-align-center doc-bold doc-highlight-gray">二月</th></tr>
+      </thead>
+      <tbody>
+        <tr><th scope="row">收入</th><td class="doc-highlight-green">1</td><td class="doc-highlight-green">2</td></tr>
+        <tr><th scope="row" class="doc-text-blue">支出</th><td class="doc-text-red">3</td><td>4</td></tr>
+      </tbody>
+    </table>
+  </div>
+`));
+  const column = insertColumn(s.table(), 3);
+  assert.deepEqual(column.map(lookOf), ["doc-bold doc-highlight-gray", "doc-highlight-green", ""], "the header row's looks differ: the cell before it's color and bold; a row's shared look beside the header column; plain where they differ");
+  const first = insertColumn(s.table(), 0);
+  assert.deepEqual(first.map(lookOf), ["doc-bold doc-highlight-gray", "", ""], "a new header column's cell plain");
+  const row = insertRow(s.table(), 3);
+  assert.deepEqual([...row.cells].map((cell) => [cell.localName, lookOf(cell)].join(":")), ["th:", "td:", "td:", "td:", "td:"], "a row: its columns' body looks differ, plain (the header column's plain th)");
+  s.commit();
+  assert.deepEqual(rowsOf(s.file).slice(1, 3), ['<th scope="row"></th><td>收入</td><td class="doc-highlight-green">1</td><td class="doc-highlight-green">2</td><td class="doc-highlight-green"></td>', '<th scope="row"></th><td class="doc-text-blue">支出</td><td class="doc-text-red">3</td><td>4</td><td></td>'], "written");
+}
+{
+  // No header row: every row counts. A merged cell counts once in each column it covers; its spans are not the new cell's.
+  const s = studio(page(`  <div class="doc-table-wrap">
+    <table class="doc-table">
+      <tbody>
+        <tr><td class="doc-text-blue" rowspan="2">甲</td><td>1</td></tr>
+        <tr><td>2</td></tr>
+        <tr><td class="doc-text-blue">乙</td><td class="doc-bold">3</td></tr>
+      </tbody>
+    </table>
+  </div>
+`));
+  const row = insertRow(s.table(), 3);
+  assert.deepEqual([...row.cells].map((cell) => [lookOf(cell), cell.rowSpan]), [["doc-text-blue", 1], ["", 1]], "a merged cell's look counted, its spans not taken");
+  s.commit();
+  assert.equal(rowsOf(s.file)[3], '<td class="doc-text-blue"></td><td></td>');
 }
 
 // A column's width (--doc-column-width on its first row's cell, the kit's manual layout) goes
@@ -748,4 +819,4 @@ for (const name of [...CELL_ALIGNS, ...CELL_VALIGNS].map(([each]) => each).conca
   assert.equal(shownWhole(21, [words(0)]), false, "a long table of empty cells");
 }
 
-console.log("Checked tables' rows and columns: put in, typed into, moved, taken out (never the last), copied, header row and column switched, written as one operation with what stayed as it was, the cells known where the file has them after it, undone, a conflict when someone else changed the table; merged cells made, grown and shrunk by rows and columns put in and taken out, split, the file's spans checked, and a new table written with its merged cells; lists in a cell as its text; a cell's words read as a number (the one reading of the kit and 一键优化, with its missing values); the alignments the cells' bar and a column's menu offer, and the classes of a cell's look in the table's description and styles/table.css; whether a table is plain judged once, by the server from the source, marked on its unit and only read by the page (the tags a file leaves out, a tbody before the thead, cells that tile no rectangle), the operation on a table the server does not judge plain refused, a table's operation built once per commit; a cell's start tag rewritten where it stands (a style kept as written); the slots the kit, the editor and the server share; the kit's numeric columns, none where a header says text or dates; the cells on a framed table's edges marked where a cell spans rows; a table shown whole when short or mostly words.");
+console.log("Checked tables' rows and columns: put in (wearing the look their column's or row's cells share), typed into, moved, taken out (never the last), copied, header row and column switched, written as one operation with what stayed as it was, the cells known where the file has them after it, undone, a conflict when someone else changed the table; merged cells made, grown and shrunk by rows and columns put in and taken out, split, the file's spans checked, and a new table written with its merged cells; lists in a cell as its text; a cell's words read as a number (the one reading of the kit and 一键优化, with its missing values); the alignments the cells' bar and a column's menu offer, and the classes of a cell's look in the table's description and styles/table.css; whether a table is plain judged once, by the server from the source, marked on its unit and only read by the page (the tags a file leaves out, a tbody before the thead, cells that tile no rectangle), the operation on a table the server does not judge plain refused, a table's operation built once per commit; a cell's start tag rewritten where it stands (a style kept as written); the slots the kit, the editor and the server share; the kit's numeric columns, none where a header says text or dates; the cells on a framed table's edges marked where a cell spans rows; a table shown whole when short or mostly words.");

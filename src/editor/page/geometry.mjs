@@ -1,5 +1,7 @@
 import { UNIT, isEmpty, isHost, nestedBlocks, withLeads } from "./core.mjs";
-import { boxRole, endIsPadding, isBlock, isLead, isSelectable } from "../components/registry.mjs";
+import { boxRole, endIsPadding, holdsControls, isBlock, isLead, isSelectable } from "../components/registry.mjs";
+import { drawnPast } from "../../shared/table-across.mjs";
+import { SURFACE } from "../components/kit.mjs";
 
 // Where the blocks are on the screen (docs/editor.md, "Selecting blocks"). measure() reads the
 // page once into a tree of boxes and units with their rectangles. hoverAt, atHeight, measuredNode, pick,
@@ -44,9 +46,20 @@ const RULE = 12; // a divider line shows as a band this far above and below it (
  */
 export const undrawn = (el) => el.checkVisibility?.() === false;
 
+// An element's box out to what of it stands past it (shared/table-across.mjs drawnPast: a 多维表格's drawing, its own
+// child, which 宽多维表格 places past the text, past its host's edges); any other element's box as it is. (A wide table's
+// frame is the table's block itself, placed past the text as it stands.)
+function widened(part, box) {
+  const drawing = drawnPast(part);
+  if (!drawing || undrawn(drawing)) return box;
+  const wide = drawing.getBoundingClientRect();
+  return { left: Math.min(box.left, wide.left), top: box.top, right: Math.max(box.right, wide.right), bottom: box.bottom, width: Math.max(box.right, wide.right) - Math.min(box.left, wide.left), height: box.height };
+}
+
 /**
  * Where a block shows (client coordinates), or null when it does not: its own box and those of its
- * leads, a list item's marker left of it, out to its list's edge (the list's room for markers), and
+ * leads, a list item's marker left of it, out to its list's edge (the list's room for markers), a
+ * 多维表格 out to its drawing placed past the text (宽多维表格), and
  * a divider line (an <hr>) as a band around the line, a line of text tall (the line alone is a
  * pixel or two), as the reader sees the block. Its fill, its handle, where the pointer finds it and
  * what a box selection touches go by this.
@@ -54,7 +67,7 @@ export const undrawn = (el) => el.checkVisibility?.() === false;
 export function extentOf(el) {
   let rect = null;
   for (const part of withLeads(el)) {
-    const next = part.getBoundingClientRect();
+    const next = widened(part, part.getBoundingClientRect());
     if ((next.width === 0 && next.height === 0) || undrawn(part)) continue;
     rect = rect
       ? { left: Math.min(rect.left, next.left), top: Math.min(rect.top, next.top), right: Math.max(rect.right, next.right), bottom: Math.max(rect.bottom, next.bottom) }
@@ -150,12 +163,14 @@ function markerLeft(el) {
 
 /**
  * Whether a press or the pointer is on empty space: the page around the report, or a box between
- * its blocks. Never text: a list item is the box of its lists too, yet a press on it is in its text.
+ * its blocks, or a surface of the document over the page around the body it shows (a database's record
+ * details: SURFACE, below the body). Never text: a list item is the box of its lists too, yet a press on it is in its text.
  */
 export function blankTarget(target) {
   if (!target?.closest || target.closest("[data-doc-dev]")) return false;
   if (target === document.documentElement || target === document.body) return true;
   if (!target.closest("main")) return false; // the report's own controls outside it
+  if (target.matches(SURFACE)) return true;
   return target.localName === "main" || (target.hasAttribute("data-ge-box") && target.getAttribute("contenteditable") !== "true");
 }
 
@@ -339,11 +354,13 @@ export function pick(tree, rect) {
   // touching only it, or only the block's padding, takes the whole highlight block, as a
   // disclosure's title row takes the disclosure. A unit that is never selected (`selectable: false`:
   // the page's icon in the header, which is no block) is passed over as well: a box from above the
-  // icon and the title into the page takes the header's lines and the page's blocks alone.
+  // icon and the title into the page takes the header's lines and the page's blocks alone. So are the
+  // units of a box of the block's own controls (`controls`: a Sheet area's tabs): a box touching them
+  // and blocks of a panel takes those blocks, one touching only them the Sheet area.
   const visit = (node, path) => {
     for (const child of node.children) {
       const next = [...path, child];
-      if (child.type === "unit" && ((node.type === "box" && isLead(node.kind, child.kind)) || !isSelectable(child.kind))) continue;
+      if (child.type === "unit" && ((node.type === "box" && (isLead(node.kind, child.kind) || holdsControls(node.kind))) || !isSelectable(child.kind))) continue;
       if (child.type === "unit" && meets(child.rect, rect)) hits.push(next);
       visit(child, next); // what it holds may reach past it (a divider's band at its top)
     }

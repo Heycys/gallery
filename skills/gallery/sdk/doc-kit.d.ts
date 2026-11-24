@@ -339,6 +339,36 @@ export interface DocChooseOptions {
   signal?: AbortSignal;
 }
 
+/** What `DocKit.popover` takes. */
+export interface DocPopoverOptions {
+  /** Fills the card (and again as the block likes, with `handle.place()` once its size changed). */
+  build(card: HTMLElement, handle: DocPopoverHandle): void;
+  /** Where the card stands in the page (an element of the block's own drawing: its keys and presses are the block's). */
+  within?: Element | null;
+  /** Under the anchor (above where there is more room), above it, beside it (a submenu) or over it. */
+  placement?: "bottom" | "top" | "right" | "over";
+  /** Its edge with the anchor's start or end. */
+  align?: "start" | "end";
+  /** px between it and the anchor. */
+  gap?: number;
+  width?: number;
+  minWidth?: number;
+  className?: string;
+  /** Its name for a screen reader. */
+  label?: string;
+  /** Hears it close, whatever closed it: "outside", "escape", "replaced", "closed". */
+  onClose?(reason: string): void;
+}
+
+/** An open card of `DocKit.popover`. */
+export interface DocPopoverHandle {
+  readonly card: HTMLElement;
+  /** Places it again by its anchor (what it holds changed its size). */
+  place(): void;
+  close(): void;
+  readonly open: boolean;
+}
+
 /** What `mount` is given for a package's instance. */
 export interface DocComponentContext {
   /** The instance's element. */
@@ -590,6 +620,13 @@ export interface DocKitApi {
    * to look like the browser's.
    */
   choose(anchor: Element, options: DocChooseOptions): Promise<string | null>;
+  /**
+   * The same floating card holding what a block puts in it (a menu of rows with icons, a field and its suggestions,
+   * a small form), under `anchor` (an element, or a box of the window's). Cards opened from one inside an open card
+   * stay with it; a press outside, Esc, or another card opened elsewhere closes it. Flat, rounded, light and dark as
+   * the page is; in the top layer, so nothing of the page covers it.
+   */
+  popover(anchor: Element | { left: number; top: number; right?: number; bottom?: number }, options: DocPopoverOptions): DocPopoverHandle;
 
   stats(): DocKitStats;
   /** The keys of the page's bound controls. */

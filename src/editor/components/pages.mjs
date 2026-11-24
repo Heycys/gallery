@@ -1,6 +1,7 @@
 import { create as bookmark } from "./bookmark/page.mjs";
 import { create as code } from "./code/page.mjs";
 import { create as columns } from "./columns/page.mjs";
+import { create as database } from "./database/page.mjs";
 import { create as details } from "./details/page.mjs";
 import { create as dialog } from "./dialog/page.mjs";
 import { create as embed } from "./embed/page.mjs";
@@ -29,7 +30,7 @@ import { create as table } from "./table/page.mjs";
 // listeners onto the document as it is made, and media comes before the four blocks made of its
 // parts (block(id)). It is also the order they are asked in where every one is: the columns tidy
 // before the lists (`tidy`), an image takes a pasted file before a file block does (`acceptsFile`).
-const PAGES = { columns, code, list, flowchart, nodeAdder, details, dialog, paragraph, heading, section, icon, sheets, sheetPills, figure, media, image, file, bookmark, embed, math, table, installed };
+const PAGES = { columns, code, list, flowchart, nodeAdder, details, dialog, paragraph, heading, section, icon, sheets, sheetPills, figure, media, image, file, bookmark, embed, math, table, database, installed };
 
 /**
  * Every component's page object, by its component's name (and the flowchart's "+", nodeAdder, and a

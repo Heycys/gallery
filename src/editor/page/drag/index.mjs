@@ -1,7 +1,7 @@
 import { IN_LAYER } from "../../../shared/layers.mjs";
 import { gestureLock } from "../gesture.mjs";
 import { nestedBlocks, newContainer, placeBefore, removalTarget, unitsOf, withLeads } from "../core.mjs";
-import { accepts, isLead, isSelectable } from "../../components/registry.mjs";
+import { accepts, isLead, isSelectable, refusedWithin } from "../../components/registry.mjs";
 import { columnOps } from "../page-objects.mjs";
 import { DIALOG, SHEETS } from "../../components/kit.mjs";
 import { heldListType, listType } from "../../components/list/index.mjs";
@@ -247,7 +247,7 @@ export function createDrag({ info, selection, struct, say, closeMenu, schedule, 
     const takes = (box) => (tabs ? kinds.size === 1 && targets.every((target) => target.parentElement === box.el)
       : items ? accepts(box.kind, "item") || accepts(box.kind, "list")
       : steps ? accepts(box.kind, "step") || (accepts(box.kind, "flowchart") && box.kind !== "nest" && !box.el.closest("ol.doc-flow"))
-      : [...kinds].every((kind) => accepts(box.kind, kind)));
+      : [...kinds].every((kind) => accepts(box.kind, kind) && !refusedWithin(box.el, kind))); // none a box around it refuses, however far in (except)
     // Blocks a column takes may go beside a block, into a column (分栏); beside a folded heading when a
     // column takes what it hides too, which goes into its column with it (besideTo).
     const aside = !tabs && [...kinds].every((kind) => accepts("column", kind)) && ((unit) => folds.withHidden(unit.el).every((node) => accepts("column", kindOf(node))));

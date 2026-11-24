@@ -1,4 +1,5 @@
 import { Z } from "../../shared/layers.mjs";
+import { SURFACE } from "../components/kit.mjs";
 import { UNIT, unitElement, withLeads } from "./core.mjs";
 import { frameNumber, inFrame } from "./frames.mjs";
 import { clipOf, fillExtentOf } from "./geometry.mjs";
@@ -15,7 +16,9 @@ import { addStyle, element } from "./ui.mjs";
 //   viewport  the window (a block that is fixed or sticky, or inside one: a table's sticky header
 //             cell): a fixed layer;
 //   dialog    the open modal dialog holding the block (it is in the top layer, where nothing of
-//             the body shows): a fixed layer inside that dialog, never inside another one.
+//             the body shows): a fixed layer inside that dialog, never inside another one; so too
+//             a surface of the document's standing in the top layer (data-doc-surface: a database's
+//             record details showing its body).
 //
 // Positions are measured against the layer's own rectangle, never worked out from scrollX/scrollY,
 // so they hold whatever the layer's containing block. A box of the page that scrolls by itself (a
@@ -32,13 +35,17 @@ const STYLE = `
   .ge-layer[data-context="viewport"], .ge-layer[data-context="dialog"] { position: fixed; }
   /* Whatever the tools put in a layer stands where they say; those that declared a position of their own (a relative box) would not, and the layer cannot know which rule a tool wrote them with: !important keeps it one rule. */
   .ge-layer > * { position: absolute !important; }
-  .ge-layer > .ge-handle, .ge-layer > .ge-section-bar { pointer-events: auto; }
+  /* The handle takes the pointer; a section's bar in its solid strips alone (handle/: across a block placed past the text its dots are the block's). */
+  .ge-layer > .ge-handle, .ge-layer > .ge-section-bar > .ge-section-bar-line { pointer-events: auto; }
 `;
 
 // The coordinate system a block moves in, and the element its layer goes into.
 function contextOf(target) {
+  // An open modal dialog, or a surface of the document's in the top layer (a database's record details showing its
+  // body: SURFACE), as one: a layer of its own in it, over what it shows.
   const dialog = target.closest("dialog[open]");
-  if (dialog?.matches(":modal")) return { kind: "dialog", host: dialog };
+  const top = dialog?.matches(":modal") ? dialog : target.closest(SURFACE);
+  if (top) return { kind: "dialog", host: top };
   for (let node = target; node && node !== document.body && node !== document.documentElement; node = node.parentElement) {
     const { position } = getComputedStyle(node);
     if (position === "fixed" || position === "sticky") return { kind: "viewport", host: document.body };

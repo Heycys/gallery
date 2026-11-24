@@ -1,10 +1,13 @@
 import { Z } from "../../../shared/layers.mjs";
 import { blankTarget, measure, pick } from "../geometry.mjs";
-import { DIALOG } from "../../components/kit.mjs";
+// SURFACE: a surface of the document standing over the page (the kit's: a database's record details showing a body,
+// its pages element made a panel of the top layer: render/kit/database/peek.js); SURFACE_BODY the body it shows.
+import { DIALOG, SURFACE, SURFACE_BODY } from "../../components/kit.mjs";
 import { edgeFollower } from "../edge-scroll.mjs";
 import { cancelOnEscape, endsGesture, gestureLock } from "../gesture.mjs";
 import { note, own } from "../overlays.mjs";
 import { addStyle, element, mount } from "../ui.mjs";
+
 
 // A press on empty space (geometry.mjs blankTarget: the page around the report, a box between its
 // blocks): moved more than a few pixels, it draws a box selection (docs/editor.md, "Selecting
@@ -42,8 +45,12 @@ export function createMarquee({ active, selection, click }) {
   const scrolling = edgeFollower("box selection", { pointer: () => (held?.drawn ? held : null), scroller: () => held.scroller, scrolled: () => update(), fail: () => cancel() });
 
   // Where a press may draw one: the page, or, while a detail card is open, the content of the card
-  // the press is in (its own top, as Ctrl+A's: select-all/), never the page behind it. null: nowhere.
+  // the press is in (its own top, as Ctrl+A's: select-all/), never the page behind it. A press in a
+  // database's record details (a surface of the document standing over the page: SURFACE) draws one in
+  // the body they show alone, never the page under them. null: nowhere.
   function topOf(target) {
+    const surface = target.closest?.(SURFACE);
+    if (surface) return surface.querySelector(SURFACE_BODY);
     if (!document.querySelector(DIALOG.open)) return document.querySelector("main");
     const content = target.closest(DIALOG.open)?.querySelector(DIALOG.openContent);
     return content?.contains(target) ? content : null;
@@ -64,8 +71,11 @@ export function createMarquee({ active, selection, click }) {
     const focused = document.activeElement;
     if (focused?.isContentEditable && focused.closest("main")) focused.blur();
     getSelection()?.removeAllRanges();
+    const surface = root.closest(SURFACE);
+    // Drawn on the page while record details stand over part of it: what it takes ends at their edge.
+    const over = root.localName === "main" ? [...document.querySelectorAll(SURFACE)].map((node) => node.getBoundingClientRect()).find((rect) => rect.width > 0 && rect.left > event.clientX) : null;
     held = {
-      x: event.clientX, y: event.clientY, root, scroller: root.localName === "main" ? null : root, card: root.closest("dialog"),
+      x: event.clientX, y: event.clientY, root, scroller: surface ?? (root.localName === "main" ? null : root), card: root.closest("dialog") ?? surface, edge: over ? over.left : Infinity,
       start: selection.get(), shift: event.shiftKey, target: event.target, tree: null, drawn: false, pointer: event.pointerId,
     };
     // Its start, on the content: where it is as what scrolls under it moves (the tree's frame: from()).
@@ -101,7 +111,7 @@ export function createMarquee({ active, selection, click }) {
     const startY = held.startY - now.y;
     const left = Math.min(startX, held.x);
     const top = Math.min(startY, held.y);
-    const width = Math.abs(held.x - startX);
+    const width = Math.max(0, Math.min(Math.max(startX, held.x), held.edge) - left);
     const height = Math.abs(held.y - startY);
     Object.assign(shape.style, { transform: `translate(${Math.round(left)}px, ${Math.round(top)}px)`, width: `${Math.round(width)}px`, height: `${Math.round(height)}px` });
     const dx = now.x - held.at.x + held.page.x;

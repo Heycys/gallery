@@ -3,7 +3,7 @@ import { HOSTS, IDENTITY } from "../components/registry.mjs";
 import { FILES } from "../components/files.mjs";
 import { CODE, MATH, MEDIA, PAGE, TABLE } from "../components/kit.mjs";
 import { TAB } from "../components/paragraph/index.mjs";
-import { componentOf, isInstance, matchesNode, partOf } from "../../shared/components/index.mjs";
+import { COMPONENTS, componentOf, isInstance, matchesNode, partOf } from "../../shared/components/index.mjs";
 import { texSource } from "../components/math/index.mjs";
 import { MENTION, MENTION_ICON, MENTION_PAGE } from "../../shared/components/mention.mjs";
 import { imageFile } from "../../shared/media.mjs";
@@ -34,6 +34,10 @@ const TEXT_PARTS = Object.entries(HOSTS).flatMap(([kind, host]) => (host.parts ?
 }));
 const textPartsOf = (node) => TEXT_PARTS.filter(({ match }) => matchesNode(node, match)).flatMap(({ kind, at }) => partOf(node, at).map((part) => ({ kind, part })));
 const inFileOrder = (parts) => parts.sort((a, b) => a.part.sourceCodeLocation.startOffset - b.part.sourceCodeLocation.startOffset);
+
+// The kit's components whose drawing writes their parts (a database: its JSON and its table, edited as data):
+// what stands in one is its drawing's to write, no text block of the document's, as an instance's own region is.
+const WRITTEN_WHOLE = COMPONENTS.filter((component) => component.match && Object.values(component.parts ?? {}).some((part) => part.edit === "data")).map((component) => component.match).join(", ");
 
 const INLINE_TAGS = new Set(["strong", "em", "b", "i", "u", "s", "code", "a", "br", "sup", "sub"]);
 
@@ -298,6 +302,12 @@ export function scan(source) {
       for (const { kind, part } of inFileOrder(instance ? FILES[unitKind(child)].textParts(child, packages ??= currentCatalog().packages) : textPartsOf(child))) candidate(part, kind);
       if (instance) {
         for (const { element } of heldBoxesOf(child)) flow(element, own);
+        continue;
+      }
+      // A database: its drawing's, none of its words a text block, but for its records' bodies (the boxes its
+      // file says: the document's blocks, as in an instance's slots).
+      if (WRITTEN_WHOLE && matchesNode(child, WRITTEN_WHOLE)) {
+        for (const { element } of FILES[unitKind(child)]?.boxes ? heldBoxesOf(child) : []) flow(element, own);
         continue;
       }
       // A code block: its title (above) and its code (plain text).

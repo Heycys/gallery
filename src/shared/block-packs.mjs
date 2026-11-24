@@ -34,7 +34,7 @@ import { DEVICE_NAMES, PACKAGE_MANIFEST, layoutOf, markerOf, packageFolders } fr
 //   workspacePacks  the workspace's packs as 设置 › 组件列表 and gallery block pack list say them.
 //
 // Which pack a block counts in is its scope (components/installed.mjs packOf), but for Gallery's own blocks
-// for documents alone (gallery/card, chart-card, chart-view, kanban, metric: places ["document"]), which the
+// for documents alone (gallery/card, chart-card, metric: places ["document"]), which the
 // pack gallery's folder holds and installs, and which count in the default pack: Gallery 风格 is a look of
 // the custom pages' cards (the user, 2026-11-19), its switch none of theirs, and their ids stay as written.
 //

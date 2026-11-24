@@ -6,6 +6,8 @@ import { ATTRIBUTE, INSTANCE, PACKAGE_ID, SCHEMA, SLOT, schemaAhead } from "../s
 import { packageScript } from "../shared/export-wrap.mjs";
 import { asDocName, kitNamespace } from "../shared/old-names.mjs";
 import { shortSheets } from "../shared/components/sheets.mjs";
+import { DATABASE_CLASS, PAGES_CLASS, databaseProblems, problemSaid, slotRecord } from "../shared/database.mjs";
+import { databaseReading, databaseWarnings, jsonErrorLine, problemPlaces } from "./database-checks.mjs";
 import { attr, curlyQuoted, hasClass, walk } from "../shared/html-tree.mjs";
 import { packageText, packagesOf } from "./package-files.mjs";
 import { lineAt, parseReport } from "./report-tree.mjs";
@@ -176,6 +178,13 @@ function slotFailures(tree, packages) {
     const name = attr(node, SLOT);
     if (name === undefined) return;
     if (isInstance(node)) return void failures.push(`${SLOT}="${name}"${at(node)} on the instance itself: a slot is an element inside it`);
+    // A record's body: a div straight in a database's pages (src/shared/database.mjs), named record:<id>.
+    const pages = node.parentNode;
+    if (pages?.tagName === "div" && hasClass(pages, PAGES_CLASS) && pages.parentNode?.tagName === "div" && hasClass(pages.parentNode, DATABASE_CLASS)) {
+      if (node.tagName !== "div" || !slotRecord(name)) failures.push(`${SLOT}="${name}"${at(node)}: a slot in a database's div.${PAGES_CLASS} is a record's body, a <div data-doc-slot="record:<id>">, <id> its row's data-record (letters, digits, - and _)`);
+      else if (attr(node, "data-block-id") !== undefined) failures.push(`${SLOT}="${name}"${at(node)}: a record's body is no block: it carries no data-block-id`);
+      return;
+    }
     if (!isSlot(node)) return void failures.push(`${SLOT}${at(node)} on a <${node.tagName}>: a slot is a block-level <div> or <section>`);
     const instance = edgeAround(node);
     const found = instance && isInstance(instance) ? packages?.get(attr(instance, ATTRIBUTE)) : null;
@@ -199,8 +208,47 @@ const instanceFailures = (instances) => instances.flatMap((node) => {
   return PACKAGE_ID.test(attr(node, ATTRIBUTE)) ? [] : [`${ATTRIBUTE}="${attr(node, ATTRIBUTE)}"${at(node)} names no custom block: write <scope>/<name>, the id of a custom block of the workspace's components/ folder`];
 });
 
-/** The notes of a report's instances: each that names a package the workspace does not hold, or holds and cannot load, with why, and each in a shape its package does not reach. */
+// Databases (多维表格, shared/database.mjs), in the page and in templates alike: JSON that does not read is a
+// failure (the drawing shows the database read-only and writes nothing until it is fixed); a table the
+// format cannot hold is a note (read-only too, never rewritten: the Agent writes it in the format).
+function databasesIn(tree) {
+  const found = [];
+  walk(tree, (node) => { if (node.tagName === "div" && hasClass(node, DATABASE_CLASS)) found.push(node); });
+  return found;
+}
+const databaseFailures = (tree) => databasesIn(tree).flatMap((node) => databaseProblems(node).filter((problem) => problem.code === "json").map((problem) => {
+  const stops = jsonErrorLine(node);
+  return `database${at(node)}: ${problemSaid(problem)}${stops ? `, near line ${stops}` : ""}: it shows read-only, and no change of it is written, until the JSON reads (databases.md, "Read-only")`;
+}));
+/**
+ * What makes each database of the report read-only, a note to act on first (pipeline.mjs notesByKind `fix`): each
+ * problem at the line it stands on. The page refuses every edit of it until it is fixed.
+ */
+export function databaseFixes(tree) {
+  return databasesIn(tree).flatMap((node) => {
+    const problems = databaseProblems(node).filter((problem) => problem.code !== "json");
+    const places = problemPlaces(node, problems);
+    const placed = (problem) => {
+      const where = places.get(`${problem.code}:${problem.detail ?? ""}`);
+      return `${problemSaid(problem)}${where ? ` (${where})` : ""}`;
+    };
+    return problems.length === 0 ? [] : [`line ${lineOf(node)}: database read-only: ${problems.map(placed).join("; ")}: the page shows it read-only and refuses every edit of it; write its table as the format holds it (databases.md, "Read-only")`];
+  });
+}
+// A note each of what a database holds that reads otherwise than written (database-checks.mjs: a view naming a
+// column by its name, a filter's value of the wrong shape, a cell that is no value of its column…), at its line.
+const databaseNotes = (tree) => databasesIn(tree).flatMap((node) => databaseWarnings(node).map(({ said, node: where }) => `line ${lineOf(where ?? node) ?? lineOf(node)}: database: ${said}`));
+
+/** What each database of the report holds and each of its views shows (database-checks.mjs databaseReading), information, at its line; `options.wideLook`: the document's look draws its databases wide. */
+export const databaseReadings = (tree, options = {}) => databasesIn(tree).map((node) => `line ${lineOf(node)}: ${databaseReading(node, options)}`);
+
+/** The notes of a report's instances: each that names a package the workspace does not hold, or holds and cannot load, with why, and each in a shape its package does not reach, and of its databases that the format cannot hold */
 export function componentNotes(tree) {
+  return [...instanceNotes(tree), ...databaseNotes(tree)];
+}
+
+// The notes of its instances.
+function instanceNotes(tree) {
   const instances = marked(tree).filter((node) => isInstance(node) && PACKAGE_ID.test(attr(node, ATTRIBUTE)));
   const catalog = instances.length > 0 ? currentCatalog() : null;
   return instances.flatMap((node) => {
@@ -274,6 +322,7 @@ function scriptFailure(found) {
  */
 export function componentFailures(html, tree = parseReport(html), catalog = null) {
   const failures = curlyQuoteFailures(html, tree);
+  failures.push(...databaseFailures(tree));
   const instances = marked(tree);
   failures.push(...instanceFailures(instances));
   const known = instances.length > 0 ? catalog ?? currentCatalog() : null;

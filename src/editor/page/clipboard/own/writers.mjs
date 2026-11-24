@@ -269,9 +269,10 @@ export const WRITERS = {
   },
   table: {
     copied: (block, how, clip) => piped(block, block.rows[0].length, how.inline, clip),
+    // What a block writes after its table (`after`: a database's records' bodies), a part of its own.
     exported(unit, how, clip) {
       const data = clip.read(unit, how);
-      return data.rows.length === 0 ? [] : piped(data, Math.max(...data.rows.map((row) => row.length)), how.inline, clip);
+      return apart([data.rows.length === 0 ? [] : piped(data, Math.max(...data.rows.map((row) => row.length)), how.inline, clip), ...(clip.after?.(unit, how) ?? [])].filter((part) => part.length > 0));
     },
     // A merged cell keeps its spans (colspan, rowspan): its row has fewer cells.
     html(block, how) {

@@ -45,6 +45,7 @@ export default {
     classes: {
       "table.doc-table": ["doc-table--auto"],
     },
-    internal: ["doc-code-run", "doc-table-sort-button", "doc-scrollbar*", "data-doc-sort-arrow", "data-active", "data-drag", "data-x", "data-y", "data-more"],
+    // doc-scrollbar*, data-active, data-drag, data-timeline: the kit's scrollbars (kit/scrollbar.js), a frame's and a database's.
+    internal: ["doc-code-run", "doc-table-sort-button", "doc-scrollbar*", "data-doc-sort-arrow", "data-active", "data-drag", "data-timeline", "data-x", "data-y", "data-more"],
   },
 };

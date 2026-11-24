@@ -1,4 +1,4 @@
-import { accepts, attributeValue, BLOCK_TYPES, boxRole, CHAPTER, holdsStraight, IDENTITY, isLead, SIZES, sizeValue, TOGGLES } from "../components/registry.mjs";
+import { accepts, attributeValue, BLOCK_TYPES, boxRole, CHAPTER, holdsStraight, IDENTITY, isLead, refusedInBoxes, SIZES, sizeValue, TOGGLES } from "../components/registry.mjs";
 import { tabButton } from "../components/sheets/file.mjs";
 import { FILES, foreignFields } from "../components/files.mjs";
 import { iconMarkup, iconValueOf, validIcon } from "../components/icon/index.mjs";
@@ -306,7 +306,7 @@ export function applyEdits({ current, edits, units = [], partial = false, ids = 
     const anchor = into ? null : origin.units[after ? where.after : where?.before];
     const target = into ?? (anchor ? origin.boxes[anchor.box] : null);
     const within = (offset) => offset >= unit.start && offset < unit.end;
-    if (!target || !(accepts(target.kind, kindOf(unit)) || stood === target.kind) || (unit.kind === "tab" && target.id !== unit.box)
+    if (!target || !(accepts(target.kind, kindOf(unit)) || stood === target.kind) || (unit.kind === "tab" && target.id !== unit.box) || refusedInBoxes(target, kindOf(unit), origin.boxes, origin.units)
       || (anchor && (anchor === unit || !anchorIds.has(anchor.id) || within(anchor.elStart)))
       || (into && within(target.at))) return unitConflict(unit, "position");
     const from = lineIndent(current, unit.start);
@@ -541,7 +541,7 @@ export function applyEdits({ current, edits, units = [], partial = false, ids = 
     const target = into ?? (anchor ? origin.boxes[anchor.box] : null);
     const restored = node?.restore !== undefined ? restoredUnit(node.restore) : null;
     const kind = restored ? (target && restored.kind === "item" ? kindIn(restored.element, target.kind) : restored.kind) : BLOCK_TYPES[node?.type]?.kind;
-    if (!target || !kind || !(accepts(target.kind, kind) || node.stood === target.kind) || (anchor && !anchorIds.has(anchor.id))) return refused("position");
+    if (!target || !kind || !(accepts(target.kind, kind) || node.stood === target.kind) || (anchor && !anchorIds.has(anchor.id)) || refusedInBoxes(target, kind, origin.boxes, origin.units)) return refused("position");
     const earlier = new Set(placedRefs);
     if (!checkNode(node, target.kind)) return refused("invalid");
     for (const id of placedRefs) {

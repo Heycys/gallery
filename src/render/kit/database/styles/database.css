@@ -1,0 +1,744 @@
+/* A database (多维表格: render/kit/database/), the kit's file database.css: everything it draws is in
+   .doc-database-app, at its host's end, the menus and the details in its layer there; its table is the
+   file's, hidden while it draws (data-doc-database). Its words are the kit's own font, its colors the
+   kit's tokens (tokens.css: light and dark through light-dark(), as the document's theme says), an
+   option's the kit's nine (an element's style gives --db-fill, --db-mark and --db-ink: ui/colors.js). */
+.doc-database[data-doc-database] > table, .doc-database[data-doc-database] > script { display: none; }
+/* Its records' bodies (.doc-database-pages, a slot each) show in a record's details alone, while they are drawn
+   (data-doc-peek on the pages, data-doc-shown on the slot shown); with no drawing (Markdown, a page with no kit)
+   they stand after the table as the file has them. */
+.doc-database[data-doc-database] > .doc-database-pages:not([data-doc-peek]) { display: none; }
+.doc-database-pages[data-doc-peek] > [data-doc-slot]:not([data-doc-shown]) { display: none; }
+.doc-database { margin: var(--doc-component-gap) 0; }
+.doc-database-app {
+  --bg: var(--doc-bg);
+  --bg-soft: light-dark(#f8f8f7, #1f1f1f);
+  --bg-elev: var(--doc-float-fill);
+  --hover: var(--doc-hover);
+  --hover-solid: light-dark(#f4f3f2, #232323);
+  --sel-bg: light-dark(rgb(38 120 216 / 22%), rgb(114 173 240 / 30%));
+  --scroll-thumb: var(--doc-scrollbar-thumb);
+  --scroll-thumb-active: var(--doc-scrollbar-thumb-active);
+  --dot: light-dark(#c9c7c2, #6b6b68);
+  --press: var(--doc-press);
+  --text: var(--doc-text);
+  --text-2: var(--doc-muted);
+  --text-3: var(--gallery-faint);
+  --line: var(--doc-hairline);
+  --line-2: var(--doc-border);
+  --blue: var(--doc-accent);
+  --blue-text: var(--doc-accent);
+  --blue-soft: var(--doc-accent-soft);
+  --blue-soft-2: light-dark(#dcebfb, #1d3550);
+  --sel: light-dark(rgb(38 120 216 / 8%), rgb(114 173 240 / 12%));
+  --red: var(--doc-danger);
+  --red-soft: light-dark(rgb(192 72 72 / 10%), rgb(252 107 131 / 14%));
+  --orange: var(--doc-warning);
+  --green: var(--doc-success);
+  --shadow-pop: var(--doc-shadow-card);
+  --shadow-card: 0 0 0 1px light-dark(rgb(15 15 15 / 6%), rgb(255 255 255 / 7%)), 0 2px 4px light-dark(rgb(15 15 15 / 5%), transparent);
+  --mask: light-dark(rgb(15 15 15 / 40%), rgb(0 0 0 / 60%));
+  --db-fill: var(--doc-hover);
+  --db-mark: light-dark(rgb(55 53 47 / 9%), rgb(255 255 255 / 10%));
+  --db-ink: var(--doc-muted);
+  font-family: var(--doc-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+.doc-database-app, .doc-database-app * { box-sizing: border-box; }
+.doc-database-app ::-webkit-scrollbar { width: 12px; height: 12px; }
+.doc-database-app ::-webkit-scrollbar-track { background: transparent; }
+.doc-database-app ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+.doc-database-app ::-webkit-scrollbar-thumb:hover { background-color: var(--scroll-thumb-active); }
+.doc-database-app a { color: inherit; }
+.doc-database-app .popover, .doc-database-app .menu-scroll, .doc-database-app .picker-list, .doc-database-app .peek, .doc-database-app .peek-scroll, .doc-database-app .cal-panel { overscroll-behavior: contain; }
+/* The sideways scrollbar under a table view and a board (ui/rail.js, drawn as every scrollbar of the kit:
+   scrollbar.css): a strip along the bottom of what scrolls (sticky, taking no room: its spacer's height where nothing
+   scrolls), its rail from the column that stays, shown while the pointer is over the view's frame (or it scrolls, or
+   its thumb is dragged), and taking a press only then. What scrolls names its timeline and the frame hoists the name
+   to the rail beside it, so its thumb follows the scroll on the compositor; and it scrolls there too (will-change:
+   scroll-position): see-through and masked at its edges, on a screen at 100% the browser would otherwise scroll it by
+   painting it again on the page's main thread, the thumb a frame or more ahead of its columns whenever that thread is
+   busy (a table's frame, opaque, the browser scrolls there by itself). */
+.doc-database-app .scroll-rail { position: sticky; bottom: 0; z-index: 7; height: 12px; pointer-events: none; }
+.doc-database-app .scroll-rail-spacer { height: 12px; }
+.doc-database-app .scroll-rail > .doc-scrollbar { top: 0; }
+.doc-database-app :is(.tbl-frame, .board-frame):hover .scroll-rail > .doc-scrollbar { opacity: 1; pointer-events: auto; }
+.doc-database-app .scroll-rail > .doc-scrollbar:is([data-active], [data-drag]) { pointer-events: auto; }
+.doc-database-app :is(.tbl-frame, .board-frame) { timeline-scope: --doc-scrollbar-x; }
+.doc-database-app .no-native-scrollbar { scrollbar-width: none; overscroll-behavior-x: none; scroll-timeline: --doc-scrollbar-x x; will-change: scroll-position; }
+.doc-database-app .no-native-scrollbar::-webkit-scrollbar { display: none; }
+.doc-database-app button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+.doc-database-app button:disabled { cursor: default; opacity: .35; }
+.doc-database-app input, .doc-database-app textarea { font: inherit; color: inherit; }
+.doc-database-app .num { font-variant-numeric: tabular-nums; }
+.doc-database-app .muted { color: var(--text-2); }
+.doc-database-app .sm { font-size: 12px; }
+.doc-database-app .grow { flex: 1; min-width: 0; }
+.doc-database-app .row { display: flex; align-items: center; }
+.doc-database-app .gap { gap: 8px; }
+.doc-database-app .row-end { display: flex; justify-content: flex-end; }
+.doc-database-app .ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-database-app .ic { flex-shrink: 0; display: block; }
+.doc-database-app [hidden] { display: none !important; }
+.doc-database-app.is-dragging, .doc-database-app.is-dragging * { user-select: none !important; cursor: grabbing !important; }
+/* The whole page's, not the drawing's alone: the pointer leaving the card or the table on its way keeps the same cursor (drag-cursor.js marks the body). */
+body[data-doc-database-drag="dragging"], body[data-doc-database-drag="dragging"] * { cursor: grabbing !important; }
+body[data-doc-database-drag="resizing"], body[data-doc-database-drag="resizing"] * { cursor: col-resize !important; }
+body[data-doc-database-drag] { user-select: none; }
+/* Keys moving into something that a scrolling box clips: its ring drawn inside it, never cut off. */
+.doc-database-app :focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
+.doc-database-app :is(input, textarea):focus-visible { outline: none; }
+.doc-database-app .icon-btn { width: 28px; height: 28px; border-radius: var(--doc-radius-control); display: inline-grid; place-items: center; color: var(--doc-menu-icon); flex-shrink: 0; transition: background-color 100ms ease-out; }
+.doc-database-app .icon-btn:hover:not(:disabled), .doc-database-app .icon-btn.active { background: var(--hover); }
+.doc-database-app .icon-btn:active:not(:disabled) { background: var(--press); }
+.doc-database-app .icon-btn.accent { color: var(--blue); }
+.doc-database-app .icon-btn.sm { width: 24px; height: 24px; }
+.doc-database-app .icon-btn.xs { width: 20px; height: 20px; border-radius: 4px; }
+.doc-database-app .icon-btn.round { border-radius: 50%; background: var(--hover); }
+.doc-database-app .icon-btn.dim { color: var(--text-3); }
+.doc-database-app .btn { height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: var(--doc-radius-control); font-size: 14px; white-space: nowrap; background: var(--hover); }
+.doc-database-app .btn:hover:not(:disabled) { background: var(--press); }
+.doc-database-app .btn.ghost { background: transparent; color: var(--text-2); }
+.doc-database-app .btn.ghost:hover:not(:disabled) { background: var(--hover); }
+.doc-database-app .btn.ghost.active { background: var(--hover); color: var(--text); }
+.doc-database-app .btn.sm { height: 26px; font-size: 13px; padding: 0 8px; }
+.doc-database-app .btn.primary { background: var(--gallery-accent-soft); color: var(--gallery-accent-ink); font-weight: 500; }
+.doc-database-app .btn.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--gallery-accent) 18%, var(--bg-elev)); }
+.doc-database-app .link-btn { color: var(--text-2); font-size: 13px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px; border-radius: 4px; }
+.doc-database-app .link-btn:hover { color: var(--text); background: var(--hover); }
+.doc-database-app .link-btn.sm { font-size: 12px; color: var(--blue-text); }
+.doc-database-app .chip-btn { height: 24px; display: inline-flex; align-items: center; gap: 4px; padding: 0 8px; border-radius: 12px; font-size: 12.5px; color: var(--text-2); background: var(--doc-hover-row); white-space: nowrap; }
+.doc-database-app .chip-btn:hover { background: var(--doc-press); color: var(--text); }
+.doc-database-app .chip-btn.on { background: var(--blue-soft); color: var(--blue-text); box-shadow: none; }
+.doc-database-app .chip-btn.ghost { background: transparent; }
+.doc-database-app .chip-btn.ghost:hover { background: var(--doc-hover-row); }
+.doc-database-app .text-input { width: 100%; height: 28px; border: 0; border-radius: var(--doc-radius-control); padding: 0 8px; outline: 0; background: var(--bg-elev); box-shadow: inset 0 0 0 1px var(--line-2); }
+.doc-database-app .text-input:focus { box-shadow: inset 0 0 0 1px var(--blue); }
+.doc-database-app .text-input.sm { height: 26px; font-size: 13px; margin-bottom: 4px; }
+.doc-database-app .input-error { color: var(--red); font-size: 12px; padding: 2px 10px 6px; }
+.doc-database-app .seg { display: inline-flex; padding: 2px; border-radius: var(--doc-radius-control); background: var(--hover); gap: 2px; }
+.doc-database-app .seg button { height: 24px; padding: 0 10px; border-radius: 6px; font-size: 13px; color: var(--text-2); white-space: nowrap; }
+.doc-database-app .seg button.on { background: var(--bg-elev); color: var(--text); box-shadow: 0 0 0 1px var(--line), 0 1px 2px light-dark(rgb(0 0 0 / 6%), rgb(0 0 0 / 30%)); }
+.doc-database-app .seg.sm button { height: 22px; padding: 0 8px; font-size: 12.5px; }
+.doc-database-app .popover { position: fixed; z-index: 1000; box-sizing: border-box; background: var(--doc-float-fill); color: var(--doc-text); border-radius: var(--doc-radius-card); box-shadow: var(--doc-shadow-card); padding: var(--doc-card-pad) 0; max-height: min(80vh, 640px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; scrollbar-width: thin; font: 14px/1.2 var(--doc-font); transform-origin: top left; animation: db-pop-in 140ms var(--doc-ease-out); }
+@keyframes db-pop-in { from { opacity: 0; scale: .96; } }
+/* In the top layer (a popover): its own box styles taken off. */
+.doc-database-app .popover[popover] { inset: auto; margin: 0; border: 0; color: var(--doc-text); background: var(--doc-float-fill); padding: var(--doc-card-pad) 0; overflow-x: hidden; overflow-y: auto; }
+.doc-database-app .popover.picker.below[popover] { padding-top: 2px; }
+.doc-database-app .cal-pop[popover] { padding: 4px 10px 10px; }
+@media (prefers-reduced-motion: reduce) { .doc-database-app .popover { animation-name: db-fade-in; } }
+.doc-database-app .menu-item { width: calc(100% - 2 * var(--doc-card-pad)); margin: 0 var(--doc-card-pad); min-height: 28px; display: flex; align-items: center; gap: 8px; padding: 0 9px 0 7px; border-radius: var(--doc-radius-row); text-align: left; color: var(--doc-text); transition: background-color 100ms ease-out; }
+.doc-database-app .menu-item:hover:not(.static):not(.disabled), .doc-database-app .menu-item.active { background: var(--doc-hover-row); transition: none; }
+.doc-database-app .menu-item.static { cursor: default; }
+.doc-database-app .menu-item:active:not(.static):not(.disabled) { background: var(--doc-press); }
+.doc-database-app .menu-item.danger:hover { color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
+.doc-database-app .menu-item.danger:hover .menu-icon { color: var(--red); }
+.doc-database-app .menu-item.disabled { opacity: .4; cursor: default; }
+.doc-database-app .menu-icon { width: 20px; height: 20px; display: grid; place-items: center; color: var(--doc-menu-icon); flex-shrink: 0; }
+.doc-database-app .menu-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; flex-direction: column; }
+.doc-database-app .menu-desc { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .menu-right { color: var(--text-3); font-size: 12px; white-space: nowrap; max-width: 120px; overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .menu-check { color: var(--doc-text); display: grid; place-items: center; width: 16px; height: 16px; flex: none; }
+.doc-database-app .menu-chev { color: var(--text-3); display: grid; place-items: center; width: 16px; height: 16px; flex: none; }
+.doc-database-app .menu-sep { height: 1px; background: var(--line); margin: 5px calc(var(--doc-card-pad) + 9px); }
+.doc-database-app .menu-label-row { display: flex; align-items: center; justify-content: space-between; padding: 8px calc(var(--doc-card-pad) + 9px) 4px; font-size: 12px; font-weight: 500; line-height: 14px; color: var(--doc-muted); }
+.doc-database-app .menu-pad { padding: 5px var(--doc-card-pad); }
+.doc-database-app .menu-pad.stack { display: flex; flex-direction: column; gap: 6px; padding: 4px 12px 8px; }
+.doc-database-app .menu-pad.stack .menu-label-row { padding: 6px 0 0; }
+.doc-database-app .menu-search { padding: 5px var(--doc-card-pad); }
+.doc-database-app .menu-search input { width: 100%; height: 28px; border: 0; outline: 0; border-radius: var(--doc-radius-control); padding: 0 8px; background: var(--bg-elev); box-shadow: inset 0 0 0 1px var(--line-2); }
+.doc-database-app .menu-scroll { max-height: 320px; overflow-y: auto; }
+/* Fourteen rows: a database's columns listed (to filter or sort by, to show or hide, to edit). */
+.doc-database-app .menu-scroll.tall { max-height: 400px; }
+.doc-database-app .menu-empty { padding: 7px calc(var(--doc-card-pad) + 9px); color: var(--doc-muted); font-size: 14px; }
+.doc-database-app .page-head { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 calc(var(--doc-card-pad) + 4px) 0 calc(var(--doc-card-pad) + 9px); }
+.doc-database-app .page-head .icon-btn.sm:first-child { margin-left: -5px; }
+.doc-database-app .page-title { flex: 1; min-width: 0; font-weight: 600; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .name-input { display: flex; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: var(--doc-radius-control); background: var(--bg-elev); box-shadow: inset 0 0 0 1px var(--line-2); }
+.doc-database-app .name-input:focus-within { box-shadow: inset 0 0 0 1px var(--blue); }
+.doc-database-app .name-input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; height: 100%; }
+.doc-database-app .prop-ic { color: var(--text-2); }
+.doc-database-app .pill { background: var(--db-mark); color: var(--text); display: inline-flex; align-items: center; height: 20px; padding: 0 6px; border-radius: 3px; font-size: 13px; line-height: 20px; white-space: nowrap; max-width: 100%; flex-shrink: 0; }
+.doc-database-app .pill-text { overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .pill.dashed { background: transparent !important; box-shadow: inset 0 0 0 1px var(--line-2); color: var(--text-2); border-style: dashed; }
+.doc-database-app .pill-x { margin-left: 2px; margin-right: -3px; width: 16px; height: 16px; border-radius: 3px; display: grid; place-items: center; opacity: .55; }
+.doc-database-app .pill-x:hover { opacity: 1; background: var(--press); }
+.doc-database-app .pills { display: inline-flex; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+.doc-database-app .dot { background: var(--db-ink); width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+/* Colors to pick (an option's) as Gallery's color pickers draw theirs (the block menu's 颜色: block-menu/colors.mjs):
+   swatches five to a line, each in its color's ring (ui/colors.js), two pixels under the pointer, the strong ring around
+   the one chosen. */
+.doc-database-app .color-grid { display: grid; grid-template-columns: repeat(5, 30px); gap: 4px; padding: 0 calc(var(--doc-card-pad) + 6px) 4px; }
+.doc-database-app .color-cell { display: block; width: 30px; height: 30px; padding: 2px; border-radius: var(--doc-radius-control); }
+.doc-database-app .color-cell > span { display: block; width: 26px; height: 26px; border-radius: 6px; background: var(--db-mark); box-shadow: inset 0 0 0 1px var(--db-ring); }
+.doc-database-app .color-cell:hover > span { box-shadow: inset 0 0 0 2px var(--db-ring); }
+.doc-database-app .color-cell[aria-current="true"] > span { box-shadow: inset 0 0 0 2px var(--db-ring-strong); }
+.doc-database-app .cbox { display: inline-grid; place-items: center; border-radius: 3px; box-shadow: inset 0 0 0 1.5px var(--line-2); color: #fff; flex-shrink: 0; vertical-align: middle; }
+.doc-database-app .cbox.on { background: var(--doc-control-blue); box-shadow: none; }
+.doc-database-app .v-title { font-weight: 500; }
+.doc-database-app .v-empty { color: var(--text-3); }
+.doc-database-app .v-error { color: var(--red); }
+.doc-database-app .v-dirty { color: var(--text-3); overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .v-date.late { color: var(--red); }
+.doc-database-app .v-date.soon { color: var(--orange); }
+.doc-database-app .v-url { color: var(--text-2); text-decoration: underline; text-decoration-color: var(--line-2); text-underline-offset: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-database-app .v-url:hover { color: var(--text); }
+.doc-database-app .stars { display: inline-flex; align-items: center; gap: 2px; color: light-dark(#e2a33a, #e8b552); white-space: nowrap; vertical-align: middle; }
+.doc-database-app .stars svg { display: block; flex-shrink: 0; }
+.doc-database-app .stars svg:not(.on) { color: var(--line-2); }
+.doc-database-app .bar { display: inline-flex; align-items: center; gap: 8px; width: 100%; }
+.doc-database-app .bar-track { flex: 1; height: 4px; border-radius: 2px; background: var(--hover); overflow: hidden; min-width: 30px; }
+.doc-database-app .bar-fill { display: block; height: 100%; background: var(--doc-accent); border-radius: 2px; }
+.doc-database-app .bar-fill.full { background: var(--doc-success); }
+.doc-database-app .bar-label { font-size: 12.5px; color: var(--text-2); min-width: 34px; text-align: right; }
+.doc-database-app .snack { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 2000; display: flex; align-items: center; gap: 14px; background: var(--doc-tip-bg); color: var(--doc-tip-text); padding: 9px 14px; border-radius: 8px; font-size: 13.5px; box-shadow: 0 6px 20px rgba(0, 0, 0, .22); animation: db-snack-in .18s ease-out; max-width: calc(100vw - 32px); }
+@keyframes db-snack-in { from { opacity: 0; transform: translate(-50%, 6px); } }
+.doc-database-app .snack[popover] { inset: auto auto 28px 50%; margin: 0; border: 0; overflow: visible; color: var(--doc-tip-text); background: var(--doc-tip-bg); padding: 9px 14px; }
+.doc-database-app .db { position: relative; }
+.doc-database-app .db-head { display: flex; align-items: center; gap: 8px; height: 40px; border-bottom: 1px solid var(--line); }
+/* Why it reads only (what its file holds that the format cannot, its place): a line of small words under its head, as the kit says a note. */
+.doc-database-app .db-note { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; padding: 6px 10px; border-radius: var(--doc-radius-control); background: var(--doc-hover-row); color: var(--text-2); font-size: 13px; line-height: 1.5; }
+.doc-database-app .db-note .ic { flex: none; margin-top: 2px; color: var(--text-3); }
+.doc-database-app .tabs { display: flex; align-items: center; gap: 2px; min-width: 0; flex: 1; overflow-x: auto; overscroll-behavior-x: none; scrollbar-width: none; padding: 8px; margin: -8px; scroll-padding-inline: 24px; }
+.doc-database-app .tabs.more-start { mask-image: linear-gradient(to right, transparent 8px, #000 24px); }
+.doc-database-app .tabs.more-end { mask-image: linear-gradient(to left, transparent 8px, #000 24px); }
+.doc-database-app .tabs.more-start.more-end { mask-image: linear-gradient(to right, transparent 8px, #000 24px, #000 calc(100% - 24px), transparent calc(100% - 8px)); }
+.doc-database-app .tabs::-webkit-scrollbar { display: none; }
+.doc-database-app .tab { display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 16px; font-size: 14px; font-weight: 500; color: var(--text-2); cursor: pointer; white-space: nowrap; flex-shrink: 0; user-select: none; }
+.doc-database-app .tab:hover { background: var(--hover); }
+.doc-database-app .tab.on { color: var(--text); background: var(--hover); }
+.doc-database-app .tab.on:hover { background: var(--press); }
+.doc-database-app .tab-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .tab-input { width: 110px; border: 0; outline: 0; background: transparent; font-weight: 500; }
+.doc-database-app .tab-add { border-radius: 50%; opacity: 0; transition: opacity .12s; }
+.doc-database-app .db-head:hover .tab-add, .doc-database-app .tab-add.active { opacity: 1; }
+.doc-database-app .tools { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.doc-database-app .search { display: flex; align-items: center; border-radius: 6px; }
+.doc-database-app .search.open { background: var(--hover); padding-right: 4px; }
+.doc-database-app .search input { width: 160px; border: 0; outline: 0; background: transparent; height: 28px; padding: 0 2px; animation: db-fade-in .12s ease-out; }
+.doc-database-app .search input::placeholder { color: var(--text-3); }
+.doc-database-app .filter-bar { display: flex; align-items: center; gap: 12px; min-height: 44px; border-bottom: 1px solid var(--line); }
+.doc-database-app .filter-scroll { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; padding: 8px; margin: 0 -8px; overflow-x: auto; scrollbar-width: none; }
+.doc-database-app .filter-scroll::-webkit-scrollbar { display: none; }
+.doc-database-app .chip { height: 26px; display: inline-flex; align-items: center; gap: 5px; padding: 0 8px 0 7px; border-radius: 13px; font-size: 13.5px; color: var(--text-2); background: var(--doc-hover-row); white-space: nowrap; flex-shrink: 0; transition: background-color 100ms ease-out; }
+.doc-database-app .chip:hover, .doc-database-app .chip.open { background: var(--doc-press); transition: none; }
+.doc-database-app .chip.on { background: var(--blue-soft); color: var(--blue-text); box-shadow: none; }
+.doc-database-app .chip.on:hover, .doc-database-app .chip.on.open { background: var(--blue-soft-2); }
+.doc-database-app .chip-text { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .chip-text b { font-weight: 600; }
+.doc-database-app .chip-chev { opacity: .7; }
+.doc-database-app .bar-div { width: 1px; height: 20px; background: var(--line-2); margin: 0 4px; flex-shrink: 0; }
+.doc-database-app .add-filter { height: 26px; display: inline-flex; align-items: center; gap: 3px; padding: 0 8px 0 6px; border-radius: 13px; font-size: 13.5px; color: var(--text-3); white-space: nowrap; flex-shrink: 0; opacity: 0; transition: opacity .12s; }
+.doc-database-app .db:hover .add-filter, .doc-database-app .add-filter.open, .doc-database-app .filter-bar:focus-within .add-filter { opacity: 1; }
+.doc-database-app .add-filter:hover, .doc-database-app .add-filter.open { background: var(--hover); color: var(--text-2); }
+.doc-database-app .filter-count { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); white-space: nowrap; flex-shrink: 0; }
+.doc-database-app .filter-count b { color: var(--text); font-weight: 600; }
+/* A filter as a row of buttons: one fill, no lines (Gallery's controls); the option picked a near-white (light) or lighter
+   gray (dark) part of it, its words full and medium, nothing raised by a shadow; one under the pointer half way to it. */
+.doc-database-app .segments { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 15px; background: light-dark(rgb(33 27 23 / 4%), rgb(255 255 255 / 4.5%)); flex-shrink: 0; }
+.doc-database-app .seg-label { height: 24px; padding: 0 8px 0 10px; font-size: 13px; color: var(--text-2); border-radius: 12px; white-space: nowrap; }
+.doc-database-app .seg-label:hover { background: var(--hover); color: var(--text); }
+.doc-database-app .seg-btn { height: 24px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 12px; font-size: 13.5px; color: var(--text); white-space: nowrap; }
+.doc-database-app .seg-btn:hover { background: light-dark(rgb(255 255 255 / 60%), rgb(255 255 255 / 6%)); }
+.doc-database-app .seg-btn.on { color: var(--text); font-weight: 500; background: light-dark(#ffffff, rgb(255 255 255 / 12%)); }
+.doc-database-app .seg-btn.on .seg-n { color: var(--text-2); }
+.doc-database-app .seg-n { font-size: 12px; color: var(--text-3); font-variant-numeric: tabular-nums; }
+.doc-database-app .fe-head { display: flex; align-items: center; gap: 2px; padding: 4px 8px 6px 12px; font-size: 12.5px; color: var(--text-2); }
+.doc-database-app .fe-name { font-weight: 500; max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-database-app .fe-op { display: inline-flex; align-items: center; gap: 2px; padding: 1px 4px; margin-left: 4px; border-radius: 4px; font-weight: 500; color: var(--text); font-size: 12.5px; }
+.doc-database-app .fe-op:hover { background: var(--hover); }
+.doc-database-app .fe-body { padding: 0 8px 6px; }
+.doc-database-app .fe-num { display: flex; align-items: center; gap: 8px; }
+.doc-database-app .fe-num .muted { min-width: 14px; text-align: center; }
+/* Twelve options shown (28px each), the rest scrolled to. */
+.doc-database-app .fe-opts { display: flex; flex-direction: column; max-height: 336px; overflow-y: auto; }
+.doc-database-app .fe-opt { display: flex; align-items: center; gap: 10px; min-height: 28px; padding: 0 7px; border-radius: var(--doc-radius-row); text-align: left; }
+.doc-database-app .fe-opt:hover { background: var(--doc-hover-row); }
+.doc-database-app .fe-note { padding: 2px 12px 8px; }
+.doc-database-app .fe-foot { border-top: 1px solid var(--line); padding: 6px 8px 2px; margin-top: 2px; }
+.doc-database-app .fe-body .date-quick { padding: 0 0 6px; }
+.doc-database-app .sort-list { padding: 4px 8px; display: flex; flex-direction: column; gap: 4px; }
+.doc-database-app .sort-row { display: flex; align-items: center; gap: 6px; }
+.doc-database-app .sort-row.dragging { opacity: .4; }
+.doc-database-app .select-btn { height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border-radius: var(--doc-radius-control); background: var(--hover); white-space: nowrap; font-size: 13.5px; min-width: 0; }
+.doc-database-app .select-btn:hover { background: var(--press); }
+.doc-database-app .grip { color: var(--text-3); cursor: grab; display: grid; place-items: center; width: 18px; height: 24px; flex-shrink: 0; border-radius: 4px; }
+.doc-database-app .grip:hover { background: var(--hover); }
+.doc-database-app .settings .menu-pad + .menu-item { margin-top: 2px; }
+/* A view's settings in Gallery's menu's look: its titles small gray headings (a page's beside its arrow back), its
+   switches Gallery's, its fields' focus a step of gray. */
+.doc-database-app .settings > .menu-label-row:first-child { padding-top: 3px; }
+.doc-database-app .settings .page-head { height: auto; min-height: 28px; gap: 4px; padding: 0 calc(var(--doc-card-pad) + 9px) 2px calc(var(--doc-card-pad) + 2px); }
+.doc-database-app .settings .page-head .icon-btn.sm:first-child { margin-left: 0; }
+.doc-database-app .settings .page-title { font-size: 12px; font-weight: 500; line-height: 14px; color: var(--doc-muted); }
+.doc-database-app .settings .page-head:not(:has(.icon-btn)) { padding: 8px calc(var(--doc-card-pad) + 9px) 4px; min-height: 0; }
+.doc-database-app .settings :is(.name-input:focus-within, .menu-search input:focus) { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gallery-faint) 60%, var(--line-2)); }
+.doc-database-app .switch { position: relative; display: block; flex: none; width: 30px; height: 18px; border-radius: 9px; background: var(--doc-switch-track); transition: background-color 160ms var(--doc-ease-sheet); }
+.doc-database-app .switch > span { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 7px; background: #ffffff; transition: left 160ms var(--doc-ease-sheet), width 160ms var(--doc-ease-sheet); }
+.doc-database-app .check-item[aria-checked="true"] .switch { background: var(--doc-control-blue); }
+.doc-database-app .check-item[aria-checked="true"] .switch > span { left: 14px; }
+.doc-database-app .check-item:active .switch > span { width: 17px; }
+.doc-database-app .check-item[aria-checked="true"]:active .switch > span { left: 11px; }
+.doc-database-app .layout-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; padding: 4px 12px 2px; }
+.doc-database-app .add-view-grid { padding-bottom: 8px; }
+/* A chart's colors in a row of its settings: four of the colors it draws in, side by side in a rounded square. */
+.doc-database-app .chart-ramp { display: flex; width: 16px; height: 16px; border-radius: 4px; overflow: hidden; }
+.doc-database-app .chart-ramp > span { flex: 1; }
+.doc-database-app .chart-kinds { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 2px 12px 6px; }
+.doc-database-app .layout-btn { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 9px 4px 7px; border-radius: var(--doc-radius-control); font-size: 12px; color: var(--text-2); background: var(--hover); }
+.doc-database-app .layout-btn:hover { background: var(--press); }
+.doc-database-app .layout-btn.on { background: var(--gallery-accent-soft); color: var(--gallery-accent-ink); font-weight: 500; }
+.doc-database-app .layout-desc { padding: 6px 14px 6px; }
+.doc-database-app .vis-row { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 7px; margin: 0 var(--doc-card-pad); border-radius: var(--doc-radius-row); }
+.doc-database-app .vis-row:hover { background: var(--doc-hover-row); }
+.doc-database-app .vis-row.locked { padding-left: 30px; color: var(--text-2); }
+.doc-database-app .vis-row.dragging { opacity: .4; }
+.doc-database-app .type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px 6px 6px; }
+.doc-database-app .type-btn { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 7px; border-radius: var(--doc-radius-row); text-align: left; }
+.doc-database-app .type-btn:hover { background: var(--doc-hover-row); }
+.doc-database-app .type-btn .prop-ic { color: var(--text-2); }
+.doc-database-app .fmt-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.doc-database-app .fmt-btn { display: flex; justify-content: space-between; align-items: center; gap: 6px; height: 28px; padding: 0 8px; border-radius: var(--doc-radius-control); background: var(--hover); font-size: 13px; }
+.doc-database-app .fmt-btn:hover { background: var(--press); }
+.doc-database-app .fmt-btn.on { background: var(--gallery-accent-soft); color: var(--gallery-accent-ink); }
+.doc-database-app .opt-editor { padding-bottom: 2px; }
+.doc-database-app .opt-row { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 7px 0 4px; margin: 0 var(--doc-card-pad); border-radius: var(--doc-radius-row); cursor: pointer; }
+.doc-database-app .opt-row:hover { background: var(--doc-hover-row); }
+.doc-database-app .tag-done { font-size: 11px; color: var(--green); border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; line-height: 15px; }
+.doc-database-app .formula { padding: 0 12px 8px; display: flex; flex-direction: column; gap: 6px; }
+.doc-database-app .formula .menu-label-row { padding: 6px 0 0; }
+.doc-database-app .formula-input { width: 100%; min-height: 64px; resize: vertical; border: 0; outline: 0; border-radius: 6px; padding: 8px; background: var(--bg-soft); box-shadow: inset 0 0 0 1px var(--line-2); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; line-height: 1.5; }
+.doc-database-app .formula-input:focus { box-shadow: inset 0 0 0 1px var(--blue); }
+.doc-database-app .formula-status { font-size: 12px; color: var(--green); }
+.doc-database-app .formula-status.bad { color: var(--red); }
+.doc-database-app .formula-preview { border-radius: 6px; background: var(--bg-soft); padding: 4px 8px; }
+.doc-database-app .fp-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; padding: 2px 0; color: var(--text-2); }
+.doc-database-app .fp-row .num { color: var(--text); }
+.doc-database-app .formula-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.doc-database-app .formula-funcs { max-height: 150px; overflow-y: auto; display: flex; flex-direction: column; }
+.doc-database-app .fn-row { display: flex; align-items: baseline; gap: 10px; padding: 4px 7px; border-radius: var(--doc-radius-row); text-align: left; }
+.doc-database-app .fn-row:hover { background: var(--doc-hover-row); }
+.doc-database-app .fn-row code { font-size: 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; white-space: nowrap; }
+.doc-database-app .formula-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; }
+.doc-database-app .cell-editor { position: absolute; z-index: 6; }
+.doc-database-app .cell-editor.table { top: 0; left: 0; right: 0; min-height: 100%; background: var(--bg); box-shadow: inset 0 0 0 2px var(--blue); }
+.doc-database-app .cell-editor.peek { position: relative; flex: 1; min-width: 0; margin: -7px -8px; }
+.doc-database-app .cell-editor-input { display: block; width: 100%; border: 0; outline: 0; resize: none; background: transparent; padding: 7px 8px; line-height: 20px; min-height: 34px; overflow: hidden; font: inherit; color: inherit; }
+.doc-database-app .cell-editor.table .cell-editor-input { min-height: 33px; }
+.doc-database-app .cell-editor-input.num { font-variant-numeric: tabular-nums; }
+.doc-database-app .cell-editor.table.al-center .cell-editor-input { text-align: center; }
+.doc-database-app .cell-editor.table.al-right .cell-editor-input { text-align: right; }
+.doc-database-app .cell-editor.opt .cell-editor-pills { display: flex; flex-wrap: wrap; align-items: center; column-gap: 0; row-gap: 4px; min-height: 34px; padding: 7px 6px; overflow: visible; cursor: text; }
+.doc-database-app .cell-editor.table.opt .cell-editor-pills { min-height: 33px; }
+.doc-database-app .cell-editor.opt .cell-editor-pills { user-select: none; }
+.doc-database-app .tok { display: inline-flex; flex-shrink: 0; max-width: 100%; padding: 1px 2px; margin: -1px 0; }
+.doc-database-app .tok.on { background: var(--sel-bg); }
+.doc-database-app .tok-q { position: relative; display: inline-block; flex: 0 0 auto; width: 0; height: 20px; }
+.doc-database-app .tok-q.has-q { width: auto; margin: 0 2px; }
+.doc-database-app .tok-q-mirror { display: inline-block; height: 20px; visibility: hidden; white-space: pre; }
+.doc-database-app .has-range .cell-editor-q { caret-color: transparent; }
+.doc-database-app .cell-editor-q { position: absolute; top: 0; left: -1px; width: calc(100% + 3px); height: 20px; min-width: 3px; border: 0; outline: 0; background: transparent; padding: 0 0 0 1px; font: inherit; color: inherit; }
+.doc-database-app .cell-editor.date .cell-editor-input { white-space: nowrap; }
+.doc-database-app .cell-editor-input.bad { color: var(--red); }
+.doc-database-app .popover.picker.below { padding-top: 2px; }
+.doc-database-app .date-cal { padding: 0 8px 6px; }
+.doc-database-app .picker.below .date-bad { padding: 8px 12px 0; }
+.doc-database-app .cell-editor-hint { position: absolute; left: 0; top: 100%; margin-top: 4px; font-size: 12px; color: var(--text-2); background: var(--bg-elev); padding: 2px 6px; border-radius: 4px; box-shadow: var(--shadow-card); white-space: nowrap; }
+.doc-database-app .picker { padding-top: 0; }
+.doc-database-app .picker-input { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 34px; padding: 6px 8px; background: var(--bg-soft); border-bottom: 1px solid var(--line); }
+.doc-database-app .picker-input input { flex: 1; min-width: 60px; border: 0; outline: 0; background: transparent; height: 22px; }
+.doc-database-app .picker-hint { font-size: 12px; color: var(--doc-muted); padding: 8px calc(var(--doc-card-pad) + 9px) 4px; }
+.doc-database-app .picker-list { padding: 2px 0; max-height: 280px; overflow-y: auto; }
+.doc-database-app .picker-row { width: calc(100% - 2 * var(--doc-card-pad)); margin: 0 var(--doc-card-pad); display: flex; align-items: center; gap: 8px; min-height: 28px; padding: 0 7px; border-radius: var(--doc-radius-row); }
+.doc-database-app .picker-row.hi { background: var(--doc-hover-row); }
+.doc-database-app .picker-check { margin-left: auto; color: var(--text-2); }
+.doc-database-app .picker-empty { padding: 7px calc(var(--doc-card-pad) + 9px); color: var(--doc-muted); font-size: 14px; }
+.doc-database-app .date-panel { padding: 6px 8px 4px; }
+.doc-database-app .date-input { position: relative; display: flex; align-items: center; height: 30px; border-radius: 6px; background: var(--bg-soft); box-shadow: inset 0 0 0 1px var(--line-2); }
+.doc-database-app .date-input:focus-within { box-shadow: inset 0 0 0 1px var(--blue); }
+.doc-database-app .date-input.bad { box-shadow: inset 0 0 0 1px var(--red); }
+.doc-database-app .date-input input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; padding: 0 8px; height: 100%; }
+.doc-database-app .date-input-hint { font-size: 12px; color: var(--text-2); padding-right: 8px; white-space: nowrap; }
+.doc-database-app .date-bad { color: var(--red); font-size: 12px; padding: 4px 2px 0; }
+.doc-database-app .date-quick { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px 0 4px; }
+.doc-database-app .cal-mini-head { display: flex; align-items: center; gap: 2px; padding: 4px 2px; font-weight: 500; font-size: 13px; }
+.doc-database-app .cal-mini-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+.doc-database-app .cal-mini-wd { text-align: center; font-size: 11px; color: var(--text-3); padding: 2px 0; }
+.doc-database-app .cal-mini-day { height: 30px; border-radius: 6px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.doc-database-app .cal-mini-day:hover { background: var(--hover); }
+.doc-database-app .cal-mini-day.out { color: var(--text-3); }
+.doc-database-app .cal-mini-day.today { color: var(--blue); font-weight: 600; }
+.doc-database-app .cal-mini-day.on { background: var(--blue); color: #fff; }
+/* A record's details stand in the top layer (a popover): nothing of the page (an annotation's button, the editor's
+   tools beside a block) over them; a popover's own box styles taken off. The panel scrolls itself: the .peek of the
+   layer, or its database's pages while they show the record's body (data-doc-peek), its head drawn first in it
+   (.db-peek-chrome) and what stands still as it scrolls in its pin (sticky, no height: the small bar at its top
+   right, the edge at its left). At the side it comes and goes sliding (peek.js, as the workbench's sidebar). */
+:is(.doc-database-app .peek, .doc-database-pages[data-doc-peek]) { position: fixed; z-index: 400; box-sizing: border-box; background: var(--doc-bg); color: var(--doc-text); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; font-family: var(--doc-font); }
+:is(.doc-database-app .peek, .doc-database-pages[data-doc-peek])[popover] { inset: auto; margin: 0; border: 0; padding: 0; }
+:is(.doc-database-app .peek.side, .doc-database-pages[data-doc-peek="side"]) { top: 0; right: 0; bottom: 0; left: auto; height: 100%; width: min(var(--peek-w, 560px), 100vw); border-left: 1px solid var(--doc-hairline); }
+.doc-database-app .peek-mask[popover] { inset: 0; width: auto; height: auto; margin: 0; border: 0; padding: 56px 16px; overflow: visible; color: var(--text); }
+.doc-database-app .peek-mask { position: fixed; inset: 0; z-index: 400; background: var(--mask); display: flex; justify-content: center; align-items: flex-start; padding: 56px 16px; animation: db-fade-in .12s; }
+@keyframes db-fade-in { from { opacity: 0; } }
+.doc-database-app .peek.center { position: relative; width: min(860px, 100%); max-height: calc(100vh - 112px); border-radius: 12px; box-shadow: var(--doc-shadow-card); }
+.doc-database-pages[data-doc-peek="center"], .doc-database-pages[data-doc-peek="center"][popover] { top: 56px; left: 0; right: 0; bottom: auto; margin: 0 auto; width: min(860px, calc(100% - 32px)); max-height: calc(100vh - 112px); border-radius: 12px; box-shadow: var(--doc-shadow-card); }
+.doc-database-pages[data-doc-peek]::-webkit-scrollbar { width: 12px; height: 12px; }
+.doc-database-pages[data-doc-peek]::-webkit-scrollbar-track { background: transparent; }
+.doc-database-pages[data-doc-peek]::-webkit-scrollbar-thumb { background: var(--doc-scrollbar-thumb); border-radius: 999px; border: 3px solid transparent; background-clip: padding-box; }
+.doc-database-pages[data-doc-peek]::-webkit-scrollbar-thumb:hover { background-color: var(--doc-scrollbar-thumb-active); }
+.doc-database-app.db-peek-pin, .doc-database-app .db-peek-pin { position: sticky; top: 0; height: 0; z-index: 3; }
+.doc-database-app .peek-edge { position: absolute; top: 0; left: 0; width: 9px; height: 100vh; z-index: 2; cursor: col-resize; }
+.doc-database-app .peek-edge::after { content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 3px; background: transparent; transition: background .12s; }
+.doc-database-app .peek-edge:hover::after, .doc-database-app .peek-edge.on::after { background: var(--blue); }
+.doc-database-app.is-resizing, .doc-database-app.is-resizing * { cursor: col-resize !important; user-select: none !important; }
+/* Its head and its body as wide as each other: a body's blocks (the slot shown) stand in its head's padding. */
+.doc-database-app.db-peek-chrome, .doc-database-app .db-peek-chrome { padding: 60px 48px 64px; }
+:is(.doc-database-app .peek.center, .doc-database-pages[data-doc-peek="center"]) .db-peek-chrome { padding: 64px 72px 64px; }
+.doc-database-pages[data-doc-peek] > .db-peek-chrome { padding-bottom: 0 !important; }
+.doc-database-pages[data-doc-peek] > [data-doc-slot][data-doc-shown] { padding: 0 48px 64px; }
+.doc-database-pages[data-doc-peek="center"] > [data-doc-slot][data-doc-shown] { padding: 0 72px 64px; }
+/* Where a record with no body would have one, where no editor takes edits: its notes, read only. */
+.doc-database-app .peek-body-new { font-size: 15px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.doc-database-app .peek-nav .icon-btn.sm { border-radius: 7px; }
+/* No bar at its top: closing it, the record before and after and which one it is float at its top right. */
+.doc-database-app .peek-nav { position: absolute; top: 12px; right: 14px; z-index: 2; display: flex; align-items: center; gap: 2px; padding: 2px 8px 2px 2px; border-radius: 9px; background: var(--bg-elev); box-shadow: var(--shadow-pop); }
+.doc-database-app .peek-count { margin-left: 4px; font-size: 12px; color: var(--text-2); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.doc-database-app .peek-flag { font-size: 12px; color: var(--orange); background: color-mix(in srgb, var(--orange) 12%, transparent); padding: 2px 8px; border-radius: 10px; margin-right: 6px; }
+.doc-database-app .peek-title { display: block; width: 100%; border: 0; outline: 0; resize: none; background: transparent; font-size: 30px; font-weight: 700; line-height: 1.25; padding: 0; margin: 0 0 16px; overflow: hidden; }
+.doc-database-app .peek-title::placeholder { color: var(--text-3); }
+.doc-database-app .peek-props { display: flex; flex-direction: column; gap: 2px; }
+.doc-database-app .peek-prop { display: flex; align-items: flex-start; gap: 4px; min-height: 34px; }
+.doc-database-app .peek-label { width: 150px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px; border-radius: 6px; color: var(--text-2); text-align: left; }
+.doc-database-app .peek-label { cursor: pointer; user-select: none; }
+.doc-database-app .peek-label:hover, .doc-database-app .peek-label.open { background: var(--hover); }
+.doc-database-app .peek-label.head-edit { background: transparent; box-shadow: inset 0 0 0 1px var(--blue); cursor: text; }
+.doc-database-app .peek-label .th-input-wrap { flex: 1 1 auto; }
+.doc-database-app .peek-type { display: grid; place-items: center; width: 22px; height: 22px; margin: 0 -4px 0 -3px; border-radius: 4px; flex-shrink: 0; }
+.doc-database-app .peek-type:hover { background: var(--hover); }
+.doc-database-app .peek-type:hover .prop-ic { color: var(--text); }
+.doc-database-app .peek-value { flex: 1; min-width: 0; min-height: 34px; padding: 7px 8px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; flex-wrap: wrap; gap: 4px; line-height: 20px; word-break: break-word; }
+.doc-database-app .peek-value:hover, .doc-database-app .peek-value.editing { background: var(--hover); }
+.doc-database-app .peek-value.editing { cursor: text; }
+.doc-database-app .peek-value.readonly { cursor: default; }
+.doc-database-app .peek-value.readonly:hover { background: transparent; }
+.doc-database-app .peek-value .pills { flex-wrap: wrap; }
+.doc-database-app .peek-value .bar { max-width: 260px; }
+.doc-database-app .peek-add { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 6px; border-radius: 6px; color: var(--text-3); width: 150px; }
+.doc-database-app .peek-add:hover { background: var(--hover); color: var(--text-2); }
+.doc-database-app .peek-sep { height: 1px; background: var(--line); margin: 16px 0; }
+.doc-database-app .empty-state { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 56px 16px; color: var(--text-2); text-align: center; }
+.doc-database-app .empty-state .ic { color: var(--text-3); }
+.doc-database-app .empty-state.sm { padding: 32px 16px; }
+@media (max-width: 640px) {
+  .doc-database-app .db-peek-chrome, .doc-database-app.db-peek-chrome { padding: 56px 20px 48px; }
+  .doc-database-pages[data-doc-peek] > [data-doc-slot][data-doc-shown] { padding: 0 20px 48px; }
+  .doc-database-app .peek-label { width: 110px; }
+  .doc-database-app .search input { width: 110px; }
+  .doc-database-app .db-head { height: auto; min-height: 40px; flex-wrap: wrap; padding: 4px 0; }
+}
+.doc-database-app .reorder-line { position: fixed; z-index: 2000; background: var(--blue); border-radius: 1px; pointer-events: none; transition: opacity .08s; }
+.doc-database-app .reorder-src { opacity: .4; }
+.doc-database-app .reorder-lift { position: relative; z-index: 30; background: var(--bg-elev) !important; box-shadow: 0 0 0 1px var(--line-2), 0 2px 6px rgba(15, 15, 15, .14); cursor: grabbing; }
+.doc-database-app .sort-row.reorder-lift { box-shadow: var(--shadow-pop); }
+.doc-database-app .sort-row.reorder-lift { border-radius: 6px; }
+.doc-database-app .icon-btn.danger-hover:hover { color: var(--red); }
+.doc-database-app .fe-head .icon-btn + .icon-btn { margin-left: 2px; }
+.doc-database-app .align-row .seg { margin-left: auto; }
+.doc-database-app .align-row .seg button { padding: 0 6px; display: grid; place-items: center; }
+.doc-database-app .db-body { position: relative; }
+.doc-database-app .tbl-frame { position: relative; margin-left: -32px; }
+/* Its right edge fades over 10px, to nothing at the very edge, while columns lie past it: by the scroll's own progress
+   where the browser runs animations so (over the last 10px scrolled it goes), else as table.js says .more-end; the
+   fade's width a registered length, so that it comes and goes. */
+@property --tbl-fade-end { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.doc-database-app .tbl-wrap { overflow-x: auto; overflow-y: hidden; outline: none; --tbl-fade-end: 0px; transition: --tbl-fade-end .1s ease;
+  -webkit-mask-image: linear-gradient(to left, transparent, #000 var(--tbl-fade-end)); mask-image: linear-gradient(to left, transparent, #000 var(--tbl-fade-end)); }
+.doc-database-app .tbl-wrap.more-end { --tbl-fade-end: 10px; }
+@keyframes db-table-fade-end { from { --tbl-fade-end: 10px; } to { --tbl-fade-end: 0px; } }
+@supports (animation-timeline: scroll()) {
+  .doc-database-app .tbl-wrap { transition: none; animation: db-table-fade-end linear both; animation-timeline: scroll(self inline); animation-range: calc(100% - 10px) 100%; }
+}
+.doc-database-app .tbl { position: relative; min-width: 100%; }
+.doc-database-app .th.fill, .doc-database-app .td.fill { flex: 1 0 40px; border-right: 0; padding: 0; cursor: default; }
+.doc-database-app .th.fill:hover { background: transparent; }
+.doc-database-app .fill-add { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; border-radius: 5px; display: grid; place-items: center; color: var(--text-3); opacity: 0; pointer-events: none; transition: opacity .12s; }
+/* The pointer in the room past the last column (any row's, table.js marks the table): its header's +. No :has() here: it would
+   restyle the whole table at every row drawn anew (a character typed in a cell). */
+.doc-database-app .tbl.fill-hover .fill-add, .doc-database-app .fill-add.on, .doc-database-app .fill-add:focus-visible { opacity: 1; pointer-events: auto; }
+.doc-database-app .fill-add:hover, .doc-database-app .fill-add.on { background: var(--hover); color: var(--text-2); }
+.doc-database-app .empty-row .td { color: var(--text-3); }
+.doc-database-app .empty-cell { font-size: 13px; }
+.doc-database-app .tr { display: flex; position: relative; }
+.doc-database-app .th, .doc-database-app .td { flex-shrink: 0; display: flex; align-items: center; min-height: 34px; padding: 0 8px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); overflow: hidden; white-space: nowrap; }
+.doc-database-app .gut { position: sticky; left: 0; z-index: 5; width: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--bg); }
+.doc-database-app .th.sticky, .doc-database-app .td.sticky { position: sticky; left: 32px; z-index: 5; background: var(--bg); }
+.doc-database-app .th { position: relative; gap: 6px; height: 34px; color: var(--text-2); font-size: 13.5px; cursor: pointer; user-select: none; overflow: visible; --th-solid: var(--bg); }
+.doc-database-app .th .prop-ic { color: var(--text-3); }
+.doc-database-app .th:hover { background: var(--hover); --th-solid: var(--hover-solid); }
+.doc-database-app .th.al-center { justify-content: center; }
+.doc-database-app .th.al-right { justify-content: flex-end; }
+.doc-database-app .th-type { display: grid; place-items: center; width: 22px; height: 22px; margin: 0 -3px 0 -4px; border-radius: 4px; flex-shrink: 0; }
+.doc-database-app .th-type:not(.fixed):hover { background: var(--hover); }
+.doc-database-app .th-type:not(.fixed):hover .prop-ic { color: var(--text-2); }
+.doc-database-app .th-sort-btn { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); z-index: 2; width: 22px; height: 22px; padding: 0; display: none; align-items: center; justify-content: center; border-radius: 5px; color: var(--text-3); background: var(--th-solid); }
+.doc-database-app .th-sort-btn::before { content: ''; position: absolute; right: 100%; top: 0; bottom: 0; width: 14px; background: linear-gradient(to right, transparent, var(--th-solid)); pointer-events: none; }
+.doc-database-app .th:hover .th-sort-btn, .doc-database-app .th-sort-btn.on { display: inline-flex; }
+.doc-database-app .th-sort-btn:hover { background: linear-gradient(var(--hover), var(--hover)), var(--th-solid); color: var(--text-2); }
+.doc-database-app .th-sort-btn.on { color: var(--blue); }
+.doc-database-app .th-sort-btn.on:hover { color: var(--blue); }
+.doc-database-app .th-sort-btn.has-n .ic { transform: translateX(-2px); }
+.doc-database-app .th-sort-n { position: absolute; right: 1px; bottom: 1px; font-size: 9.5px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.doc-database-app .th.sorted { padding-right: 31px; }
+.doc-database-app .th.head-edit .th-sort-btn:not(.on), .doc-database-app .is-dragging .th-sort-btn:not(.on) { display: none; }
+/* A header's name typed where it stands: its own words made editable (props.js headNameInput), drawn as the name's
+   are, on a line as tall as the name's (its selection lit as tall as the words, not the header), so that nothing
+   moves as it turns into its field. Left aligned, the field runs on past
+   its words to the header's end: a press or a drag there puts the caret in it, or selects its words, never moves
+   the column. Its words never run past its frame: the caret is kept in sight as the words scroll. */
+.doc-database-app .th-input-wrap { display: block; flex: 0 1 auto; min-width: 0; max-width: 100%; overflow: hidden; }
+.doc-database-app .th:not(.al-center):not(.al-right) > .th-input-wrap { flex: 1 1 auto; }
+.doc-database-app .th.sticky:hover { background: linear-gradient(var(--hover), var(--hover)), var(--bg); }
+.doc-database-app .th.moving > *, .doc-database-app .td.moving-col > * { opacity: .3; }
+.doc-database-app .th.head-edit { box-shadow: inset 0 0 0 2px var(--blue); cursor: text; }
+.doc-database-app .th-input { display: block; min-width: 1px; outline: 0; white-space: pre; color: var(--text); cursor: text; -webkit-user-select: text; user-select: text; }
+.doc-database-app .th-input:empty::before { content: attr(aria-placeholder); color: var(--text-3); }
+.doc-database-app .th-input.bad { color: var(--red); }
+.doc-database-app .tghost { position: fixed; z-index: 1500; pointer-events: none; opacity: .72; background: var(--bg); border-radius: 2px; box-shadow: 0 0 0 1px rgba(15, 15, 15, .05), 0 3px 6px rgba(15, 15, 15, .1), 0 9px 24px rgba(15, 15, 15, .2); }
+.doc-database-app .tghost-cells { position: absolute; inset: 0; overflow: hidden; border-radius: 2px; }
+.doc-database-app .tghost-cells > * { box-sizing: border-box; }
+.doc-database-app .th-name { overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .resizer { position: absolute; top: 0; bottom: 0; right: -4px; width: 7px; cursor: col-resize; z-index: 3; }
+.doc-database-app .resizer::after { content: ''; position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: transparent; transition: background .15s; }
+.doc-database-app .resizer:hover::after { background: var(--blue); width: 2px; left: 2px; }
+.doc-database-app .td { position: relative; padding: 7px 8px; line-height: 20px; cursor: default; user-select: none; text-overflow: ellipsis; }
+.doc-database-app .td > .v-text, .doc-database-app .td > .v-title, .doc-database-app .td > .v-url { overflow: hidden; text-overflow: ellipsis; }
+.doc-database-app .td.al-center { justify-content: center; text-align: center; }
+.doc-database-app .td.al-right { justify-content: flex-end; text-align: right; }
+.doc-database-app .td.t-number .bar { width: 100%; }
+.doc-database-app .td.in-sel { background: var(--sel); }
+.doc-database-app .td.sticky.in-sel { background: color-mix(in srgb, var(--blue) 8%, var(--bg)); }
+.doc-database-app .td.cursor { box-shadow: inset 0 0 0 2px var(--blue); }
+.doc-database-app .td.editing { overflow: visible; z-index: 6; }
+.doc-database-app .td.done .v-title { color: var(--text-2); }
+.doc-database-app .wrap-text .td { white-space: normal; align-items: flex-start; word-break: break-word; }
+.doc-database-app .wrap-text .td .pills { flex-wrap: wrap; }
+/* A cell's options (ui/values.js) run on past where its padding begins, to just inside its line, and fade out over
+   that room: a column narrower than them shows them going on, not cut short. Clear of the cursor's 2px ring. Where
+   the cells' words wrap, they wrap within the padding as other values do. */
+.doc-database-app .td:is(.t-select, .t-multi) { padding-right: 0; }
+.doc-database-app .cell-tags { display: inline-flex; flex: 1 1 auto; min-width: 0; gap: 4px; overflow: hidden; justify-content: inherit;
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent calc(100% - 2px)); mask-image: linear-gradient(to right, #000 calc(100% - 10px), transparent calc(100% - 2px)); }
+.doc-database-app .cell-tags > .pill { max-width: none; }
+.doc-database-app .wrap-text .td:is(.t-select, .t-multi) { padding-right: 8px; }
+.doc-database-app .wrap-text .cell-tags { -webkit-mask-image: none; mask-image: none; }
+.doc-database-app .wrap-text .cell-tags > .pill { max-width: 100%; }
+.doc-database-app .cell-act { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); display: none; align-items: center; gap: 4px; height: 22px; padding: 0 6px; border-radius: 4px; background: var(--bg-elev); box-shadow: var(--shadow-card); color: var(--text-2); font-size: 12px; cursor: pointer; }
+.doc-database-app .cell-act:hover { color: var(--text); background: color-mix(in srgb, var(--text) 4%, var(--bg-elev)); }
+.doc-database-app .tr:hover .open-btn, .doc-database-app .td:hover .url-open { display: inline-flex; }
+.doc-database-app.is-dragging .cell-act { display: none !important; }
+.doc-database-app .url-open { padding: 0 4px; }
+.doc-database-app .open-btn.on { display: inline-flex; color: var(--blue-text); }
+.doc-database-app .row-handle { width: 18px; height: 24px; border-radius: 4px; display: grid; place-items: center; color: var(--text-3); cursor: grab; opacity: 0; transition: opacity .1s; }
+.doc-database-app .tr:hover .row-handle { opacity: 1; }
+.doc-database-app .row-handle:hover { background: var(--hover); color: var(--text-2); }
+.doc-database-app .tr.stale > .td > *, .doc-database-app .tr.moving > .td > * { opacity: .45; }
+.doc-database-app .tr.drop-before::before, .doc-database-app .tr.drop-after::after { content: ''; position: absolute; left: 32px; right: 0; height: 2px; background: var(--blue); z-index: 7; }
+.doc-database-app .tr.drop-before::before { top: -1px; }
+.doc-database-app .tr.drop-after::after { bottom: -1px; }
+.doc-database-app .tbl-wrap.dragging { cursor: grabbing; }
+.doc-database-app .col-drop { position: absolute; width: 2px; margin-left: -1px; background: var(--blue); z-index: 7; pointer-events: none; border-radius: 1px; }
+.doc-database-app .calc-row .td { border-bottom: 0; }
+.doc-database-app .calc-cell { justify-content: flex-end; gap: 6px; color: var(--text); font-size: 13px; cursor: pointer; border-right-color: transparent; }
+.doc-database-app .calc-cell:hover { background: var(--hover); }
+.doc-database-app .calc-cell.al-center, .doc-database-app .group-calc.al-center { justify-content: center; }
+.doc-database-app .calc-cell.al-right, .doc-database-app .group-calc.al-right { justify-content: flex-end; }
+.doc-database-app .calc-cell.sticky:hover { background: linear-gradient(var(--hover), var(--hover)), var(--bg); }
+.doc-database-app .calc-k { font-size: 12px; color: var(--text-3); }
+.doc-database-app .calc-ph { display: inline-flex; align-items: center; gap: 2px; color: var(--text-3); font-size: 12px; opacity: 0; transition: opacity .12s; }
+.doc-database-app .calc-row:hover .calc-ph { opacity: 1; }
+.doc-database-app .group-row { margin-top: 14px; }
+.doc-database-app .group-row:first-of-type { margin-top: 0; }
+.doc-database-app .group-head { gap: 8px; cursor: pointer; overflow: visible; border-right: 0; }
+.doc-database-app .group-head:hover { background: linear-gradient(var(--hover), var(--hover)), var(--bg); }
+.doc-database-app .group-tog { color: var(--text-3); }
+.doc-database-app .group-label { font-weight: 500; }
+.doc-database-app .group-n { color: var(--text-3); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.doc-database-app .group-calc { justify-content: flex-end; gap: 6px; font-size: 12.5px; color: var(--text-2); border-right-color: transparent; }
+.doc-database-app .edge-plus { position: absolute; z-index: 9; width: 18px; height: 18px; display: grid; place-items: center; cursor: pointer; }
+.doc-database-app .edge-plus > i { display: grid; place-items: center; width: 6px; height: 6px; border-radius: 50%; background: var(--dot); color: #fff; transition: width .1s, height .1s, background .1s; }
+.doc-database-app .edge-plus > i svg { display: none; }
+.doc-database-app .edge-plus.hot > i, .doc-database-app .edge-plus:hover > i { width: 18px; height: 18px; background: var(--blue); box-shadow: 0 0 0 2px var(--bg); }
+.doc-database-app .edge-plus.hot > i svg, .doc-database-app .edge-plus:hover > i svg { display: block; }
+.doc-database-app .edge-line { position: absolute; z-index: 8; background: var(--blue); border-radius: 1px; pointer-events: none; }
+.doc-database-app .card { position: relative; display: block; width: 100%; text-align: left; background: var(--bg-elev); border-radius: 8px; box-shadow: var(--shadow-card); padding: 9px 12px 10px; cursor: pointer; user-select: none; transition: background .1s; }
+.doc-database-app .card:hover { background: color-mix(in srgb, var(--text) 2.5%, var(--bg-elev)); }
+.doc-database-app .card.stale { opacity: .5; }
+.doc-database-app .card-title { font-weight: 500; line-height: 1.45; word-break: break-word; padding-right: 18px; }
+.doc-database-app .card-title.done { color: var(--text-2); }
+.doc-database-app .card-props { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 6px; margin-top: 8px; }
+.doc-database-app .card-prop { display: flex; align-items: center; gap: 6px; font-size: 13px; min-height: 20px; max-width: 100%; overflow: hidden; }
+.doc-database-app .card-prop.t-number, .doc-database-app .card-prop.t-text, .doc-database-app .card-prop.t-url, .doc-database-app .card-prop.t-formula, .doc-database-app .card-prop.t-checkbox { flex-basis: 100%; }
+.doc-database-app .card-prop.t-date { color: var(--text-2); }
+.doc-database-app .card-prop .pills { flex-wrap: wrap; }
+.doc-database-app .card-prop.t-number .bar { max-width: 220px; }
+.doc-database-app .card-prop-name { color: var(--text-2); }
+/* A card's ···: a flat button (no fill at rest, the gray under the pointer, no shadow). */
+.doc-database-app .card-more { position: absolute; top: 6px; right: 6px; width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; color: var(--text-2); background: transparent; opacity: 0; }
+.doc-database-app .card-more:hover { background: var(--hover); }
+.doc-database-app .card:hover .card-more { opacity: 1; }
+.doc-database-app .drag-ghost { position: fixed; z-index: 1500; pointer-events: none; box-shadow: 0 10px 28px rgba(15, 15, 15, .18); border-radius: 8px; }
+/* A board's card held (views/card-drag.js): its copy lifted under the pointer in the colors of the column it is over,
+   the room where it would land a soft fill of that column's color (its card unseen), and as it is let go (or given up)
+   the copy flying into its place, its shadow going. While one is held no card takes the pointer (no fill under it as
+   the cards slide). */
+.doc-database-app .drag-ghost.landing { transition: transform .18s cubic-bezier(.2, 0, 0, 1), opacity .18s ease, box-shadow .18s ease; box-shadow: 0 1px 3px rgba(15, 15, 15, .06); }
+.doc-database-app .card-slot.card-gap { border-radius: 8px; background: color-mix(in srgb, var(--k) 8%, transparent); }
+.doc-database-app .card-slot.card-gap > .card { visibility: hidden; }
+.doc-database-app.is-dragging .board .card { pointer-events: none; }
+/* The board scrolls within the database's own edges (nothing of it shows past them, where the page's selection of the
+   block ends), its edges fading where columns lie past them: over 10px, to nothing at the very edge, so that no line
+   shows where the board ends (the user's 2026-11-24: 32px, then 16px, was too much; a quarter left at the edge read as
+   a dark line). The fades follow the scroll itself where the browser runs animations by a scroll's progress (below:
+   the start's grows over the first 10px scrolled, the end's goes over the last 10px), in the frame the board moves in;
+   elsewhere views/board.js says .more-start, .more-end as it scrolls (a fast swipe left those a step behind). */
+@property --board-fade-start { syntax: "<length>"; inherits: false; initial-value: 0px; }
+@property --board-fade-end { syntax: "<length>"; inherits: false; initial-value: 0px; }
+/* It scrolls sideways alone: never down (overflow-y hidden), so that a wheel turned up or down over it scrolls the
+   page, whatever a fraction of a pixel of its cards past its height at a screen's scale (the user's 2026-11-24: swiped
+   sideways, then the wheel moved the board up and down and not the page). */
+.doc-database-app .board { display: flex; gap: 12px; overflow-x: auto; overflow-y: hidden; padding: 14px 0 12px; align-items: flex-start;
+  --board-fade-start: 0px; --board-fade-end: 0px; transition: --board-fade-start .1s ease, --board-fade-end .1s ease;
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--board-fade-start), #000 calc(100% - var(--board-fade-end)), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 var(--board-fade-start), #000 calc(100% - var(--board-fade-end)), transparent); }
+.doc-database-app .board.more-start { --board-fade-start: 10px; }
+.doc-database-app .board.more-end { --board-fade-end: 10px; }
+@keyframes db-board-fade-start { from { --board-fade-start: 0px; } to { --board-fade-start: 10px; } }
+@keyframes db-board-fade-end { from { --board-fade-end: 10px; } to { --board-fade-end: 0px; } }
+@supports (animation-timeline: scroll()) {
+  .doc-database-app .board { transition: none; animation: db-board-fade-start linear both, db-board-fade-end linear both;
+    animation-timeline: scroll(self inline), scroll(self inline); animation-range: 0px 10px, calc(100% - 10px) 100%; }
+}
+.doc-database-app .drag-ghost { --k: var(--db-ink); --tint: var(--db-fill); }
+.doc-database-app .board-col { --k: var(--db-ink); --tint: var(--db-fill); --col-bg: color-mix(in srgb, var(--tint) 70%, transparent);
+  position: relative; width: 264px; flex-shrink: 0; border-radius: 10px; padding: 6px 10px 10px; color: inherit; background: var(--col-bg); }
+.doc-database-app .board.size-s .board-col { width: 224px; }
+.doc-database-app .board.size-l .board-col { width: 324px; }
+.doc-database-app .board-col.reorder-lift { background: linear-gradient(var(--col-bg), var(--col-bg)), var(--bg) !important; box-shadow: 0 0 0 1px var(--line-2), 0 4px 12px rgba(15, 15, 15, .12); }
+.doc-database-app .board-head { display: flex; align-items: center; gap: 8px; height: 32px; padding: 0 0 6px 2px; margin-right: -4px; }
+.doc-database-app .board-head.movable { cursor: grab; }
+.doc-database-app .board-name { display: inline-flex; min-width: 0; cursor: pointer; }
+.doc-database-app .board-name .pill { max-width: 160px; }
+.doc-database-app .board-name-input { height: 22px; min-width: 48px; max-width: 170px; border: 0; outline: 0; border-radius: 4px; padding: 0 6px; font: inherit; font-size: 13.5px; color: var(--text); background: var(--bg-elev); box-shadow: inset 0 0 0 1px var(--blue); }
+.doc-database-app .board-name-input.bad { color: var(--red); box-shadow: 0 0 0 2px var(--red); }
+.doc-database-app .board-acts { display: flex; gap: 2px; opacity: 0; transition: opacity .12s; }
+.doc-database-app .board-col:hover .board-acts, .doc-database-app .board-col.menu-open .board-acts { opacity: 1; }
+.doc-database-app.is-dragging .board-acts { opacity: 0 !important; }
+.doc-database-app .board-acts .icon-btn { color: color-mix(in srgb, var(--k) 55%, var(--text-2)); }
+.doc-database-app .board-acts .icon-btn:hover { color: var(--text); background: color-mix(in srgb, var(--k) 16%, transparent); }
+.doc-database-app .board-cards { display: flex; flex-direction: column; gap: 8px; }
+.doc-database-app .card-slot { display: flex; flex-direction: column; }
+.doc-database-app .col-add-zone { position: absolute; top: 0; bottom: 0; left: 100%; width: 64px; display: flex; align-items: center; justify-content: center; }
+.doc-database-app .col-add-zone .end-plus { transform: translateX(-12px) scale(.8); }
+/* A card on a board in its column's color family, in the dark too: there its fill takes the column's tint; its copy held the same. */
+.doc-database-app :is(.board, .board-lift) .card { padding: 10px 14px 11px; background: light-dark(color-mix(in srgb, var(--k) 4%, var(--bg-elev)), color-mix(in srgb, var(--tint) 42%, var(--bg-elev)));
+  box-shadow: 0 0 0 1px light-dark(color-mix(in srgb, var(--k) 20%, transparent), color-mix(in srgb, var(--k) 24%, transparent)), 0 1px 3px light-dark(color-mix(in srgb, var(--k) 14%, transparent), transparent), 0 2px 4px light-dark(transparent, transparent); }
+.doc-database-app :is(.board, .board-lift) .card:hover { background: light-dark(color-mix(in srgb, var(--k) 8%, var(--bg-elev)), color-mix(in srgb, var(--tint) 56%, var(--bg-elev))); }
+.doc-database-app :is(.board, .board-lift) .card-title { color: light-dark(color-mix(in srgb, var(--k) 20%, var(--text)), color-mix(in srgb, var(--k) 12%, var(--text))); }
+.doc-database-app :is(.board, .board-lift) .card-title.done { color: color-mix(in srgb, var(--k) 50%, var(--text-2)); }
+.doc-database-app :is(.board, .board-lift) .card-prop.t-date, .doc-database-app :is(.board, .board-lift) .card-prop-name, .doc-database-app :is(.board, .board-lift) .card .bar-label { color: light-dark(color-mix(in srgb, var(--k) 55%, var(--text-2)), color-mix(in srgb, var(--k) 45%, var(--text-2))); }
+.doc-database-app :is(.board, .board-lift) .card .bar-track { background: light-dark(color-mix(in srgb, var(--k) 16%, transparent), color-mix(in srgb, var(--k) 22%, transparent)); }
+/* An option on a board's card reads in its own color family (its words of its own hue, a gray one gray), the kit's radius. */
+.doc-database-app :is(.board, .board-lift) .card .pill:not(.dashed) { border-radius: 4px; color: light-dark(color-mix(in srgb, var(--db-ink) 62%, var(--doc-text)), color-mix(in srgb, var(--db-ink) 58%, var(--doc-text))); }
+.doc-database-app :is(.board, .board-lift) .card .bar-fill, .doc-database-app :is(.board, .board-lift) .card .bar-fill.full { background: var(--k); }
+.doc-database-app :is(.board, .board-lift) .card-more { background: transparent; box-shadow: none; color: color-mix(in srgb, var(--k) 55%, var(--text-2)); }
+.doc-database-app :is(.board, .board-lift) .card-more:hover { background: color-mix(in srgb, var(--k) 16%, transparent); color: var(--text); }
+.doc-database-app .hover-only { opacity: 0; transition: opacity .1s; }
+.doc-database-app .cal-day:hover .hover-only { opacity: 1; }
+.doc-database-app .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; padding: 14px 0 24px; }
+.doc-database-app .gallery.size-s { grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+.doc-database-app .gallery.size-l { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+.doc-database-app .gallery .card { min-height: 92px; padding: 12px 14px; }
+.doc-database-app .list { padding: 6px 0 24px; }
+.doc-database-app .list-row { display: flex; align-items: center; gap: 10px; min-height: 40px; padding: 4px 8px; border-bottom: 1px solid var(--line); cursor: pointer; border-radius: 0; }
+.doc-database-app .list-row:hover { background: var(--hover); }
+.doc-database-app .list-row.stale { opacity: .5; }
+.doc-database-app .list-ic { color: var(--text-3); }
+.doc-database-app .list-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 80px; }
+.doc-database-app .list-title.done { color: var(--text-2); }
+.doc-database-app .list-props { display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--text-2); flex-shrink: 0; max-width: 60%; overflow: hidden; }
+.doc-database-app .list-prop { display: inline-flex; align-items: center; white-space: nowrap; }
+.doc-database-app .list-prop.t-number .bar { width: 120px; }
+.doc-database-app .calendar { padding: 6px 0 24px; }
+.doc-database-app .cal-head { display: flex; align-items: center; gap: 4px; height: 44px; }
+.doc-database-app .cal-title { font-size: 16px; font-weight: 600; }
+.doc-database-app .cal-body { display: flex; gap: 12px; align-items: flex-start; }
+.doc-database-app .cal-grid-wrap { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.doc-database-app .cal-week-head { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid var(--line); }
+.doc-database-app .cal-week-head span { text-align: right; padding: 6px 10px; font-size: 12px; color: var(--text-3); }
+.doc-database-app .cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.doc-database-app .cal-day { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); padding: 4px 5px 6px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.doc-database-app .cal-day:nth-child(7n) { border-right: 0; }
+.doc-database-app .cal-day.weekend { background: color-mix(in srgb, var(--bg-soft) 60%, transparent); }
+.doc-database-app .cal-day.out { background: var(--bg-soft); }
+.doc-database-app .cal-day.out .cal-num { color: var(--text-3); }
+.doc-database-app .cal-day.over { background: var(--blue-soft); }
+.doc-database-app .cal-day-head { display: flex; align-items: center; justify-content: flex-end; gap: 2px; height: 24px; }
+.doc-database-app .cal-num { font-size: 13px; padding: 0 6px; height: 22px; line-height: 22px; border-radius: 11px; font-variant-numeric: tabular-nums; }
+.doc-database-app .cal-day.today .cal-num { background: var(--gallery-accent-fill); color: #fff; }
+.doc-database-app .cal-item { background: var(--bg-elev); box-shadow: var(--shadow-card); border-radius: 5px; padding: 3px 7px; font-size: 12.5px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; user-select: none; min-width: 0; }
+.doc-database-app .cal-item:hover { background: color-mix(in srgb, var(--text) 4%, var(--bg-elev)); }
+.doc-database-app .cal-item.ghosted { opacity: .3; }
+.doc-database-app .cal-item-title { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-database-app .cal-item.done .cal-item-title { color: var(--text-3); text-decoration: line-through; }
+.doc-database-app .cal-item-prop { display: flex; overflow: hidden; }
+.doc-database-app .cal-pop { padding: 4px 10px 10px; max-height: min(70vh, 520px); transition: opacity .12s; }
+.doc-database-app .cal-pop.dragging-out { opacity: 0; pointer-events: none; }
+.doc-database-app .cal-panel-head { display: flex; align-items: center; gap: 4px; font-weight: 600; height: 30px; font-size: 14px; }
+.doc-database-app .cal-panel-tip { margin: -2px 0 8px; }
+.doc-database-app .cal-pop-list { display: flex; flex-direction: column; gap: 6px; }
+.doc-database-app .cal-item.in-panel { padding: 6px 8px; font-size: 13px; }
+.doc-database-app .cal-ghost { padding: 4px 10px; background: var(--bg-elev); font-size: 13px; font-weight: 500; transform: none; }
+.doc-database-app .chart-view { padding: 10px 0 24px; }
+.doc-database-app .chart-caption { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 13.5px; margin-bottom: 10px; }
+.doc-database-app .chart-caption b { font-weight: 600; }
+.doc-database-app .chart-area { position: relative; }
+.doc-database-app .chart-svg { display: block; overflow: visible; }
+.doc-database-app .chart-svg .axis, .doc-database-app .donut-svg .axis { fill: var(--text-3); font-size: 11.5px; }
+.doc-database-app .chart-svg .val { fill: var(--text-2); font-size: 12px; font-variant-numeric: tabular-nums; }
+.doc-database-app .grid-line { stroke: var(--line); }
+.doc-database-app .base-line { stroke: var(--line-2); }
+.doc-database-app .chart-svg .dim, .doc-database-app .donut-svg .dim { opacity: .35; }
+.doc-database-app .chart-svg path, .doc-database-app .donut-svg path { transition: opacity .12s; }
+.doc-database-app .line-path { fill: none; stroke: var(--db-line, var(--blue)); stroke-width: 2; stroke-linejoin: round; }
+.doc-database-app .line-dot { fill: var(--bg); stroke: var(--db-line, var(--blue)); stroke-width: 2; }
+.doc-database-app .hbars { display: flex; flex-direction: column; gap: 8px; max-width: 860px; padding: 6px 0; }
+.doc-database-app .hbar-row { display: grid; grid-template-columns: 120px 1fr 72px; align-items: center; gap: 12px; transition: opacity .12s; }
+.doc-database-app .hbar-row.dim { opacity: .4; }
+.doc-database-app .hbar-k { text-align: right; color: var(--text-2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.doc-database-app .hbar-track { height: 22px; border-radius: 4px; background: var(--hover); overflow: hidden; }
+.doc-database-app .hbar-fill { display: block; height: 100%; border-radius: 4px; }
+.doc-database-app .hbar-v { font-size: 13px; }
+.doc-database-app .donut-wrap { display: flex; align-items: center; justify-content: center; gap: 48px; flex-wrap: wrap; padding: 16px 0; }
+.doc-database-app .donut-svg { width: 240px; height: 240px; }
+.doc-database-app .donut-total { fill: var(--text); font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.doc-database-app .legend { display: flex; flex-direction: column; gap: 4px; min-width: 220px; }
+.doc-database-app .legend-row { display: grid; grid-template-columns: 12px 1fr auto 40px; align-items: center; gap: 10px; padding: 4px 8px; border-radius: 6px; font-size: 13.5px; }
+.doc-database-app .legend-row.hi { background: var(--hover); }
+.doc-database-app .legend-row .muted { text-align: right; }
+.doc-database-app .sw { background: var(--db-ink); width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.doc-database-app .chart-tip { position: absolute; z-index: 10; pointer-events: none; background: var(--bg-elev); box-shadow: var(--shadow-pop); border-radius: 8px; padding: 8px 10px; font-size: 12.5px; min-width: 130px; }
+.doc-database-app .tip-k { display: flex; align-items: center; gap: 6px; font-weight: 500; margin-bottom: 2px; }
+.doc-database-app .tip-v { color: var(--text-2); }
+.doc-database-app .tip-v b { color: var(--text); }
+.doc-database-app .end-zone { display: flex; align-items: center; justify-content: center; height: 40px; }
+.doc-database-app .end-plus { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--bg-elev); color: var(--text-2); box-shadow: 0 0 0 1px var(--line-2), var(--shadow-card);
+  opacity: 0; transform: translateY(-6px) scale(.8); pointer-events: none; transition: opacity .15s, transform .15s cubic-bezier(.2, 0, 0, 1), background .1s, color .1s; }
+.doc-database-app .end-plus:hover { background: var(--blue); color: #fff; box-shadow: 0 0 0 2px var(--bg), 0 2px 6px color-mix(in srgb, var(--blue) 35%, transparent); }
+.doc-database-app .end-zone:hover .end-plus, .doc-database-app .col-add-zone:hover .end-plus, .doc-database-app .gallery > .card:nth-last-child(2):hover + .end-zone .end-plus, .doc-database-app .list-row:nth-last-child(2):hover + .end-zone .end-plus, .doc-database-app .end-plus:focus-visible { opacity: 1; transform: none; pointer-events: auto; }
+.doc-database-app.is-dragging .end-plus { opacity: 0 !important; }
+.doc-database-app .gallery > .end-zone { height: auto; min-height: 80px; }
+.doc-database-app .list > .end-zone { justify-content: flex-start; padding-left: 4px; }
+.doc-database-app .chart-svg .fill, .doc-database-app .donut-svg .fill { fill: var(--db-ink); }

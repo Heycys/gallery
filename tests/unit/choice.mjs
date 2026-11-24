@@ -61,7 +61,7 @@ assert.ok(sources.runtime.includes("doc-choice"), "the runtime carries the menu"
 const css = await loadKitFile("report.css");
 assert.ok(css.includes(".doc-choice-row") && css.includes(":where(select:not([multiple], [size]))"), "the stylesheet has the card and a select's quiet look");
 // The product's menu card since 2026-11-17: the card's corners and surface by their tokens (tokens.css), its rows lit by the row fill (7%).
-assert.ok(/\.doc-choice-row\.is-active\s*\{[^}]*var\(--doc-hover-row\)/.test(css) && /\.doc-choice,\s*\.doc-choice-leaving\s*\{[^}]*border-radius:\s*var\(--doc-radius-card\)/.test(css) && /--doc-radius-card:\s*14px/.test(css) && /--doc-float-fill:\s*light-dark\(#ffffff, #252525\)/.test(css), "the card is the display menu's: radius 14, light and dark, rows lit by a menu card's row fill");
+assert.ok(/\.doc-choice-row\.is-active\s*\{[^}]*var\(--doc-hover-row\)/.test(css) && /\.doc-choice,\s*\.doc-choice-leaving(?:,\s*\.doc-popover)?\s*\{[^}]*border-radius:\s*var\(--doc-radius-card\)/.test(css) && /--doc-radius-card:\s*14px/.test(css) && /--doc-float-fill:\s*light-dark\(#ffffff, #252525\)/.test(css), "the card is the display menu's: radius 14, light and dark, rows lit by a menu card's row fill");
 assert.ok(!/\.doc-choice[^{]*\{[^}]*\bborder:\s*1px/.test(css), "no outlined card or row (the flat look)");
 
 // ---------- a press opens the card, not the browser's popup ----------
@@ -318,7 +318,7 @@ assert.ok(!/\.doc-choice[^{]*\{[^}]*\bborder:\s*1px/.test(css), "no outlined car
 
 // ---------- a select in the kit's own and the shipped blocks' sources: none draws its own popup ----------
 {
-  for (const file of ["src/packs/gallery/chart-view/kit.js", "src/packs/gallery/kanban/kit.js", "src/packs/gallery/metric/kit.js"]) {
+  for (const file of ["src/packs/gallery/metric/kit.js"]) {
     const text = read(file);
     assert.ok(text.includes('createElement("select")'), `${file} draws a <select> (the kit opens its menu)`);
     assert.ok(!/showPicker|appearance:\s*auto/.test(text), `${file} asks for no native popup`);

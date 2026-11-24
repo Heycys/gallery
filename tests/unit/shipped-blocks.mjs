@@ -31,21 +31,20 @@ import { DENSITY, WIDEST, webpSize } from "../../src/cli/block-picture.mjs";
 // stats, heatmap: their needs "workspace") are run on a context.workspace of the test's: what each asks,
 // draws of the answer and says where none can be read (an export: "offline"), a click opening its document.
 // weather looks its city up and fetches its weather through context.fetch (a test's), at the two hosts its
-// needs name, and says why where there is none. The views of a table (kanban, metric,
-// chart-view: their places a document's, their needs "tables") are run on a context.table() of the
-// test's over a table of jsdom's: what each reads by default and as its settings say, the board's groups
-// and its cards kept a row while the row is the same object, its intents and its links, read-only where
-// the table takes no change.
+// needs name, and says why where there is none. The view of a table (metric:
+// its places a document's, its needs "tables") is run on a context.table() of the test's over a table of
+// jsdom's: what it reads by default and as its settings say, and read-only where the table takes no
+// change.
 
 const PACKS = path.join(projectRoot, "src", "packs");
 const BLOCKS = path.join(PACKS, "gallery");
 const SOFT = path.join(PACKS, "gallery-soft");
 const PAGES = ["countdown", "habit", "heatmap", "note", "recent", "static", "stats", "today", "todos", "weather"];
 const WORKSPACE = ["heatmap", "recent", "stats", "todos"];
-const VIEWS = ["chart-view", "kanban", "metric"];
+const VIEWS = ["metric"];
 
 // The list: Gallery 风格's (the pack gallery): the documents' two (card, chart-card), the pages' ten (six,
-// and the workspace's four) and the documents' three views of a table; 柔光风格's (gallery-soft): the pages'
+// and the workspace's four) and the documents' view of a table; 柔光风格's (gallery-soft): the pages'
 // ten again, in a soft look of their own (decided 2026-11-09); each with its files.
 const shipped = shippedBlocks(PACKS);
 const own = shipped.filter(({ pack }) => pack === "gallery");
@@ -80,7 +79,7 @@ for (const { name, id, folder, pack } of shipped) {
     }
   }
 }
-assert.deepEqual(jsonParts, ["chart-view/template.html", "chart-view/example.html", "countdown/template.html", "countdown/example.html", "habit/template.html", "habit/example.html", "heatmap/template.html", "heatmap/example.html", "kanban/template.html", "kanban/example.html", "metric/template.html", "metric/example.html", "metric/example.html", "note/template.html", "note/example.html", "todos/template.html", "todos/example.html", "weather/template.html", "weather/example.html"], "the JSON parts looked at");
+assert.deepEqual(jsonParts, ["countdown/template.html", "countdown/example.html", "habit/template.html", "habit/example.html", "heatmap/template.html", "heatmap/example.html", "metric/template.html", "metric/example.html", "metric/example.html", "note/template.html", "note/example.html", "todos/template.html", "todos/example.html", "weather/template.html", "weather/example.html"], "the JSON parts looked at");
 // What the static card's notes say a picture is: a file of the page's assets/, served at
 // /pages/<slug>/assets/<file> (server/media-route.mjs servePageAsset), which gallery page check says is
 // there, or a data: address; never a name alone, which nothing serves. Its places are a page's alone, so
@@ -131,10 +130,10 @@ for (const file of ["template.html", "example.html"]) {
 }
 assert.ok(fs.readFileSync(path.join(BLOCKS, "weather", "writing.md"), "utf8").includes('as example.html does: `{"city":"上海","unit":"℃"}` (on one line and compact'), "and its writing.md shows them so");
 assert.ok(PAGES.every((name) => Object.values(of(name).parts).every(({ edit }) => edit !== "flow" && edit !== "text")), "no slot, and nothing a custom page leaves read-only");
-// The views of a table: a document's (a custom page holds no table), reading tables (the kanban the
-// workspace too, to open a document a card links to), their settings in their data part.
-assert.deepEqual(VIEWS.map((name) => [name, of(name).places, of(name).needs, of(name).parts.settings.edit]), [["chart-view", ["document"], ["tables"], "data"], ["kanban", ["document"], ["tables", "workspace"], "data"], ["metric", ["document"], ["tables"], "data"]], "the views: a document's, reading tables, their settings their data");
-assert.deepEqual(VIEWS.map((name) => of(name).settings.map(({ key }) => key)), [["by", "op", "value", "title"], ["group", "order"], ["op", "column", "where", "is", "title", "unit"]], "their settings");
+// The view of a table: a document's (a custom page holds no table), reading tables, its settings in its
+// data part.
+assert.deepEqual(VIEWS.map((name) => [name, of(name).places, of(name).needs, of(name).parts.settings.edit]), [["metric", ["document"], ["tables"], "data"]], "the view: a document's, reading tables, its settings its data");
+assert.deepEqual(VIEWS.map((name) => of(name).settings.map(({ key }) => key)), [["op", "column", "where", "is", "title", "unit"]], "its settings");
 
 // ---------- each script's logic, run as a page runs it ----------
 
@@ -705,7 +704,7 @@ const settled = () => new Promise((resolve) => setTimeout(resolve, 0));
   assert.deepEqual([recent.squares, recent.before], [371, 360], "a record begun ten days ago: the days before it drawn apart");
 }
 
-// ---------- the views of a table (kanban, metric, chart-view) ----------
+// ---------- the view of a table (metric) ----------
 
 // A table of jsdom's read as context.table() reads one: its header's words and a row object a row, its
 // values numbers where a cell writes one (as cellValue reads them), its links to documents; a row object
@@ -777,96 +776,6 @@ const viewGlobals = (document) => {
   return { HTMLElement: w.HTMLElement, HTMLAnchorElement: w.HTMLAnchorElement, HTMLSelectElement: w.HTMLSelectElement, HTMLInputElement: w.HTMLInputElement, Element: w.Element, Option: w.Option };
 };
 const noInput = () => ({ set() {}, value: "" });
-const noDrag = () => ({ cancel() {}, dragging: false });
-
-// kanban: grouped by the column that reads as a status, or as its settings say, the groups its order
-// lists first (an empty one too), the empty value last; a card its row's first cell and the other cells'
-// words; each card kept while its row is the same object, the one typed in alone made again; a group's +
-// adds a row after the group's last, its cell of the group set; a link to a document a chip that opens it;
-// its words typed in where they stand (DocKit.text): a card's title or the words under it their cell, one
-// holding a link none, a group's name each cell of its rows with its place in the order, empty nothing.
-{
-  const document = page();
-  const kanban = loadBlock("kanban", ["groupColumnOf", "askedOf"], { document, input: noInput, drag: noDrag, globals: viewGlobals(document) });
-  const columnsOf = (header, body) => kanban.groupColumnOf(viewOf(document, header, body).view());
-  assert.equal(columnsOf(["任务", "负责人", "状态"], [["a", "小王", "待办"], ["b", "小李", "待办"]]), "状态", "a column named as a status");
-  assert.equal(columnsOf(["客户", "金额", "区域", "联系人"], [["a", "12", "华东", "甲"], ["b", "8", "华东", "乙"], ["c", "3", "华北", "丙"]]), "区域", "else the column of words whose values repeat most, numbers left out");
-  assert.equal(columnsOf(["名称"], [["a"]]), "名称", "a table of one column: that one");
-  assert.deepEqual(kanban.askedOf({ group: " 阶段 ", order: "待办，进行中、已完成" }), { group: "阶段", order: ["待办", "进行中", "已完成"] }, "its settings: the order by any comma");
-  assert.deepEqual(kanban.askedOf(null), { group: "", order: [] }, "none: the defaults");
-
-  const host = document.createElement("div");
-  host.setAttribute("data-doc-component", "gallery/kanban");
-  host.setAttribute("data-doc-from", "t1");
-  document.body.append(host);
-  const bench = viewOf(document, ["任务", "状态", "负责人"], [["<a href=\"../plan/doc.html\">写方案</a>", "待办", "小王"], ["做评审", "进行中", "小李"], ["发布", "", ""], ["整理", "待办", ""]]);
-  const { context, opened } = viewContext(host, { settings: { order: "待办,进行中,已完成" }, table: bench.view });
-  const handle = kanban.def.mount(host, context);
-  const look = () => [...host.querySelectorAll(".gallery-kanban-group")].map((group) => [group.querySelector(".gallery-kanban-name").textContent || group.querySelector(".gallery-kanban-name").getAttribute("data-doc-text-empty"), ...[...group.querySelectorAll(".gallery-kanban-card")].map((card) => [card.querySelector(".gallery-kanban-title").textContent, ...[...card.querySelectorAll(".gallery-kanban-prop")].map((prop) => prop.textContent)].join("/"))]);
-  assert.deepEqual(look(), [["待办", "写方案/小王", "整理"], ["进行中", "做评审/小李"], ["已完成"], ["（空）", "发布"]], "its groups: the order's (已完成 empty), then the empty value; a card its title and its other cells, the grouping column left out");
-  assert.equal(host.querySelector(".gallery-kanban-caption").textContent, "按“状态”分组 · 4 张卡片");
-  assert.ok(host.querySelector(".gallery-kanban-groups").hasAttribute("data-writes") && host.querySelector(".gallery-kanban-line").hidden, "it writes, nothing to say");
-  const cardsBefore = [...host.querySelectorAll(".gallery-kanban-card")];
-  const titleBefore = cardsBefore[2].querySelector(".gallery-kanban-title");
-  bench.table.tBodies[0].rows[1].cells[0].textContent = "做评审了";
-  handle.update("data", "table");
-  const cardsAfter = [...host.querySelectorAll(".gallery-kanban-card")];
-  assert.deepEqual([cardsAfter.map((card, at) => card === cardsBefore[at]), cardsAfter[2].querySelector(".gallery-kanban-title") === titleBefore, titleBefore.textContent], [[true, true, true, true], true, "做评审了"], "a cell typed in: no card made again, that one's words drawn in place, the rest untouched");
-  // A link to a document: a chip that opens it (its words its title's: 打开).
-  const chip = host.querySelector(".gallery-kanban-link");
-  assert.deepEqual([chip.dataset.page, chip.textContent], ["plan", "打开"]);
-  chip.dispatchEvent(new document.defaultView.MouseEvent("click", { bubbles: true, cancelable: true }));
-  assert.deepEqual(opened, [{ slug: "plan", block: null }], "a document's chip opens it through the workspace");
-  // 新建 in 已完成, with no card: a row at the end, its title empty and its status 已完成; in 待办, after its last.
-  host.querySelector('.gallery-kanban-group[data-value="已完成"] .gallery-kanban-add').click();
-  host.querySelector('.gallery-kanban-group[data-value="待办"] .gallery-kanban-add').click();
-  host.querySelector('.gallery-kanban-group[data-value="待办"] .gallery-kanban-card .gallery-kanban-remove').click();
-  assert.deepEqual(bench.asked, [
-    { op: "add", values: { 任务: "", 状态: "已完成" }, after: null },
-    { op: "add", values: { 任务: "", 状态: "待办" }, after: "整理" },
-    { op: "remove", row: "写方案" },
-  ], "a group's + and 🗑 each one intent");
-  // Its words typed in where they stand: a title holding words alone, the words under a title, a group's name.
-  const typable = (node) => node.getAttribute("contenteditable") === "plaintext-only" && node.hasAttribute("data-doc-text");
-  const titles = Object.fromEntries([...host.querySelectorAll(".gallery-kanban-title")].map((node) => [node.textContent, node]));
-  assert.ok(typable(titles["整理"]) && typable(titles["做评审了"]) && !typable(titles["写方案"]), "a card's title typed in where it stands, but one holding a link (the table has it)");
-  assert.ok([...host.querySelectorAll(".gallery-kanban-prop, .gallery-kanban-name")].every(typable), "the words under a title and each group's name too");
-  // Words left (a blur), done once what took the focus has run (a microtask), as they are in a page.
-  const typeOver = async (node, words) => {
-    node.textContent = words;
-    node.dispatchEvent(new document.defaultView.FocusEvent("blur"));
-    await Promise.resolve();
-  };
-  bench.asked.length = 0;
-  await typeOver(titles["整理"], "  整理  文档 ");
-  await typeOver(host.querySelector('.gallery-kanban-card .gallery-kanban-prop'), "小张");
-  assert.deepEqual(bench.asked, [{ op: "set", row: "整理", column: "任务", text: "整理 文档" }, { op: "set", row: "写方案", column: "负责人", text: "小张" }], "a title typed: its first cell, its white space one space; the words under it: theirs");
-  bench.asked.length = 0;
-  await typeOver(host.querySelector('.gallery-kanban-group[data-value="待办"] .gallery-kanban-name'), "计划");
-  const [renamed] = bench.asked;
-  assert.deepEqual([renamed.op, renamed.row, renamed.column, renamed.text, renamed.also.editJSON[0]], ["set", ["写方案", "整理"], "状态", "计划", "settings"], "a group's name: each cell of its rows, one write carrying its settings");
-  assert.deepEqual(renamed.also.editJSON[1]({ order: "待办,进行中,已完成" }), { order: "计划,进行中,已完成" }, "its place in the order, renamed where it stood");
-  assert.deepEqual(renamed.also.editJSON[1]({ order: "待办、进行中、计划" }), { order: "进行中、计划" }, "named as a group the order lists: the two one, written with the order's comma");
-  // A name holding a comma the order splits at (、 , ，): out of the order, which can name no such group (a review of 2026-11-20).
-  bench.asked.length = 0;
-  await typeOver(host.querySelector('.gallery-kanban-group[data-value="待办"] .gallery-kanban-name'), "设计、评审");
-  assert.deepEqual([bench.asked[0].text, bench.asked[0].also.editJSON[1]({ order: "待办,进行中,已完成" }), bench.asked[0].also.editJSON[1]({ order: "待办" })], ["设计、评审", { order: "进行中,已完成" }, {}], "a name holding the order's comma: its cells so named, the old name out of the order (an order left empty taken out)");
-  bench.asked.length = 0;
-  const named = host.querySelector('.gallery-kanban-group[data-value="进行中"] .gallery-kanban-name');
-  await typeOver(named, " ");
-  assert.deepEqual([bench.asked, named.textContent], [[], "进行中"], "a name typed empty: nothing asked, the name shown again");
-  // A table the editor's tools do not manage: read-only, said so; no table: said so.
-  const hostTwo = host.cloneNode(false);
-  document.body.append(hostTwo);
-  const readOnly = viewOf(document, ["任务", "状态"], [["a", "待办"]], { editable: false });
-  kanban.def.mount(hostTwo, viewContext(hostTwo, { table: readOnly.view }).context);
-  assert.ok(!hostTwo.querySelector(".gallery-kanban-groups").hasAttribute("data-writes") && hostTwo.querySelector(".gallery-kanban-line").textContent.startsWith("这张表格有表尾"), "a table it cannot change: read-only, said");
-  assert.ok(hostTwo.querySelectorAll("[contenteditable]").length === 0 && hostTwo.querySelectorAll("[data-doc-text]").length > 0, "and no words of it typed in");
-  const hostThree = document.createElement("div");
-  document.body.append(hostThree);
-  kanban.def.mount(hostThree, viewContext(hostThree, { table: null }).context);
-  assert.equal(hostThree.querySelector(".gallery-kanban-line").textContent, "这个看板还没有接到表格上：在它的菜单里选“设置…”，选一张表格。", "no key: how to bind it");
-}
 
 // metric: the rows counted, a column summed or averaged (its numbers alone), over the rows of one value.
 {
@@ -915,50 +824,6 @@ const noDrag = () => ({ cancel() {}, dragging: false });
   document.body.append(exported);
   metric.def.mount(exported, viewContext(exported, { settings: { op: "sum" }, table: bench.view, editable: false }).context);
   assert.equal(exported.querySelectorAll("[contenteditable]").length, 0, "where nothing is written (an export): none typed in");
-}
-
-// chart-view: by the status-like column (or one that repeats) by default, summed where there are
-// numbers, else counted; a bar a row where nothing repeats; at most 50 bars.
-{
-  const document = page();
-  const chart = loadBlock("chart-view", ["chartOf", "askedOf", "WORDS", "MAX_BARS"], { document, input: noInput, globals: viewGlobals(document) });
-  const of = (header, body, settings = {}) => {
-    const said = chart.chartOf(viewOf(document, header, body).view(), chart.askedOf(settings), chart.WORDS.zh);
-    return said.line ?? [said.title, said.bars.map(({ label, value }) => `${label}:${value}`), said.all];
-  };
-  assert.deepEqual(of(["任务", "状态"], [["a", "待办"], ["b", "进行中"], ["c", "待办"], ["d", ""]]), ["各状态的行数", ["待办:2", "进行中:1", "（空）:1"], 3], "tasks: counted by status, in the order the rows say them");
-  assert.deepEqual(of(["客户", "区域", "金额"], [["a", "华东", "10"], ["b", "华北", "5"], ["c", "华东", "2.5"]]), ["各区域的金额合计", ["华东:12.5", "华北:5"], 2], "sales: summed by the column that repeats");
-  assert.deepEqual(of(["客户", "区域", "金额"], [["a", "华东", "10"], ["b", "华北", "5"], ["c", "华东", "2"]], { op: "average" }), ["各区域的金额平均", ["华东:6", "华北:5"], 2]);
-  assert.deepEqual(of(["渠道", "本月"], [["搜索", "48"], ["社交", "27"]]), ["各渠道的本月", ["搜索:48", "社交:27"], 2], "nothing repeats: a bar a row");
-  assert.deepEqual(of(["客户", "区域", "金额"], [["a", "华东", "10"]], { by: "区域", op: "count", title: "客户数" }), ["客户数", ["华东:1"], 1], "as its settings say");
-  assert.equal(of(["任务", "状态"], [["a", "待办"]], { by: "阶段" }), "找不到列“阶段”：表格的列名改过了吗？");
-  const many = of(["编号", "数"], Array.from({ length: 80 }, (_, at) => [`n${at}`, String(at)]));
-  assert.deepEqual([many[1].length, many[2], chart.MAX_BARS], [50, 80, 50], "at most 50 bars of 80");
-  // Drawn: a bar kept by its group while the table is typed in, its length written anew.
-  const host = document.createElement("div");
-  document.body.append(host);
-  const bench = viewOf(document, ["客户", "区域", "金额"], [["a", "华东", "10"], ["b", "华北", "5"]]);
-  const handle = chart.def.mount(host, viewContext(host, { settings: { by: "区域" }, table: bench.view }).context);
-  const bars = () => [...host.querySelectorAll(".gallery-chart-view-row")];
-  const before = bars();
-  assert.deepEqual(before.map((row) => [row.querySelector(".gallery-chart-view-label").textContent, row.querySelector(".gallery-chart-view-value").textContent, row.querySelector(".gallery-chart-view-bar").style.width]), [["华东", "10", "100%"], ["华北", "5", "50%"]]);
-  bench.table.tBodies[0].rows[1].cells[2].textContent = "20";
-  handle.update("data", "table");
-  assert.deepEqual(bars().map((row, at) => [row === before[at], row.querySelector(".gallery-chart-view-bar").style.width]), [[true, "50%"], [true, "100%"]], "typed in: the same bars, their lengths anew");
-  // Its title and its bars' names typed in where they stand: the title its setting, a group's name each cell of its rows.
-  const typedIn = viewContext(host, { settings: { by: "区域" }, table: bench.view });
-  host.replaceChildren();
-  chart.def.mount(host, typedIn.context);
-  const typeOver = async (node, words) => {
-    node.textContent = words;
-    node.dispatchEvent(new document.defaultView.FocusEvent("blur"));
-    await Promise.resolve();
-  };
-  assert.ok([".gallery-chart-view-title", ".gallery-chart-view-label"].every((selector) => host.querySelector(selector).getAttribute("contenteditable") === "plaintext-only") && !host.querySelector(".gallery-chart-view-value").hasAttribute("contenteditable"), "its title and its bars' names typed in, its numbers not");
-  await typeOver(host.querySelector(".gallery-chart-view-title"), "区域金额");
-  bench.asked.length = 0;
-  await typeOver(host.querySelector(".gallery-chart-view-label"), "华南");
-  assert.deepEqual([typedIn.written.at(-1)[1], bench.asked], [{ by: "区域", title: "区域金额" }, [{ op: "set", row: ["a"], column: "区域", text: "华南" }]], "the title its setting; a bar's name each cell of its group's rows");
 }
 
 // ---------- 柔光风格 (gallery-soft): Gallery 风格's page cards in a soft look, the same logic ----------

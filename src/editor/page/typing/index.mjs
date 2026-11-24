@@ -27,12 +27,14 @@ import { t } from "../../../shared/i18n/index.mjs";
 // 3万5千), and a block written without such spaces is typed in its own way (none added). An edit
 // that leaves such a space where no pair stands either side of it any more takes it out (spaces.mjs).
 // The text blocks that say their placeholder whenever they are empty (HOSTS' `untitled`: the page's title).
-const UNTITLED = Object.keys(HOSTS).filter((kind) => HOSTS[kind].untitled).map((kind) => `main [data-ge-kind="${kind}"]`).join(", ");
+const UNTITLED = Object.keys(HOSTS).filter((kind) => HOSTS[kind].untitled).map((kind) => `main [data-ge-kind="${kind}"]`);
 // ...and the blocks of a type that says so (`untitled` of `types`: a heading), found by
 // their types' tags; a paragraph says its own only under the caret (data-ph-focus), and so does the text in a
 // callout or a highlight, a paragraph there.
 const UNTITLED_TAGS = [...new Set(Object.values(BLOCK_TYPES).filter((spec) => spec.untitled && !spec.className).map((spec) => spec.tag))];
-const RESTING = [UNTITLED, ...UNTITLED_TAGS.map((tag) => `main ${tag}[contenteditable="true"]`)].filter(Boolean).join(", ");
+// Each its own selector, asked apart: a list of them has the browser match every element of the page (a long
+// table's thousands of cells) to each, at every input.
+const RESTING = [...UNTITLED, ...UNTITLED_TAGS.map((tag) => `main ${tag}[contenteditable="true"]`)];
 const restingSays = (host) => {
   if (HOSTS[host.getAttribute("data-ge-kind")]?.untitled) return placeholderOf(host);
   const type = BLOCK_TYPES[textTypeOf(host)];
@@ -357,8 +359,8 @@ export function createTyping({ struct, say, keepText, paragraphBefore, removeBlo
   // blocks and the workbench's renaming are followed too. The block under the caret says what
   // updatePlaceholder gave it.
   function untitled() {
-    if (!RESTING) return;
-    for (const host of document.querySelectorAll(RESTING)) {
+    if (RESTING.length === 0) return;
+    for (const host of new Set(RESTING.flatMap((selector) => [...document.querySelectorAll(selector)]))) {
       if (!isHost(host) || host === placeholder) continue;
       const says = restingSays(host);
       if (says && isEmpty(host)) {

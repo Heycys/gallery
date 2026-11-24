@@ -6,9 +6,10 @@ import { numberValue, rawCellValue } from "../../../shared/number-reading.mjs";
 import { columnWidths, slotsOf, tileSlots, tileSpans } from "../../../shared/table-slots.mjs";
 import { CELL_ALIGN_CLASSES, CELL_BOLD_CLASS, CELL_VALIGN_CLASSES } from "../../../shared/components/table.mjs";
 import { CHART_KEY, CHART_SOURCE } from "../../../shared/table-chart.mjs";
+import { WIDE } from "../../../shared/table-across.mjs";
 import { t } from "../../../shared/i18n/index.mjs";
 import { labeled, plainRow } from "../read-rows.mjs";
-import { escapeAttribute } from "../../../shared/escape.mjs";
+import { escapeAttribute, escapeText } from "../../../shared/escape.mjs";
 import { servedFile } from "../../page/served.mjs";
 import { currentProjectBase } from "../../../shared/workspace-address.mjs";
 
@@ -60,8 +61,9 @@ export default {
       resizable: ".doc-table-wrap[data-ge-unit]", // its right and bottom edges, once it is in the file
       copy: "itself", // within the report a copy keeps all of its markup (its scope line, its frame's size); another report's gets the table's data (tableData) made anew
       // 识别数字列 off, and the key a chart or a view reads it by (src/shared/table-chart.mjs), which a view
-      // made from a menu puts on a table that has none (page/table/binding.mjs) in the step that makes the view.
-      attributes: { [NUMBERS]: (value) => value === "off", [CHART_SOURCE]: (value) => CHART_KEY.test(value) },
+      // made from a menu puts on a table that has none (page/table/binding.mjs) in the step that makes the view;
+      // its own 宽表格, on or off over the page's (the block menu's switch: page/table/ wideRow).
+      attributes: { [NUMBERS]: (value) => value === "off", [CHART_SOURCE]: (value) => CHART_KEY.test(value), [WIDE]: (value) => value === "on" || value === "off" },
       sizes: {
         [SPAN]: { min: 0.15, max: 3 }, // past 1 the table is wider than the text and scrolls in its frame
         [TABLE_HEIGHT]: { min: 80, max: 4000, px: true, none: true, height: true },
@@ -71,7 +73,7 @@ export default {
   },
   components: ["doc-table-wrap", "doc-table-meta"],
   hosts: {
-    cell: { name: t("表格单元格"), caps: () => ["empty", "links"], pictures: { show: showPictures, write: writtenPicture } },
+    cell: { name: t("表格单元格"), caps: () => ["empty", "links"], pictures: { show: showPictures, write: writtenPicture }, lines: { nodes: cellNodes, blocks: cellBlocks } },
   },
   types: {
     // Made by a paste or the "/" menu (三列三行, a header row: page.mjs newTable): no class here, so
@@ -223,6 +225,98 @@ export function validTable(node, validCell) {
   return (node.looks === undefined || (Array.isArray(node.looks) && node.looks.length === node.rows.length
     && node.looks.every((row, r) => Array.isArray(row) && row.length === node.rows[r].length && row.every(validLook))))
     && (node.widths === undefined || (Array.isArray(node.widths) && node.widths.length === places.columns && node.widths.every(validWidth)));
+}
+
+// ---------- a cell's text as lines and lists ----------
+
+/**
+ * A cell's text (its inline HTML, as copied, or what is pasted into one) in pieces: { html } its lines
+ * between lists, { tag, items } a list ("ul" or "ol") and its items' inline HTML. A list wherever it
+ * stood (in a paragraph, a mark) stands apart, and one in an item gives its items after that item (a
+ * cell's list holds no list). Null when it holds no list.
+ */
+export function cellPieces(doc, html) {
+  const template = doc.createElement("template");
+  template.innerHTML = html;
+  const root = template.content;
+  if (!root.querySelector("ul, ol")) return null;
+  // Each list not in a list out of the elements around it, split there up to the top.
+  for (const list of [...root.querySelectorAll("ul, ol")]) {
+    if (list.parentElement?.closest("ul, ol")) continue;
+    for (let parent = list.parentNode; parent !== root; parent = list.parentNode) {
+      const after = parent.cloneNode(false);
+      while (list.nextSibling) after.append(list.nextSibling);
+      parent.after(list, after);
+    }
+  }
+  // A list's items: an item's own, then the items of a list it holds.
+  const itemsOf = (list) => [...list.children].filter((item) => item.localName === "li").flatMap((item) => {
+    const held = [...item.querySelectorAll("ul, ol")].filter((inner) => inner.parentElement.closest("ul, ol") === list);
+    held.forEach((inner) => inner.remove());
+    return [item.innerHTML, ...held.flatMap(itemsOf)];
+  });
+  const source = (node) => (node.nodeType === 1 ? node.outerHTML : node.nodeType === 3 ? escapeText(node.data) : "");
+  const pieces = [];
+  for (const child of [...root.childNodes]) {
+    if (child.nodeType === 1 && (child.localName === "ul" || child.localName === "ol")) pieces.push({ tag: child.localName, items: itemsOf(child) });
+    else if (pieces.at(-1)?.html !== undefined) pieces.at(-1).html += source(child);
+    else pieces.push({ html: source(child) });
+  }
+  return pieces;
+}
+
+/**
+ * A cell's nodes made of inline HTML (cellPieces): its lines with a line break between two, an empty
+ * line among them kept, and its lists (part of the cell's text: tableData) lists of the
+ * cell, each item its lines. `lines(html, ends)`: the lines of a piece of it as pastedLines makes them
+ * with `lineBreaks` (`ends`: { start, end }, whether the piece begins or ends what is made, for the
+ * spaces kept at its ends). An empty item keeps a line break for its caret, and the empty lines at the
+ * ends of what is made go.
+ */
+export function cellNodes(doc, html, lines) {
+  const pieces = cellPieces(doc, html) ?? [{ html }];
+  const joined = (made) => made.flatMap((line, index) => (index > 0 ? [doc.createElement("br"), ...line] : line));
+  const nodes = [];
+  pieces.forEach((piece, index) => {
+    const ends = { start: index === 0, end: index === pieces.length - 1 };
+    if (piece.html !== undefined) {
+      const made = lines(piece.html, ends);
+      while (ends.start && made[0]?.length === 0) made.shift();
+      while (ends.end && made.at(-1)?.length === 0) made.pop();
+      nodes.push(...joined(made));
+      // An empty line right above a list: a line break of its own, the one ending the line above it
+      // showing none before a block.
+      if (!ends.end && made.at(-1)?.length === 0) nodes.push(doc.createElement("br"));
+      return;
+    }
+    const list = doc.createElement(piece.tag);
+    for (const item of piece.items) {
+      const made = lines(item, { start: false, end: false });
+      while (made[0]?.length === 0) made.shift();
+      while (made.at(-1)?.length === 0) made.pop();
+      const entry = doc.createElement("li");
+      entry.append(...(made.length > 0 ? joined(made) : [doc.createElement("br")]));
+      list.append(entry);
+    }
+    if (list.children.length > 0) nodes.push(list);
+  });
+  return nodes;
+}
+
+/**
+ * A cell's text with lists in it (its inline HTML: cellPieces) as the clipboard's described blocks, for
+ * where blocks go (a paragraph: page/clipboard/): each run of its lines between them a paragraph of
+ * those lines (one with no words none), each list a bulleted or numbered list of its items; null for
+ * text holding no list.
+ */
+export function cellBlocks(doc, html) {
+  const said = (part) => {
+    const template = doc.createElement("template");
+    template.innerHTML = part;
+    return Boolean(template.content.textContent.trim() || template.content.querySelector("[data-ge-atom], .doc-math-inline, img"));
+  };
+  return cellPieces(doc, html)?.filter((piece) => piece.html === undefined || said(piece.html)).map((piece) => (piece.html !== undefined ? { type: "paragraph", html: piece.html }
+    : { type: piece.tag === "ol" ? "numbers" : "bullets", blocks: piece.items.map((item) => ({ type: "item", html: item, lists: [] })) })) ?? null;
 }
 
 /** The most a cell's inline HTML is as a description of a table has it (the clipboard's and the server's). */

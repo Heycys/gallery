@@ -43,7 +43,7 @@ const tidy = (list: MenuEntry[]) => list.filter((entry, at) => entry.kind !== 's
  * 打开着的别处的底稿（另一个工作区的文档）顶栏也是这一份（用户 2026-11-21：“不同工作区的都是几乎一样的”）：同样的标题「文档」、项、顺序、
  * 分隔线和底部；只是导入、移至回收区的悬停提示说清是在它所在的工作区里，复制本地路径复制的是底稿的位置（report.path），
  * 找不到底稿（missing）时用不了的项不出现。侧栏里底稿那一行的菜单另是 draftMenuEntries。
- * foot：false 时不带最后的分隔线和上次编辑、字数（顶栏在字体与布局、目录、全宽、宽表格下面自己放）。
+ * foot：false 时不带最后的分隔线和上次编辑、字数（顶栏在字体与布局、目录、全宽、宽表格、宽多维表格下面自己放）。
  * ownerKey：打开这个菜单的那一行（Popover 的 ownerKey）；从菜单里开的移动到、修改网址也挂在它上面，开着时那一行一直标着（.menu-open）
  */
 export function reportMenuEntries(slug: string, anchorFor: () => HTMLElement, { withExport = false, foot = true, onRename, onChangeIcon, ownerKey }: { withExport?: boolean; foot?: boolean; onRename?: () => void; onChangeIcon?: () => void; ownerKey?: string } = {}): MenuEntry[] {

@@ -6,6 +6,7 @@ import { FOLDED } from "../folded.mjs";
 import { describe, note, report } from "../overlays.mjs";
 import { t } from "../../../shared/i18n/index.mjs";
 import { UNFILLED_ALONE, isSelectable } from "../../components/registry.mjs";
+import { placedIn } from "../../../shared/table-across.mjs";
 
 // Selected blocks (docs/editor.md, "Selecting blocks"): a set of blocks, none inside another, in
 // document order. A box selection drawn from empty space gives blocks of one container
@@ -22,7 +23,9 @@ import { UNFILLED_ALONE, isSelectable } from "../../components/registry.mjs";
 // The fills belong to their blocks (docs/editor.md, "Overlays"): one per selected block on the
 // page, made to match the selection the moment it changes (render), never on a later frame, so no
 // fill outlives its block's selection, and none is drawn while the block tools are off. The frames
-// only keep them where their blocks are (paint); a fill that cannot be drawn goes.
+// only keep them where their blocks are (paint); a fill that cannot be drawn goes. A block holding a
+// table or a 多维表格 placed past the text (宽表格, 宽多维表格: a section) is filled block by block instead
+// (filledOn): what it is selected for is the same.
 //
 // What a folded heading hides (fold/) is never selected: select() leaves it out, Shift+↑/↓ and ↑/↓
 // pass over it; what takes a folded heading away whole takes it along when it acts (fold/ takenWith).
@@ -34,6 +37,17 @@ const folded = (node) => node.closest(`[${FOLDED}]`) !== null;
 
 // Whether a block is of a kind never selected (the page's icon: registry.mjs isSelectable).
 const unselectable = (node) => !isSelectable(node.getAttribute?.("data-ge-unit-kind"));
+
+// The blocks a selected block's fill is drawn on: itself, or, where a table or a 多维表格 in it stands past the text
+// (shared/table-across.mjs placedIn: a section holding one), each block in it, as each is filled selected alone (the
+// user's, 2026-11-24: 不要之前的那个全部都在一个框里了，变成了各自都选了一下，那就用的是各自本来自己就有的两个选框): the wide one's
+// out to its drawing, the others' the text's, where one fill over the block's own box would cover the text alone. The
+// selection is the block all the same (copying, deleting, dragging it).
+function filledOn(node) {
+  if (placedIn(node).length === 0) return [node];
+  const blocks = [...node.querySelectorAll(UNIT)].filter((unit) => unit.parentElement?.closest(UNIT) === node).flatMap(filledOn);
+  return blocks.length > 0 ? blocks : [node];
+}
 
 // A box standing loose in another, no block of its own: the page's header, in the page.
 const loose = (node) => Boolean(node?.hasAttribute("data-ge-box")) && !node.matches(UNIT) && Boolean(node.parentElement?.hasAttribute("data-ge-box"));
@@ -67,7 +81,8 @@ export function createSelection({ info, active, say, closeMenu, schedule }) {
   let marked = []; // the blocks a text selection takes whole (text-select/): filled, not selected
   let anchor = null; // the block Shift+↑/↓ widens the selection from
   let hidden = false; // the fills hide while the blocks are dragged
-  const halos = createFills({ kind: "halo", className: "ge-halo", stands: (node) => (picked.includes(node) || marked.includes(node)) && active() });
+  let filled = []; // the blocks filled now: those selected and marked, or the blocks in one of them (filledOn)
+  const halos = createFills({ kind: "halo", className: "ge-halo", stands: (node) => filled.includes(node) && active() });
 
   /** Select a block, or several (none is clearing); `quiet`: without saying so. */
   function select(targets, { quiet = false } = {}) {
@@ -132,9 +147,9 @@ export function createSelection({ info, active, say, closeMenu, schedule }) {
   }
 
   // The fills made to match the selection now: those of blocks no longer selected (or no longer on
-  // the page) go at once; each selected block shown gets its fill where it is, reaching past it as
-  // reachOf says, never into a neighbour's (roomOf). One that cannot be drawn takes all the fills
-  // down (said once): better none than one in the wrong place. A kind whose own tools show it selected
+  // the page) go at once; each selected block shown gets its fill where it is (or the blocks in it do:
+  // filledOn), reaching past it as reachOf says, never into a neighbour's (roomOf). One that cannot be drawn takes all the
+  // fills down (said once): better none than one in the wrong place. A kind whose own tools show it selected
   // (UNFILLED_ALONE: the image with its picture, its corner grips and toolbar) draws no fill selected alone (the user, 2026-11-09: no pale
   // blue over a picture clicked); among other blocks it is filled as they are.
   const toolsShowIt = () => {
@@ -144,8 +159,10 @@ export function createSelection({ info, active, say, closeMenu, schedule }) {
   };
   function render() {
     try {
-      halos.paint(hidden || !active() || toolsShowIt() ? [] : [...picked, ...marked].filter(alive));
+      filled = hidden || !active() || toolsShowIt() ? [] : [...picked, ...marked].filter(alive).flatMap(filledOn);
+      halos.paint(filled);
     } catch (error) {
+      filled = [];
       unpaint();
       report("selection fills", error);
     }

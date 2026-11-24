@@ -82,6 +82,7 @@ try {
     "公式块": "r = \\frac{a}{b}",
     "a formula in a line": "$r = a / b$",
     "表格": "| 类别 | 数值 |",
+    "多维表格": "┌─ 多维表格 · 4 列 · 3 条记录",
     "图片": "![一张示意图](assets/picture.png)",
     "小字": "{.doc-note}",
     "提示块": "┌─ 提示块",
@@ -283,8 +284,10 @@ try {
   assert.ok(firstParagraph.html.startsWith(`<p data-block-id="${paragraphId}">`) && parsed.blocks.every((each) => typeof each.n === "number" && "line" in each && Array.isArray(each.children)));
 
   // ---------- parts ----------
-  assert.ok(outline.code === 0 && /^ *78 [a-z0-9]{8} │ 文字（h2，下面 27 块）$/m.test(outline.stdout) && /^ *99 [a-z0-9]{8} │     待办事项（h4，下面 3 块）$/m.test(outline.stdout) && outline.stdout.includes("标题 10 个"), outline.stdout);
-  assert.ok(map.code === 0 && map.stdout.includes("95 块（读一块：gallery read handed --block <id>）") && /│   详情卡片  #detail-card$/m.test(map.stdout), "the map: every block a line");
+  assert.ok(outline.code === 0 && /^ *78 [a-z0-9]{8} │ 文字（h2，下面 27 块）$/m.test(outline.stdout) && /^ *99 [a-z0-9]{8} │     待办事项（h4，下面 3 块）$/m.test(outline.stdout) && outline.stdout.includes("标题 11 个"), outline.stdout);
+  // Its databases after the headings, each with its id, the heading it follows and what it holds: read alone by --block.
+  assert.ok(outline.stdout.includes("多维表格 1 个（只读一个：gallery read handed --block <id>）：") && /^ *\d+ [a-z0-9]{8} │ 「多维表格」下：4 列 · \d+ 条记录 · 视图：全部、按状态$/m.test(outline.stdout), `the outline lists the databases: ${outline.stdout}`);
+  assert.ok(map.code === 0 && map.stdout.includes("98 块（读一块：gallery read handed --block <id>）") && /│   详情卡片  #detail-card$/m.test(map.stdout) && /│ +多维表格  4 列 · \d+ 条记录 · 视图：全部、按状态$/m.test(map.stdout), "the map: every block a line, a database by what it holds");
   assert.equal(section.code, 0);
   assert.ok(section.stdout.includes("### 列表") && section.stdout.includes("- [ ] 没做完的一项") && !section.stdout.includes("引用、提示") && lastLine(section.stdout) === "全部 13 块都在上面（标题「列表」的一节），没有省略。", section.stdout);
   assert.equal(sectionByWords.stdout, section.stdout, "a section by its heading's words");

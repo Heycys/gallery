@@ -15,6 +15,7 @@ import { carry } from "../components/align.mjs";
 import { unread } from "./tex.mjs";
 import { MENTION, MENTION_ICON, MENTION_PAGE } from "../../shared/components/mention.mjs";
 import { FLOW_BLOCKS } from "../../shared/components/index.mjs";
+import { PROVISIONAL } from "../../shared/provisional.mjs";
 import { giveLine } from "../../shared/components/list.mjs";
 import { isFileLink } from "../../shared/page-address.mjs";
 import { ownInline } from "./own.mjs";
@@ -431,6 +432,21 @@ export function strayIn(host) {
   return null;
 }
 
+const EDITABLE = '[contenteditable="true"]';
+/**
+ * The block elements of `root` (STRUCTURE) that stand in an editable element of it, in document order: those
+ * of each editable element that stands in none, whose subtrees are apart and in order. The same as those of
+ * root.querySelectorAll(STRUCTURE) with an editable element around them, found without matching all of the
+ * page's elements to the list (the thousands of a long table's cells, the drawing of a database: in no text
+ * block); all of root's where root itself stands in one.
+ */
+function structureInHosts(root) {
+  if (root.closest?.(EDITABLE)) return root.querySelectorAll(STRUCTURE);
+  const found = [];
+  for (const host of root.querySelectorAll(EDITABLE)) if (!host.parentElement?.closest(EDITABLE)) found.push(...host.querySelectorAll(STRUCTURE));
+  return found;
+}
+
 /**
  * The text blocks of `root` holding such structure (strayIn), found from the structure itself: the
  * text block an element of it stands in (the nearest editable one around it), asked once a block. One
@@ -439,7 +455,7 @@ export function strayIn(host) {
  */
 export function strayHosts(root) {
   const asked = new Map();
-  for (const element of root.querySelectorAll(STRUCTURE)) {
+  for (const element of structureInHosts(root)) {
     const host = element.parentElement?.closest('[contenteditable="true"]');
     if (!host || asked.has(host) || !isHost(host)) continue;
     asked.set(host, strayIn(host) !== null);
@@ -829,11 +845,17 @@ const isFormula = (node) => node.matches(".doc-math-inline");
  * its text. Each line goes without the white space at its ends but where `edges` keeps it: `start`
  * the space the first line begins with, `end` the one the last ends with (words copied with a space
  * beside them: text pasted keeps every character of it), each run of it one space.
+ * `lineBreaks`: every line break is one, as the text showed it: one inside a mark ends the line there,
+ * the mark going on in the next (else it is a space), and a line break with no words before it on its
+ * line is an empty line, an empty array among the lines, at their ends too (else none is).
  */
-export function pastedLines(doc, html, { marks = true, links = true, formula = null, formulas = true, mention = null, picture = null, edges = null } = {}) {
+export function pastedLines(doc, html, { marks = true, links = true, formula = null, formulas = true, mention = null, picture = null, edges = null, lineBreaks = false } = {}) {
   const template = doc.createElement("template");
   template.innerHTML = html;
+  if (lineBreaks) breaksOutOfMarks(template.content);
   const lines = [[]];
+  const empty = new Set(); // the empty lines a line break made (lineBreaks)
+  const holds = (line) => line.some((node) => node.nodeType !== 3 || node.data.trim());
   const newLine = () => {
     if (lines.at(-1).length > 0) lines.push([]);
   };
@@ -892,7 +914,11 @@ export function pastedLines(doc, html, { marks = true, links = true, formula = n
       }
       if (child.tagName === "BR") {
         if (target) push(target, doc.createTextNode(" "));
-        else newLine();
+        else if (lineBreaks && !holds(lines.at(-1))) {
+          lines[lines.length - 1] = [];
+          empty.add(lines.at(-1));
+          lines.push([]);
+        } else newLine();
         continue;
       }
       if (!target && PASTE_BLOCKS.has(child.tagName)) {
@@ -932,7 +958,20 @@ export function pastedLines(doc, html, { marks = true, links = true, formula = n
     inlineItems(holder).forEach((item) => spaceAround(item));
     return [...holder.childNodes];
   };
-  return lines.map(trim).filter((line) => line.some((node) => node.nodeType !== 3 || node.data.trim())).map(spaced);
+  return lines.filter((line) => empty.has(line) || holds(line)).map((line) => (empty.has(line) ? [] : spaced(trim(line, lines.indexOf(line)))));
+}
+
+// Each line break in pasted HTML out of the inline elements around it (a mark, a link, a span), each
+// split there into one before it and one after it, up to a block or the top: `<strong>a<br>b</strong>`
+// as `<strong>a</strong><br><strong>b</strong>`, two lines of bold (pastedLines `lineBreaks`).
+function breaksOutOfMarks(root) {
+  for (const br of [...root.querySelectorAll("br")]) {
+    for (let parent = br.parentNode; parent !== root && parent.nodeType === 1 && !PASTE_BLOCKS.has(parent.tagName) && !parent.hasAttribute("data-ge-atom"); parent = br.parentNode) {
+      const after = parent.cloneNode(false);
+      while (br.nextSibling) after.append(br.nextSibling);
+      parent.after(br, after);
+    }
+  }
 }
 
 // An item holding blocks merges into an item that may hold them too (they go under it: Delete at the end
@@ -1035,8 +1074,17 @@ export function identityOf(element) {
   return id;
 }
 
-/** The elements of `root` the commits know. */
-export const knownElements = (root) => root.querySelectorAll("[data-ge-unit], [data-ge-block], [data-ge-box], [data-ge-new], [data-ge-id]");
+// The marks of the elements the commits know, besides an identity of theirs.
+const KNOWN_MARKS = ["data-ge-unit", "data-ge-block", "data-ge-box", "data-ge-new"];
+const KNOWN = [...KNOWN_MARKS, ELEMENT_ID].map((name) => `[${name}]`).join(", ");
+/**
+ * The elements of `root` the commits know (what carries one of their marks or an identity), in document
+ * order. Once every marked element has its identity (every look at the page but the first after a block is
+ * made or the page served), they are those of an identity: one attribute a browser finds an element of at
+ * once, where a list of five has it match each of the page's elements five ways (a long table's thousands
+ * of cells, several times at each commit).
+ */
+export const knownElements = (root) => (KNOWN_MARKS.some((name) => root.querySelector(`[${name}]:not([${ELEMENT_ID}])`)) ? root.querySelectorAll(KNOWN) : root.querySelectorAll(`[${ELEMENT_ID}]`));
 
 // ---------- units: the blocks the reader can select and delete ----------
 // The preview server marks them (see findUnits in src/editor/source/): data-ge-unit on each,
@@ -1045,6 +1093,8 @@ export const knownElements = (root) => root.querySelectorAll("[data-ge-unit], [d
 
 /** What marks a block: a unit the file has (data-ge-unit) or one made on the page (data-ge-new). */
 export const UNIT = "[data-ge-unit], [data-ge-new]";
+/** The units of `root` in document order (root.querySelectorAll(UNIT)): those the file has alone, by the one attribute, where no block made on the page is there. */
+export const unitElementsIn = (root) => (root.querySelector("[data-ge-new]") ? root.querySelectorAll(UNIT) : root.querySelectorAll("[data-ge-unit]"));
 
 // The containers Backspace deletes once nothing is written in them (each goes with its only empty
 // line), the kinds of block whose component says so (`removedEmpty`):
@@ -1344,7 +1394,7 @@ const markedBox = (node) => (node.getAttribute("data-ge-box") ?? "") === "" ? nu
  * commit is on its way is not taken as committed.
  */
 export function snapshotLayout(root) {
-  const units = [...root.querySelectorAll(UNIT)];
+  const units = [...unitElementsIn(root)];
   const boxes = [...root.querySelectorAll("[data-ge-box]")].map((box) => [box, unitsOf(box)]);
   const tables = new Map(units.filter((node) => node.getAttribute("data-ge-unit-kind") === "table").map((node) => [node, gridOf(node)]));
   return { units, boxes, looks: new Map(units.map((node) => [node, node.cloneNode(false)])), tables };
@@ -1568,7 +1618,9 @@ export function placedUnits(layout, emptied) {
   const boxes = firstByAttribute(layout.root, "data-ge-box"); // each box as a search for it would find it, the first of that id
   for (const [boxId, before] of layout.orders) {
     const box = boxes.get(String(boxId));
-    if (!box) continue;
+    // A box the file is not to have until something is written in it (PROVISIONAL: a record's body undone back to
+    // its first word) places nothing: what stood in it is off the page, the empty paragraph there now no block.
+    if (!box || box.hasAttribute(PROVISIONAL)) continue;
     const children = placedIn(box, emptied);
     const idOf = (child) => child.hasAttribute("data-ge-unit") ? Number(child.getAttribute("data-ge-unit")) : null;
     const now = children.map(idOf).filter((id) => id !== null);

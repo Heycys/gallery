@@ -1,4 +1,4 @@
-import { SHEETS } from "../../components/kit.mjs";
+import { RECORD_BODY, SHEETS } from "../../components/kit.mjs";
 
 // What the outline lists, read from the page (outline/tree.mjs's entries): the heading blocks (h1-h4
 // the editor knows as headings, data-ge-unit-kind="heading", in the file or made on the page) in the
@@ -10,7 +10,7 @@ import { SHEETS } from "../../components/kit.mjs";
 // ones too, each with its panel's headings. A heading with no text (just made) has no row yet.
 
 export const HEADING = ':is(h1, h2, h3, h4)[data-ge-unit-kind="heading"]';
-export const LEFT_OUT = "dialog, figure, table, li, .doc-header, template, [data-doc-dev]";
+export const LEFT_OUT = `dialog, figure, table, li, .doc-header, template, [data-doc-dev], ${RECORD_BODY}`; // a record's body: its record's details'
 const SCOPES = ".doc-columns, details";
 
 // ---------- a formula as a row reads it ----------

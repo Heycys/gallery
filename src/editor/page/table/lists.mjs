@@ -6,7 +6,7 @@ import { ZWSP } from "../../../shared/inline-spacing.mjs";
 // numbered one's (into the list right above or below it of that kind); in an item, Enter makes the
 // next one with what follows the caret, Enter in an empty one leaves the list (an empty line where it
 // was, the items after it a list of their own), Backspace at an item's start makes it a line again.
-// Each is one undo step of the cell's text.
+// Each is one undo step of the cell's text. A paste's lists go in by the same rules (placeInCell).
 
 const isList = (node) => node?.nodeType === 1 && (node.tagName === "UL" || node.tagName === "OL");
 const isBreak = (node) => node?.nodeType === 1 && node.tagName === "BR";
@@ -184,4 +184,112 @@ export function createCellLists(t) {
   }
 
   return { typed, key };
+}
+
+/** Whether nodes of a cell's text (components/table/index.mjs cellNodes) hold a list. */
+export const listsIn = (nodes) => nodes.some(isList);
+
+/**
+ * `nodes`, a cell's text made of what is pasted (components/table/index.mjs cellNodes) with lists among
+ * them, in at `at` in `cell` (a collapsed range out of the marks around the caret). At a line of the
+ * cell its lists stand on lines of their own: the line break that ended the caret's line before or after
+ * them goes, and a list of them beside one of its kind joins it. In an item the item splits there, as
+ * Enter splits it: what comes before the first list joins the words before the caret, the items of its
+ * lists and the lines between them (each run of them an item) follow as items, each of its own list's
+ * kind (the caret's list split around those of another), the words after the caret joining the last,
+ * and an item left with no words gives them its place. Returns a range for the caret, at the end of
+ * what went in.
+ */
+export function placeInCell(cell, at, nodes) {
+  const doc = cell.ownerDocument;
+  const marker = doc.createTextNode(""); // where the caret goes
+  const inside = at.startContainer.nodeType === 1 ? at.startContainer : at.startContainer.parentElement;
+  const item = inside?.closest("li");
+  if (item && cell.contains(item) && item.parentElement?.parentElement === cell) inItem(doc, item, at, nodes, marker);
+  else {
+    const fragment = doc.createDocumentFragment();
+    fragment.append(...nodes);
+    const last = nodes.at(-1);
+    if (isList(last)) last.lastElementChild.append(marker);
+    else fragment.append(marker);
+    at.insertNode(fragment);
+    const first = nodes[0];
+    let end = last; // the last list, joined to one before it too
+    if (isList(first)) {
+      const before = beside(first, false);
+      if (isBreak(before) && inline(beside(before, false))) before.remove();
+      const above = beside(first, false);
+      if (joinLists(above, first) && first === last) end = above;
+    }
+    if (isList(end)) {
+      const after = beside(end, true);
+      if (isBreak(after)) after.remove();
+      joinLists(end, beside(end, true));
+    }
+  }
+  const range = doc.createRange();
+  range.setStartBefore(marker);
+  range.collapse(true);
+  marker.remove();
+  return range;
+}
+
+// The sibling of `node` before it (after it: `forward`), past empty text (the pads a split leaves).
+function beside(node, forward) {
+  let next = forward ? node.nextSibling : node.previousSibling;
+  while (next?.nodeType === 3 && !next.data.replaceAll(ZWSP, "")) next = forward ? next.nextSibling : next.previousSibling;
+  return next;
+}
+
+// Two lists side by side of one kind made one (the first keeps the items of both). Returns whether they were.
+function joinLists(first, second) {
+  if (!isList(first) || !isList(second) || first.tagName !== second.tagName) return false;
+  first.append(...second.children);
+  second.remove();
+  return true;
+}
+
+// Pasted in `item`, a cell's list's item, at `at` (placeInCell).
+function inItem(doc, item, at, nodes, marker) {
+  const list = item.parentElement;
+  const after = doc.createRange();
+  after.setStart(at.startContainer, at.startOffset);
+  after.setEnd(item, item.childNodes.length);
+  const tail = after.extractContents();
+  // What goes after the item: { tag, nodes } each.
+  const rows = [];
+  let leading = true;
+  for (const node of nodes) {
+    if (isList(node)) {
+      leading = false;
+      for (const entry of [...node.children]) rows.push({ tag: node.tagName, nodes: [...entry.childNodes] });
+    } else if (leading) item.append(node);
+    else if (rows.at(-1)?.run) rows.at(-1).nodes.push(node);
+    else rows.push({ tag: list.tagName, run: true, nodes: [node] });
+  }
+  rows.at(-1).nodes.push(marker, ...tail.childNodes);
+  const kinds = new Map();
+  let previous = item;
+  for (const row of rows) {
+    const entry = doc.createElement("li");
+    const words = row.nodes.filter((node) => !(isBreak(node) && node === row.nodes.at(-1) && row.nodes.length > 1));
+    entry.append(...words);
+    if (empty(entry)) entry.append(holder());
+    kinds.set(entry, row.tag);
+    previous.after(entry);
+    previous = entry;
+  }
+  if (empty(item)) item.remove();
+  // The caret's list split around items of another kind.
+  const entries = [...list.children];
+  if (entries.every((entry) => (kinds.get(entry) ?? list.tagName) === list.tagName)) return;
+  const lists = [];
+  for (const entry of entries) {
+    const tag = kinds.get(entry) ?? list.tagName;
+    if (lists.at(-1)?.tagName !== tag) lists.push(doc.createElement(tag.toLowerCase()));
+    lists.at(-1).append(entry);
+  }
+  list.replaceWith(...lists);
+  joinLists(beside(lists[0], false), lists[0]);
+  joinLists(lists.at(-1), beside(lists.at(-1), true));
 }

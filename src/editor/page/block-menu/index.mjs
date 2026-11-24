@@ -32,7 +32,8 @@ import { t } from "../../../shared/i18n/index.mjs";
 // one section, 分成 n 栏 for neighbours side by side, a column each) and deleting them all. A block that
 // takes a color (a paragraph, a heading: components/colors.mjs) has "颜色 ›" right below its types,
 // (colors.mjs); so do several selected ones that all take one. A paragraph and a heading
-// have "对齐与缩进 ›" right above it (align.mjs), several selected that all take one too. It keeps clear of the block, or stands right of a section's bar.
+// have "对齐与缩进 ›" right above it (align.mjs), several selected that all take one too; a table has 对齐 › there, and
+// its 宽表格 right above that (its page module's `menuLead`). It keeps clear of the block, or stands right of a section's bar.
 // A component whose block has a menu of its own gives it (`menu`): a Sheet tab's is the tab's
 // menu, below the tab (components/sheets/page.mjs): 重命名, 编辑图标 and 删除. A block that turns into
 // nothing has its name at the head (`nameOf`), with its mark where its component has one (`iconOf`:
@@ -171,10 +172,12 @@ export function createBlockMenu({ info, menu, selection, remove, takenWith = (un
       }, { columns: COLUMNS });
       items.push({ node: grid, cells: [...grid.querySelectorAll(".ge-type")], columns: COLUMNS }, { separator: true });
     }
-    // A highlight block's icon (添加图标 / 更换图标: components/icon/page.mjs rowBeside) beside its color.
+    // A highlight block's icon (添加图标 / 更换图标: components/icon/page.mjs rowBeside) beside its color; a
+    // component's row heading these (its page module's `menuLead`: a table's 宽表格), right above 对齐.
     const icon = rowBeside(target);
+    const lead = pageOfUnit(target)?.menuLead?.(target) ?? [];
     const aligned = alignRows([target], { kindOf, look });
-    if (aligned.length > 0 || colorable(target) || icon) items.push(...aligned, ...(colorable(target) ? colorRow([target]) : []), ...(icon ? [icon] : []), { separator: true });
+    if (lead.length > 0 || aligned.length > 0 || colorable(target) || icon) items.push(...lead, ...aligned, ...(colorable(target) ? colorRow([target]) : []), ...(icon ? [icon] : []), { separator: true });
     // A component's own rows (an image's: components/image/page.mjs; a table's, with its size's
     // 铺满正文宽度…; a card's, a code block's, a Sheet area's), one group, from its page module.
     const own = pageOfUnit(target)?.menuItems?.(target) ?? [];

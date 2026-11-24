@@ -22,6 +22,7 @@ Each block by the name Gallery's menu gives it (the user's word for it), what yo
 | 代码块 | `<pre data-title="…"><code class="language-…">` | `div.doc-code[data-language]` | Text and lists |
 | 公式块, a formula in a line | `<p>\[…\]</p>`, `\(…\)` | | Text and lists |
 | 表格 | `<table>`, its title a `<caption>` | `div.doc-table-wrap` › `table.doc-table`, the caption a `p.doc-note` above it | Tables |
+| 多维表格 | `div.doc-database` › `<script type="application/json">` (its columns and views), then `<table>` (a row per record, `th[data-column]`) | | Databases |
 | 图片 | `<figure><img src="assets/…"><figcaption>`, or a lone `<img>` | `figure.doc-image` | Pictures |
 | 小字 | `<p class="doc-note">`, `span.doc-tab` at its right | | Kit blocks |
 | 提示块, 高亮块 | `div.doc-callout` holding `<p>`; `<aside>` | `aside.doc-panel` (one made in the preview a `div.doc-panel`, the same block) | Kit blocks |
@@ -72,9 +73,17 @@ A table's scope or unit line (`p.doc-note` right above it, or `p.doc-table-meta`
 
 A long table of data shows in a frame at most `min(72vh, 720px)` tall (about 15 rows) and scrolls inside it under its header row, which stays; a short table, or one mostly of words, shows whole. To show every row of a long one, write `style="--doc-table-height: none"` on its `<table>`: the export moves it onto the table's frame (`div.doc-table-wrap`), where you write it on a table already in its frame.
 
+A table wider than the text goes past it, centred, when the document's look says so (宽表格: `gallery set <slug> --wide-tables on`); `data-doc-wide="on"` or `"off"` on one table (on its frame where it has one) sets that table alone, over the look.
+
+## Databases
+
+A 多维表格 (`div.doc-database`) is records the reader sees as a table, a board, a list, cards, a calendar or a chart, filters, sorts and edits on the page. Write one when the content is records of the same fields that the user will keep changing (tasks, a backlog, people and their status); a plain table otherwise. Its columns and views are a `<script type="application/json">`, its records a `<table>`, a row each. Read [databases.md](databases.md) before you write, change or read one: its format, every view's settings, formulas, safe changes and what makes it read-only. A page of its own for each record (详情页) is that record's body ([Records' bodies](databases.md#records-bodies)), not a detail card.
+
 ## Pictures
 
 A picture comes from a file right in the document's `assets/` (no folder in it), named with 1 to 81 ASCII letters, digits, dots, dashes and underscores, the first a letter or digit, in a format a page shows (png, jpg, gif, webp, avif, svg, ico): rename a file as you copy it in (`古籍 1.png` as `assets/guji-1.png`). Copy it in as it is: the export embeds a copy as light as the page needs (twice the reading width at most, a screenshot or a wide photo as WebP; the file in `assets/` stays as it is), and `gallery check` names the few it cannot make lighter. On a machine without Chrome or Edge, which draws the copies, that is every heavy one: copy those in at the size the page needs (ImageMagick: `magick in.png -resize 1400x1400> -quality 80 out.jpg`). Each further `<img>` of a picture embeds it again.
+
+A place for a picture the user adds later (添加图片) is an empty one, `<figure class="doc-image"></figure>`: the editor shows it as a field a click or a paste fills, and readers see nothing of it until then. Write that, not a line of words asking for a picture.
 
 A picture with no width shows at its own size, at most its column's width and 80% of the window's height (a tall scan shows whole, narrower); `width="360"` (pixels) gives it that share of the 712px reading width, `width="50%"` half the width it stands in. The share holds on a narrow page too: `width="300"` is 0.42 of a phone's 336px, 141px. A reader's click on a picture opens it large with its caption; you write nothing for it. A picture in a link follows the link; an icon or a picture shown under 48px does not open.
 
@@ -88,7 +97,7 @@ The blocks HTML has no element for, written with the kit's classes as the exampl
 
 **Callout** (`div.doc-callout`): text set apart from the paragraphs; its words in a `<p>` in it, and a list or a code block after that where it needs one (`<div class="doc-callout"><p>…</p></div>`). **Highlight panel** (`<aside>`): blocks set apart on a light fill, an icon first if any.
 
-**A block's color** (颜色): a class on the block, not a `style`, of the colors gray, brown, orange, yellow, green, blue, purple, pink and red. A paragraph, a heading, a list item or a flowchart step takes its words' color (`doc-text-<color>`), a fill (`doc-highlight-<color>`) or both; a disclosure, a code block (on its `<pre>`), a callout or a highlight panel a fill only; a table cell one of the two. Words in a line take theirs from `<mark>` or a `<span style>`.
+**A block's color** (颜色): a class on the block, not a `style`, of the colors gray, brown, orange, yellow, green, blue, purple, pink and red. A paragraph, a heading, a list item, a flowchart step or a file (on its `<figure>`) takes its words' color (`doc-text-<color>`), a fill (`doc-highlight-<color>`) or both; a disclosure, a code block (on its `<pre>`), a callout or a highlight panel a fill only; a table cell one of the two. Words in a line take theirs from `<mark>` or a `<span style>`.
 
 **A block's alignment and indent** (对齐与缩进): `doc-align-center` or `doc-align-right` on a paragraph, an `h1`–`h4` or a table's frame (`div.doc-table-wrap`, when the table is narrower than the text), the left being none; `doc-indent-1` … `doc-indent-8` move a paragraph or a heading in by two body characters a level. A `text-align: center` or `right` in a paragraph's or heading's `style` is rewritten as the class.
 

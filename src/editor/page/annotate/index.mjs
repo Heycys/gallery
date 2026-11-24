@@ -13,7 +13,7 @@ import { MARGIN, margin, onMargin, rightRoom, setMargin } from "../margin.mjs";
 import { note, own, provide } from "../overlays.mjs";
 import { sectionOps } from "../page-objects.mjs";
 import { placeBox } from "../placement.mjs";
-import { ACROSS } from "../../../shared/table-across.mjs";
+import { placedPast } from "../../../shared/table-across.mjs";
 import { failure, postAnswer, postJson } from "../post.mjs";
 import { keep, stored } from "../storage.mjs";
 import { addStyle, fadeIn, still } from "../ui.mjs";
@@ -1175,11 +1175,11 @@ export function createAnnotate({ slug, token, isEditing, picked, unpick = () => 
   const markerOn = (spot) => [...views.values()].some((view) => over(view.marker?.isConnected ? view.marker.getBoundingClientRect() : null, spot))
     || [...cards.values()].some((card) => over(card.node.parentNode === layer ? card.node.getBoundingClientRect() : null, spot));
 
-  // The right edge what stands right of `units` goes by, the column's being `right`: a table among them placed
-  // past the text (宽表格, the kit's tables/across.js) reaches past the column, and a marker or a bar of its
-  // stands right of it, not over it (as far as the page's area at full width, whose gutter holds them as a page
-  // read full width does).
-  const pastText = (right, units = []) => Math.max(right, ...units.map((unit) => unit?.closest?.(`[${ACROSS}]`)?.getBoundingClientRect().right ?? -Infinity));
+  // The right edge what stands right of `units` goes by, the column's being `right`: a table or a 多维表格 among them
+  // placed past the text (宽表格, 宽多维表格: the kit's tables/across.js, database/across.js; shared/table-across.mjs
+  // placedPast) reaches past the column, and a marker or a bar of its stands right of it, not over it (as far as the
+  // page's area at full width, whose gutter holds them as a page read full width does).
+  const pastText = (right, units = []) => Math.max(right, ...units.map((unit) => placedPast(unit)?.getBoundingClientRect().right ?? -Infinity));
 
   // Where across the window a marker of `units` stands, the column's right edge being `right`: with any
   // of them in a section, past its strip, as far out as the pointer finds that (handle-sizes.mjs

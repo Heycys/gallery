@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { along, placeInRow } from '../../../../shared/drag-place.mjs';
 import { t } from '../../../../shared/i18n/index.mjs';
 import { PREFIXES } from '../../../../shared/renamed-storage.mjs';
 import { Icon } from '../../components/Icon';
@@ -67,6 +68,7 @@ function WritingPreferences() {
   const [rename, setRename] = useState<{ id: string; name: string } | null>(null);
   const [drag, setDrag] = useState<string | null>(null);
   const [drop, setDrop] = useState<{ id: string; after: boolean } | null>(null);
+  const grabbed = useRef(0); // how far in from the dragged tab's left edge it was pressed (its picture follows the pointer so)
   const [hint, setHint] = useState(false);
   const editors = useRef(new Map<string, Editor>());
   const overlay = useRef<HTMLDivElement>(null);
@@ -188,6 +190,18 @@ function WritingPreferences() {
       if (choice === 'delete') await act({ action: 'delete', id: item.id, revision: item.revision });
     })() },
   ], { className: 'wp-menu' });
+  // Where a tab dragged goes is by the tab itself (the browser's picture of it, under the pointer where it was
+  // pressed), not the pointer: a tab gives way as the dragged one's leading edge passes its middle
+  // (src/shared/drag-place.mjs), as a database's view tabs; none where it stays.
+  const dropAt = (strip: HTMLElement, x: number) => {
+    const tabs = [...strip.querySelectorAll<HTMLElement>(':scope > [role="tab"]')];
+    const from = items.findIndex(item => item.id === drag);
+    if (from < 0 || tabs.length !== items.length) return null;
+    const boxes = tabs.map(tab => along(tab.getBoundingClientRect(), 'x'));
+    const start = x - grabbed.current;
+    const place = placeInRow(boxes, from, { start, end: start + boxes[from].end - boxes[from].start });
+    return place === from ? null : { id: items[place].id, after: place > from };
+  };
   const reorder = async () => {
     if (!drag || !drop || drag === drop.id) return;
     const order = items.map(item => item.id).filter(id => id !== drag);
@@ -219,8 +233,8 @@ function WritingPreferences() {
       </section>}
       <div className="wp-tabs"><div className="wp-strip" role="tablist" aria-label={t('写作偏好')}>
         {items.map((item, index) => <div key={item.id} className={'wp-tab' + (!item.enabled ? ' wp-tab-off' : '') + (drag === item.id ? ' wp-dragging' : '')} role="tab" tabIndex={item.id === active ? 0 : -1} aria-selected={item.id === active} aria-controls={'preference-' + (item.slug ?? index)} data-tip={item.file} data-drop={drop?.id === item.id ? drop.after ? 'after' : 'before' : undefined}
-          draggable={!rename && !busy && !saving} onDragStart={event => { setDrag(item.id); event.dataTransfer.setData('text/plain', item.id); event.dataTransfer.effectAllowed = 'move'; closePopover(); }}
-          onDragOver={event => { if (!drag) return; event.preventDefault(); const rect = event.currentTarget.getBoundingClientRect(); setDrop({ id: item.id, after: event.clientX > rect.left + rect.width / 2 }); }}
+          draggable={!rename && !busy && !saving} onDragStart={event => { grabbed.current = event.clientX - event.currentTarget.getBoundingClientRect().left; setDrag(item.id); event.dataTransfer.setData('text/plain', item.id); event.dataTransfer.effectAllowed = 'move'; closePopover(); }}
+          onDragOver={event => { if (!drag) return; event.preventDefault(); const next = dropAt(event.currentTarget.parentElement!, event.clientX); setDrop(now => (now?.id === next?.id && now?.after === next?.after ? now : next)); }}
           onDrop={event => { event.preventDefault(); void reorder(); setDrag(null); setDrop(null); }} onDragEnd={() => { setDrag(null); setDrop(null); }}
           onClick={event => { if (rename) return; if (item.id === active) menu(event.currentTarget, item); else setActive(item.id); }} onContextMenu={event => { event.preventDefault(); menu(event.currentTarget, item); }}
           onKeyDown={event => {

@@ -21,9 +21,9 @@ gallery skill install
 
 `gallery skill install` 把和这个版本配套的 Skill 写到 Agent 读 Skill 的地方：Claude Code 是 `~/.claude/skills/gallery`（设置了 `CLAUDE_CONFIG_DIR` 时是它下面的 `skills/gallery`），Codex 是 `~/.codex/skills/gallery`（设置了 `CODEX_HOME` 时是它下面的）；两个都装了就两个都写，都没有就写 Claude Code 的。`--agent claude|codex` 只写一个，`--project` 写进当前项目的 `.claude/skills/gallery`（或 `.codex/skills/gallery`，Codex 是否读项目里的 Skill 还没有验证），`--dir <文件夹>` 写到任意文件夹（用于别的 Agent）。升级 `gallery` 之后再运行一次，Skill 跟着更新；Skill 没变时什么都不做。也可以不用命令，把 `gallery-skill-<版本>.zip` 解压到 Agent 的 Skill 目录。
 
-只给 Agent 装了 Skill、电脑上还没有 `gallery` 也可以：Agent 会先运行 `gallery --version`，发现没有（或版本不配套）时先问你，你同意后它运行 `npm i -g @heycys/gallery@^0.3.1`。
+只给 Agent 装了 Skill、电脑上还没有 `gallery` 也可以：Agent 会先运行 `gallery --version`，发现没有（或版本不配套）时先问你，你同意后它运行 `npm i -g @heycys/gallery@^0.4.0`。
 
-- macOS、Linux 上 `npm i -g` 报 `EACCES`（npm 的全局目录属于系统）：不要用 `sudo`，执行 `npm config set prefix ~/.npm-global`，把 `~/.npm-global/bin` 加进 `PATH`，重开终端再装；或者每个命令都写成 `npx -y @heycys/gallery@^0.3.1 <命令>`（每次慢几秒，适合不能全局安装的沙箱和 CI）。
+- macOS、Linux 上 `npm i -g` 报 `EACCES`（npm 的全局目录属于系统）：不要用 `sudo`，执行 `npm config set prefix ~/.npm-global`，把 `~/.npm-global/bin` 加进 `PATH`，重开终端再装；或者每个命令都写成 `npx -y @heycys/gallery@^0.4.0 <命令>`（每次慢几秒，适合不能全局安装的沙箱和 CI）。
 - Windows PowerShell 提示“禁止运行脚本”（`gallery.ps1`）：改用 `gallery.cmd`，或者执行一次 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`。
 - 命令名很短，在 Agent 的权限设置里允许一次 `gallery *` 就够了。
 
@@ -91,7 +91,7 @@ Gallery 自己写进文件的字（新文档的起始页和说明、首页的标
 | `gallery extension list`、`extension check <id>` | 扩展给侧栏加的栏（`<工作区>/extensions/<id>/sidebar.json`：一个标题和一串条目，每个条目有标题、可选的图标和网址，可以分层；点开有网址的条目，右侧显示它的网页，和网页链接一样）：`list` 列出工作区里有哪些扩展、各自的栏名和条目数，`check <id>` 照侧栏的读法读那份文件，打印侧栏会显示什么，读不出来时退出 1 并说明原因。Gallery 只读这些文件，写它们的是扩展（写法在 `skills/gallery/references/extensions.md`）；栏放在哪里由你拖动决定，条目不能拖进拖出。扩展的文件夹没了（`extension remove` 或手动删掉），Gallery 启动时和发现文件夹没了时把它的栏从目录里清掉；停用的扩展保留位置 |
 | `gallery extension settings <id> [<键>=<值>...] [--json]` | 扩展自己的设置（`extension.json` 的 `settings`，现在只有开关）：不带键值时列出每一项、当前值和后台读的文件；带 `键=值`（`true`/`false`、`on`/`off`）就像在「设置 › 拓展列表」里拨开关一样改，扩展停用时不让改。后台从 `GALLERY_EXTENSION_SETTINGS` 指的文件读，改了不用重启；工作台脚本用 `api.settings` 和 `api.onSettings` |
 | `gallery move <文档> (--under <文档> \| --top) [--after <文档> \| --first] [--column "<栏>"]` | 在侧栏目录里移动一份文档（连同它下面的）：放到某份文档下面或顶层，放在某份文档后面、第一个或最后一个。本地服务开着时经由它写，开着的工作台马上看到；文档文件不动，文档之间的链接照常可用 |
-| `gallery set <文档> [--title "<标题>"] [--icon <图标>\|none] [--description "<说明>"] [--font sans\|serif\|mixed] [--size small\|default\|large] [--spacing compact\|default\|loose] [--width narrow\|default\|wide] [--full on\|off] [--wide-tables on\|off] [--all]` | 改文档的标题、页面图标或说明，和工作台的重命名、图标选择器一样同时改 `doc.html` 的页头和 `doc.json`；打开着的页面和侧栏马上显示。`--font`、`--size`、`--spacing`、`--width`、`--full`、`--wide-tables` 是工作台「字体与布局」和「全宽」「宽表格」那几项，写进 `doc.json` 的 `look`，加 `--all` 就是「应用到全部文档」；图标也可以写自定义表情的名字 |
+| `gallery set <文档> [--title "<标题>"] [--icon <图标>\|none] [--description "<说明>"] [--font sans\|serif\|mixed] [--size small\|default\|large] [--spacing compact\|default\|loose] [--width narrow\|default\|wide] [--full on\|off] [--wide-tables on\|off] [--wide-databases on\|off] [--all]` | 改文档的标题、页面图标或说明，和工作台的重命名、图标选择器一样同时改 `doc.html` 的页头和 `doc.json`；打开着的页面和侧栏马上显示。`--font`、`--size`、`--spacing`、`--width`、`--full`、`--wide-tables` 是工作台「字体与布局」和「全宽」「宽表格」那几项，写进 `doc.json` 的 `look`，加 `--all` 就是「应用到全部文档」；图标也可以写自定义表情的名字 |
 | `gallery trash <条目>...`、`trash list [--json]`、`trash restore <条目>...`、`trash empty [<条目>...]` | 回收区，和侧栏的「移至回收区」「设置 › 回收区」一样：文档、自定义页、网页链接都能移进去（移进去的文档，它下面的文档照侧栏的规则上移，不跟着进回收区）；`list` 列出里面有什么和各自原来在哪，`restore` 放回原处，`empty` 永久删除（不可恢复，只在你明确要求时）。`gallery link remove` 是它对网页链接的别名 |
 | `gallery duplicate <文档> [<新 slug>] [--title "<标题>"] [--open]` | 创建副本，和菜单里的「创建副本」一样：放在原文档后面，标题加「（副本）」（英文系统是 ` (copy)`），打印新文档的地址（不打开浏览器，加 `--open` 才打开） |
 | `gallery copy <文档> --to <工作区> [--under <文档>]` | 把一份文档（连同它下面的文档）复制到另一个工作区，和把它拖进另一个工作区的栏里一样 |
@@ -153,7 +153,7 @@ Ctrl+C 或另一个终端中的 `gallery sandbox stop my-test` 停止服务。�
 - 每次保存前，文件原来的样子会另存一份到工作区的 `.gallery/state/history/<slug>/`（每份文档保留最近 30 份），出问题时可以手动找回。本地服务重启不影响已经打开的页面，它照样能保存。
 - 替换文件前的最后一刻会再核对一次：如果这期间 Agent 又写入了文件，会先和它的新版本合并再写，不会把它覆盖掉（文件一再变化时最多重试三次，之后稍后再存）。这只是把可能覆盖的时间缩到极短，并不是给文件加锁；不经过本地服务、恰好在同一瞬间写文件的程序，仍有可能撞上。
 
-**字体与布局。** 工作台顶栏“更多操作”里的“字体与布局”：字体（等线体、衬线体、混合体：标题衬线、正文等线）、字体大小（小号、默认、大号，只改字的大小和行高）、正文宽度（偏窄、默认、偏宽，648、712、776 像素，默认字号下一行约 40、44、48 个字，不随字体大小变）和正文间距（紧凑、默认、宽松）。点了马上在页面上换，菜单不关；选的是这份文档自己的，存在它的 `doc.json`（`look`），导出的文件和打印也照这样排。卡片最下面的“应用到全部文档”把这份文档现在的样子设为工作区默认（存在工作区的 `gallery.json`，`look`），去掉每份文档自己的设置，所有文档马上换上，以后新建的也照它；之后在某份文档里再选，只改这一份。没有撤销，换回去也是在这里点。“更多操作”里目录下面还有一个“全宽”开关：打开后这份文档不管正文宽度设的是多少，都按整个页面的宽度显示，关掉就回到原来的宽度（同样是这份文档自己的，存在它的 `doc.json` 的 `look`，导出的文件也是全宽）。全宽下面是“宽表格”，默认关：打开后比正文宽、直接在正文里的表格在自己那一行居中，左右都可以超出正文，最宽到全宽时的页边，再放不下才在表格里左右滚动；高亮块、分栏、折叠块这些容器里的表格不变。它也存在 `doc.json` 的 `look`，导出的文件右上角的显示菜单里也有这个开关，打开时的状态跟着导出那一刻。
+**字体与布局。** 工作台顶栏“更多操作”里的“字体与布局”：字体（等线体、衬线体、混合体：标题衬线、正文等线）、字体大小（小号、默认、大号，只改字的大小和行高）、正文宽度（偏窄、默认、偏宽，648、712、776 像素，默认字号下一行约 40、44、48 个字，不随字体大小变）和正文间距（紧凑、默认、宽松）。点了马上在页面上换，菜单不关；选的是这份文档自己的，存在它的 `doc.json`（`look`），导出的文件和打印也照这样排。卡片最下面的“应用到全部文档”把这份文档现在的样子设为工作区默认（存在工作区的 `gallery.json`，`look`），去掉每份文档自己的设置，所有文档马上换上，以后新建的也照它；之后在某份文档里再选，只改这一份。没有撤销，换回去也是在这里点。“更多操作”里目录下面还有一个“全宽”开关：打开后这份文档不管正文宽度设的是多少，都按整个页面的宽度显示，关掉就回到原来的宽度（同样是这份文档自己的，存在它的 `doc.json` 的 `look`，导出的文件也是全宽）。全宽下面是“宽表格”，默认关：打开后比正文宽、直接在正文里的表格在自己那一行居中，左右都可以超出正文，最宽到全宽时的页边，再放不下才在表格里左右滚动；高亮块、分栏、折叠块这些容器里的表格不变。它下面的“宽多维表格”对多维表格做同样的事：表格视图比正文宽、直接在正文里的多维表格整块（标签、筛选条和视图）居中超出正文，看板、日历这些视图和表格一样宽，最宽到页边，再放不下才在视图里左右滚动；只在页面里有这样的表格、多维表格时才出现这两个开关。它也存在 `doc.json` 的 `look`，导出的文件右上角的显示菜单里也有这个开关，打开时的状态跟着导出那一刻。这两个是整页的开关；单独一个比正文宽的表格、多维表格，在它的块菜单（手柄菜单）里也有“宽表格”“宽多维表格”，只管这一个，写在 `doc.html` 里它身上（`data-doc-wide="on"` 或 `"off"`），比整页的优先；再点整页的开关，所有表格（多维表格）都跟着整页，各自的设置就去掉了。
 
 **复制、导入和导出。** 都在工作台顶栏的“更多操作”里：
 

@@ -1,6 +1,6 @@
 // Usage: npm run skill:package
 // The Gallery skill, thin and apart from the gallery command (docs/internals.md, "Packaging"): the
-// Agent's documents (from its source in the checkout, skills/gallery/: SKILL.md, references/writing-html.md, references/charts-and-figures.md,
+// Agent's documents (from its source in the checkout, skills/gallery/: SKILL.md, references/writing-html.md, references/databases.md, references/charts-and-figures.md,
 // references/building-blocks.md, block-script.md, pages-and-data.md, extensions.md, preference-files.md, previews.md and the example, references/example-report.html), the SDK's types (sdk/*.d.ts) and Codex's display metadata
 // (agents/openai.yaml); no src/, no package.json: the tools are the npm package @heycys/gallery,
 // which SKILL.md's first section has the Agent check for (the version range it needs, and the version
@@ -28,6 +28,7 @@ import { RECORD, recordOf } from "./skill-record.mjs";
 export const SKILL_FILES = [
   "SKILL.md",
   "references/writing-html.md",
+  "references/databases.md",
   "references/charts-and-figures.md",
   "references/building-blocks.md",
   "references/block-script.md",
@@ -245,7 +246,7 @@ export function packageSkill(releaseDirectory, { source = skillSourceDirectory, 
     name: "gallery",
     version,
     archive: archiveName,
-    holds: "The Agent's documents (SKILL.md, references/writing-html.md, references/charts-and-figures.md, references/building-blocks.md, references/block-script.md, references/pages-and-data.md, references/extensions.md, references/preference-files.md, references/previews.md, the example references/example-report.html), the SDK's types (sdk/) and Codex's display metadata (agents/openai.yaml). The tools are the npm package @heycys/gallery, which SKILL.md has the Agent check for and install (with the user's consent); gallery skill install writes this same skill.",
+    holds: "The Agent's documents (SKILL.md, references/writing-html.md, references/databases.md, references/charts-and-figures.md, references/building-blocks.md, references/block-script.md, references/pages-and-data.md, references/extensions.md, references/preference-files.md, references/previews.md, the example references/example-report.html), the SDK's types (sdk/) and Codex's display metadata (agents/openai.yaml). The tools are the npm package @heycys/gallery, which SKILL.md has the Agent check for and install (with the user's consent); gallery skill install writes this same skill.",
     skillEntrypoint: "SKILL.md",
     requires: `@heycys/gallery@${range}`,
     files: entries.map(({ name, data }) => ({ path: name.slice("gallery/".length), bytes: data.byteLength, sha256: sha256(data) })),

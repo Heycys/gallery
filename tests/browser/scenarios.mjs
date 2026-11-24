@@ -10,6 +10,13 @@ import { createHash } from "node:crypto";
 import fs from "node:fs/promises";
 import { startupSettings } from "./startup-settings.mjs";
 import { extensionColumns, extensionSettings, extensionWorkbench } from "./extension-ui.mjs";
+import { databaseScenarios } from "./database.mjs";
+import { databaseChartScenarios } from "./database-chart.mjs";
+import { databaseLayoutScenarios } from "./database-layouts.mjs";
+import { databaseBodyScenarios } from "./database-bodies.mjs";
+import { wideBlockScenarios } from "./wide-blocks.mjs";
+import { squeezeScenarios } from "./scroll-squeeze.mjs";
+import { scrollbarScenarios } from "./scrollbars.mjs";
 import http from "node:http";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -2772,6 +2779,14 @@ export const scenarios = {
     await page.mouse.down();
     t.check((await tip()) === null, "a press takes it away");
     await page.mouse.up();
+    // What is drawn anew under a pointer left still after a press (a bar redrawn as its menu opens) shows none until
+    // the pointer moves, as the browser's own tooltips.
+    await page.evaluate(() => { const old = document.querySelector("#tip-here"); old.replaceWith(old.cloneNode(true)); });
+    await t.sleep(300);
+    t.check((await tip()) === null, "drawn anew under the pointer after a press: none while it stays");
+    await page.mouse.move(at.x + 3, at.y);
+    await t.sleep(300);
+    t.check((await tip())?.text === "套件的提示", "the pointer moved on it: its bubble", JSON.stringify(await tip()));
     await page.mouse.move(5, 5);
     await page.focus("#tip-here");
     await t.sleep(300);
@@ -3049,7 +3064,7 @@ export const scenarios = {
     t.check(!(await t.read()).includes("data-tab-icon") && await page.evaluate((key) => !document.querySelector(`main .doc-sheet-tabs > [data-sheet-tab="${key}"]`).hasAttribute("data-tab-icon"), shown.key), "undone: no emoji, on the page either");
   },
 
-  // A new Sheet area (选项卡, the tabs block) from "/": three tabs, 选项卡 1–3, with empty
+  // A new Sheet area (选项卡, the tabs block) from "/": three tabs, 选项 1–3, with empty
   // panels, the kit's tabs at once (sheets.js loaded for a page served without it), a tab clicked
   // shows its panel; saved as the kit writes one, the file given sheets.js's tag it lacked; undone.
   // "/" in a block with text puts one below it; the menu has it under 高级区块, with its own icon.
@@ -3082,14 +3097,14 @@ export const scenarios = {
         kit: Boolean(globalThis.DocSheets),
       };
     });
-    t.check(offered.first?.includes("选项卡") && offered.icon && JSON.stringify(made.tabs) === JSON.stringify(["选项卡 1", "选项卡 2", "选项卡 3"]) && made.panels === 3 && made.shown === "选项卡 1" && made.kit,
+    t.check(offered.first?.includes("选项卡") && offered.icon && JSON.stringify(made.tabs) === JSON.stringify(["选项 1", "选项 2", "选项 3"]) && made.panels === 3 && made.shown === "选项 1" && made.kit,
       "/xxk: a Sheet area of three tabs, the kit's tabs at once", JSON.stringify({ offered, made }));
     await page.evaluate(() => [...document.querySelectorAll("main .doc-sheet-tabs > .doc-sheet-tab")][1].click());
     await t.sleep(250);
-    t.check(await page.evaluate(() => document.querySelector('main .doc-sheet-tabs > [aria-selected="true"]')?.textContent.trim()) === "选项卡 2", "a click on 选项卡 2 shows its panel");
+    t.check(await page.evaluate(() => document.querySelector('main .doc-sheet-tabs > [aria-selected="true"]')?.textContent.trim()) === "选项 2", "a click on 选项 2 shows its panel");
     await t.settle();
     let text = await file();
-    t.check(/<p>前文<\/p><section class="doc-sheet-shell" data-doc-sheets="tabs-[a-z0-9]{4}" aria-label="选项卡"><div class="doc-sheet-tabs" aria-label="选项卡">(<button class="doc-sheet-tab" type="button" data-sheet-tab="tab-[a-z0-9]{4}">选项卡 \d<\/button>){3}<\/div>(<div data-doc-sheet="tab-[a-z0-9]{4}"><\/div>){3}<\/section><p>后文<\/p>/.test(text)
+    t.check(/<p>前文<\/p><section class="doc-sheet-shell" data-doc-sheets="tabs-[a-z0-9]{4}" aria-label="选项卡"><div class="doc-sheet-tabs" aria-label="选项卡">(<button class="doc-sheet-tab" type="button" data-sheet-tab="tab-[a-z0-9]{4}">选项 \d<\/button>){3}<\/div>(<div data-doc-sheet="tab-[a-z0-9]{4}"><\/div>){3}<\/section><p>后文<\/p>/.test(text)
       && text.includes('<script src="/kit/sheets.js" data-doc-kit="sheets"></script>'), "saved as the kit writes one, the file given sheets.js", text.match(/<main[\s\S]*<\/main>/)?.[0]);
     await page.evaluate(() => document.querySelector("main p").focus());
     await t.combo("Control", "z");
@@ -4975,17 +4990,40 @@ export const scenarios = {
     t.check(hover.add && hover.handle && handleFor, "on the tab row: + and the area's handle, on that line", JSON.stringify({ ...hover, handleFor }));
     const plus = (await overlayState(t)).overlays.filter((overlay) => overlay.kind === "tab add");
     t.check(plus.length === 1 && plus[0].alive === true, "the + is listed among the overlays, alive", JSON.stringify(plus));
+    // As a database's + after its view tabs: a round 28px icon button 4px after the last tab, on its
+    // line, no fill till the pointer is on it, then the hover fill.
+    const plusLook = () => page.evaluate(() => {
+      const circle = document.querySelector(".ge-tab-add");
+      const probe = document.body.appendChild(document.createElement("i"));
+      probe.style.cssText = "position: absolute; background: var(--doc-hover); color: var(--doc-menu-icon)";
+      const { backgroundColor: hover, color: icon } = getComputedStyle(probe);
+      probe.remove();
+      const style = getComputedStyle(circle);
+      const rect = circle.getBoundingClientRect();
+      const last = [...document.querySelectorAll("main .doc-sheet-tabs > .doc-sheet-tab")].at(-1).getBoundingClientRect();
+      return {
+        size: [Math.round(rect.width), Math.round(rect.height)], round: style.borderRadius, icon: style.color === icon, plus: Math.round(circle.querySelector("svg").getBoundingClientRect().width),
+        bare: style.backgroundColor === "rgba(0, 0, 0, 0)", lit: style.backgroundColor === hover, gap: Math.round(rect.left - last.right), off: Math.round((rect.top + rect.bottom - last.top - last.bottom) / 2),
+      };
+    });
+    const resting = await plusLook();
+    t.check(resting.size.join() === "28,28" && resting.round === "50%" && resting.icon && resting.plus === 16 && resting.bare && Math.abs(resting.gap - 4) <= 1 && Math.abs(resting.off) <= 1,
+      "+ is a round icon button after the last tab, no fill", JSON.stringify(resting));
 
     // +: a new tab at the end, shown, its name selected; typed over and kept.
     const add = await page.evaluate(() => {
       const rect = document.querySelector(".ge-tab-add").getBoundingClientRect();
       return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
     });
+    await page.mouse.move(add.x, add.y);
+    await t.sleep(200);
+    const lit = await plusLook();
+    t.check(lit.lit, "under the pointer, + takes the hover fill", JSON.stringify(lit));
     await page.mouse.click(add.x, add.y);
     await t.sleep(300);
     const made = await page.evaluate(() => ({ selected: getSelection().toString(), editable: document.activeElement?.getAttribute("contenteditable") }));
-    t.check(JSON.stringify(await tabs()) === JSON.stringify(["图表组件", "表格与模板", "交互状态与其他", "选项卡 4*"]) && made.selected === "选项卡 4" && made.editable === "true",
-      "+ makes 选项卡 4 at the end, shown, its name selected", JSON.stringify({ tabs: await tabs(), made }));
+    t.check(JSON.stringify(await tabs()) === JSON.stringify(["图表组件", "表格与模板", "交互状态与其他", "选项 4*"]) && made.selected === "选项 4" && made.editable === "true",
+      "+ makes 选项 4 at the end, shown, its name selected", JSON.stringify({ tabs: await tabs(), made }));
     await t.type("附加");
     await t.press("Enter");
     await t.settle();
@@ -4996,8 +5034,9 @@ export const scenarios = {
       "the file has the tab after the last one and its empty panel after that one's, set apart as the panels are", text.slice(text.indexOf("交互状态与其他</button>"), text.indexOf("交互状态与其他</button>") + 200));
     t.check(JSON.stringify(await dock()) === JSON.stringify(["图表组件", "表格与模板", "交互状态与其他", "附加"]), "the runtime knows the new tab", JSON.stringify(await dock()));
 
-    // The empty tab: a placeholder; a click makes a paragraph there, in the placeholder's room:
-    // the area's bottom stays where it was, the panel's own 16px under the paragraph.
+    // The empty tab: a placeholder, whose words alone are lit under the pointer (a fill as wide as
+    // they are); a click makes a paragraph there, in the placeholder's room: the area's bottom stays
+    // where it was, the panel's own 16px under the paragraph.
     const placed = () => page.evaluate((key) => {
       const panel = document.querySelector(`[data-doc-sheet="${key}"]`);
       const shell = panel.closest(".doc-sheet-shell");
@@ -5006,12 +5045,29 @@ export const scenarios = {
       return { panel: panel.getBoundingClientRect().height, bottom: shell.getBoundingClientRect().bottom - tabs.bottom, under: block ? panel.getBoundingClientRect().bottom - block.bottom : null };
     }, key);
     const before = await placed();
-    const empty = await page.evaluate((key) => {
+    const placeholder = () => page.evaluate((key) => {
       const panel = document.querySelector(`[data-doc-sheet="${key}"]`);
       const rect = panel.getBoundingClientRect();
-      return { says: getComputedStyle(panel, "::before").content, x: rect.left + 40, y: rect.top + rect.height / 2, height: rect.height };
+      const style = getComputedStyle(panel);
+      const before = getComputedStyle(panel, "::before");
+      // The words, set as the placeholder sets them: how wide they are.
+      const probe = document.body.appendChild(document.createElement("span"));
+      probe.style.cssText = `position: absolute; visibility: hidden; white-space: nowrap; font: ${before.font}; letter-spacing: ${before.letterSpacing}`;
+      probe.textContent = JSON.parse(before.content);
+      const words = probe.getBoundingClientRect().width;
+      probe.remove();
+      return {
+        says: before.content, x: rect.left + 40, y: rect.top + rect.height / 2, height: rect.height, width: parseFloat(before.width), words,
+        inner: rect.width - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight), fill: before.backgroundColor, ring: before.boxShadow,
+      };
     }, key);
-    t.check(empty.says.includes("空白选项卡。点击或拖动区块到这里。") && empty.height > 20, "an empty tab shows the placeholder", JSON.stringify(empty));
+    const empty = await placeholder();
+    t.check(empty.says === JSON.stringify("点击输入内容，或把块拖到这里") && empty.height > 20, "an empty tab shows the placeholder", JSON.stringify(empty));
+    await page.mouse.move(empty.x, empty.y);
+    await t.sleep(150);
+    const lighted = await placeholder();
+    t.check(Math.abs(lighted.width - lighted.words) < 1.5 && lighted.width < lighted.inner - 100 && lighted.fill !== "rgba(0, 0, 0, 0)" && /3px/.test(lighted.ring),
+      "under the pointer its words alone are lit: a fill as wide as they are, not a strip across the panel", JSON.stringify(lighted));
     await page.mouse.click(empty.x, empty.y);
     await t.sleep(200);
     const clicked = await placed();
@@ -5039,18 +5095,65 @@ export const scenarios = {
     t.check(new RegExp(`<button class="doc-sheet-tab" type="button" data-sheet-tab="${key}" data-block-id="[a-z0-9]{8}">附加</button>`).test(text) && text.includes("新内容</p>")
       && JSON.stringify(await dock()) === JSON.stringify(["图表组件", "表格与模板", "交互状态与其他", "附加"]), "undo puts the tab and its panel back, in the file and the dock", JSON.stringify(await dock()));
 
-    // A tab dragged by itself: along its row.
+    // A tab dragged by itself: along its row, as a database's view tabs move. It lifts and follows
+    // the pointer, the tab it passes makes way, nothing else moves; no block is selected for it (no
+    // fill), no drop line, no handle, no +. Let go, it takes its place, in the file too, the tabs
+    // keeping nothing of the drag; one undo puts it back. Esc while dragging puts it back too, and
+    // the release after it switches nothing.
     const from = await rectOf("charts");
     const past = await rectOf("tables");
+    const lefts = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll("main .doc-sheet-tabs > [data-sheet-tab]")].map((tab) => [tab.getAttribute("data-sheet-tab"), tab.getBoundingClientRect().left])));
+    const still = await lefts();
     await page.mouse.move(from.x, from.y);
     await page.mouse.down();
     await page.mouse.move(from.x + 10, from.y, { steps: 2 });
     await page.mouse.move(past.right - 4, past.y, { steps: 6 });
-    await t.sleep(150);
+    await t.sleep(300);
+    const during = await page.evaluate(() => {
+      const charts = document.querySelector('main [data-sheet-tab="charts"]');
+      const shown = (selector) => [...document.querySelectorAll(selector)].some((node) => !node.hidden && node.getClientRects().length > 0);
+      return {
+        lifted: charts.hasAttribute("data-ge-tab-lifted") && getComputedStyle(charts).boxShadow !== "none" && getComputedStyle(charts).backgroundColor !== "rgba(0, 0, 0, 0)",
+        selected: window.__gallerySelected().length, fills: document.querySelectorAll(".ge-halo").length,
+        line: shown(".ge-drop-line"), handle: shown(".ge-handle"), add: Boolean(document.querySelector(".ge-tab-add:not([data-ge-going])")),
+      };
+    });
+    const moved = await lefts();
+    const width = 2 * (from.right - from.x);
+    t.check(during.lifted && during.selected === 0 && during.fills === 0 && !during.line && !during.handle && !during.add,
+      "while dragged: the tab lifted, no block selected, no drop line, no handle, no +", JSON.stringify(during));
+    t.check(moved.charts - still.charts > past.x - from.x && still.tables - moved.tables > width - 1 && Math.abs(moved.workspace - still.workspace) < 0.5,
+      "the dragged tab follows the pointer, the tab it passed makes way, the one after them stays", JSON.stringify({ still, moved, width }));
     await page.mouse.up();
     await t.settle();
+    await t.sleep(300);
     text = await t.read();
-    t.check((await tabs()).slice(0, 2).join() === "表格与模板,图表组件" && text.indexOf('data-sheet-tab="tables"') < text.indexOf('data-sheet-tab="charts"'), "a dragged tab moves along its row", JSON.stringify(await tabs()));
+    const kept = await page.evaluate(() => [...document.querySelectorAll("main .doc-sheet-tabs > [data-sheet-tab]")].filter((tab) => /transform|transition/.test(tab.getAttribute("style") ?? "") || tab.hasAttribute("data-ge-tab-lifted")).length
+      + document.querySelectorAll("[data-ge-moving]").length + (document.documentElement.hasAttribute("data-ge-tab-drag") ? 1 : 0));
+    t.check((await tabs()).slice(0, 2).join() === "表格与模板,图表组件" && text.indexOf('data-sheet-tab="tables"') < text.indexOf('data-sheet-tab="charts"') && !/data-sheet-tab="(charts|tables)"[^>]*style=/.test(text) && kept === 0,
+      "a dragged tab moves along its row, in the file too; nothing of the drag is left on the tabs", JSON.stringify({ tabs: await tabs(), kept }));
+    await t.combo("Control", "z");
+    await t.settle();
+    text = await t.read();
+    t.check((await tabs()).slice(0, 2).join() === "图表组件,表格与模板" && text.indexOf('data-sheet-tab="charts"') < text.indexOf('data-sheet-tab="tables"'), "one undo puts it back, in the file too", JSON.stringify(await tabs()));
+    const shownBefore = (await tabs()).find((name) => name.endsWith("*"));
+    const tables = await rectOf("tables");
+    const workspace = await rectOf("workspace");
+    await page.mouse.move(tables.x, tables.y);
+    await page.mouse.down();
+    await page.mouse.move(tables.x + 10, tables.y, { steps: 2 });
+    await page.mouse.move(workspace.right - 4, workspace.y, { steps: 6 });
+    await t.sleep(250);
+    await page.keyboard.press("Escape");
+    await t.sleep(300);
+    const back = await lefts();
+    await page.mouse.up();
+    await t.sleep(200);
+    t.check(Math.abs(back.tables - still.tables) < 0.5 && Math.abs(back.workspace - still.workspace) < 0.5 && (await tabs()).find((name) => name.endsWith("*")) === shownBefore,
+      "Esc while dragging puts the tab back; the release after it switches nothing", JSON.stringify({ still, back, tabs: await tabs() }));
+    await t.settle();
+    text = await t.read();
+    t.check(text.indexOf('data-sheet-tab="charts"') < text.indexOf('data-sheet-tab="tables"') && text.indexOf('data-sheet-tab="tables"') < text.indexOf('data-sheet-tab="workspace"'), "and the file is as it was");
 
     // The right button: any tab's menu, the tab shown first.
     const other = await rectOf("workspace");
@@ -5067,6 +5170,93 @@ export const scenarios = {
     await page.keyboard.press("Escape");
     const stats = await page.evaluate(() => DocKit.stats());
     t.check(stats.failed === 0 && stats.live.sheets === 1, "the area's runtime started again each time, nothing failed", JSON.stringify(stats));
+  },
+
+  // A tab of a 选项卡 block dragged by its left end (sheets/pills.mjs): the tab after it gives way once the dragged
+  // one's right edge is past that tab's middle (src/shared/drag-place.mjs: by the tab, not the pointer, which is
+  // then still left of that middle), not before; let go, the order in the file, one undo.
+  async tabPillsEdge(t) {
+    await t.open();
+    const { page } = t;
+    const tabs = () => page.evaluate(() => Object.fromEntries([...document.querySelectorAll("main .doc-sheet-tabs > [data-sheet-tab]")].map((tab) => {
+      const rect = tab.getBoundingClientRect();
+      return [tab.getAttribute("data-sheet-tab"), { left: rect.left, right: rect.right, width: rect.width, y: rect.top + rect.height / 2, shift: new DOMMatrixReadOnly(getComputedStyle(tab).transform).m41 }];
+    })));
+    await page.evaluate(() => document.querySelector('main [data-sheet-tab="tables"]').scrollIntoView({ block: "center" }));
+    await t.sleep(200);
+    const before = await tabs();
+    const { tables, workspace } = before;
+    const press = { x: tables.left + 4, y: tables.y };
+    const past = workspace.left + workspace.width / 2 + 3 - tables.right; // its right edge 3px past the next one's middle
+    await page.mouse.move(press.x, press.y);
+    await t.sleep(150);
+    await page.mouse.down();
+    await page.mouse.move(press.x + 8, press.y, { steps: 2 });
+    await page.mouse.move(press.x + past - 12, press.y, { steps: 4 });
+    await t.sleep(250);
+    const short = await tabs();
+    await page.mouse.move(press.x + past, press.y, { steps: 2 });
+    await t.sleep(300);
+    const during = await tabs();
+    t.check(Math.abs(short.workspace.shift) < 0.5 && during.workspace.shift < -(tables.width - 1) && Math.abs(during.charts.shift) < 0.5 && press.x + past < workspace.left + workspace.width / 2,
+      "its edge short of the next tab's middle: nothing moves; past it (the pointer short of it): the next tab has given way, the one before stays", JSON.stringify({ before, short, during }));
+    await page.mouse.up();
+    await t.settle();
+    await t.sleep(300);
+    let text = await t.read();
+    t.check(text.indexOf('data-sheet-tab="workspace"') < text.indexOf('data-sheet-tab="tables"') && text.indexOf('data-sheet-tab="charts"') < text.indexOf('data-sheet-tab="workspace"'), "let go: after it in the file");
+    await t.combo("Control", "z");
+    await t.settle();
+    text = await t.read();
+    t.check(text.indexOf('data-sheet-tab="tables"') < text.indexOf('data-sheet-tab="workspace"'), "one undo puts it back");
+  },
+
+  // A box selection over a Sheet area never takes its tabs, the area's own controls (the tab row a box
+  // of `controls`, components/sheets/index.mjs; geometry.mjs pick): drawn from the row's empty end
+  // across the tabs into the panel shown, it takes the panel's blocks it touches and no tab; over the
+  // tab row alone, the Sheet area whole; no fill is drawn on a tab either way.
+  async tabBoxSelect(t) {
+    await t.open();
+    const { page } = t;
+    const at = await page.evaluate(() => {
+      const shell = document.querySelector("main .doc-sheet-shell");
+      shell.scrollIntoView({ block: "start" });
+      scrollBy(0, -80);
+      const row = shell.querySelector(".doc-sheet-tabs").getBoundingClientRect();
+      const last = [...shell.querySelectorAll(".doc-sheet-tabs > .doc-sheet-tab")].at(-1).getBoundingClientRect();
+      const panel = shell.querySelector(":scope > [data-doc-sheet]:not([hidden])");
+      const blocks = [...panel.querySelectorAll("h2, p")].filter((node) => node.getClientRects().length > 0).slice(0, 2).map((node) => node.getBoundingClientRect());
+      return { row: row.toJSON(), last: last.right, second: (blocks[1]?.top ?? 0) + 6, count: blocks.length };
+    });
+    t.check(at.row.right - at.last > 60 && at.count === 2, "the tab row has empty room after its tabs, the panel shown its heading and a paragraph", JSON.stringify(at));
+    const picked = () => page.evaluate(() => {
+      const nodes = window.__gallerySelected();
+      return {
+        tabs: nodes.filter((node) => node.closest(".doc-sheet-tabs")).length,
+        panel: nodes.filter((node) => node.closest("[data-doc-sheet]") && !node.closest(".doc-sheet-tabs")).length,
+        shells: nodes.filter((node) => node.matches(".doc-sheet-shell")).length,
+        all: nodes.length,
+        tabFills: [...document.querySelectorAll(".ge-halo")].filter((fill) => {
+          const box = fill.getBoundingClientRect();
+          return [...document.querySelectorAll("main .doc-sheet-tabs > .doc-sheet-tab")].some((tab) => {
+            const rect = tab.getBoundingClientRect();
+            return Math.abs(box.left - rect.left) < 8 && Math.abs(box.right - rect.right) < 8 && Math.abs(box.top - rect.top) < 8;
+          });
+        }).length,
+      };
+    });
+    // From the row's empty end, leftward across every tab, down into the panel's second block.
+    await drawBox(t, { x: at.row.right - 20, y: at.row.top + 6 }, { x: at.row.left + 4, y: at.second });
+    const across = await picked();
+    t.check(across.tabs === 0 && across.shells === 0 && across.panel === 2 && across.all === 2 && across.tabFills === 0,
+      "across the tabs into the panel: the panel's blocks it touches, no tab", JSON.stringify(across));
+    await t.press("Escape");
+    // Over the tab row alone.
+    await drawBox(t, { x: at.row.right - 20, y: at.row.top + 4 }, { x: at.row.left + 4, y: at.row.bottom - 4 });
+    const row = await picked();
+    t.check(row.tabs === 0 && row.shells === 1 && row.all === 1 && row.tabFills === 0, "over the tab row alone: the Sheet area whole, no tab", JSON.stringify(row));
+    await t.press("Escape");
+    t.check((await pickedTexts(t)).length === 0, "Esc clears it");
   },
 
   // A declared chart (its data in its card, its type the report's script defines) is drawn and keeps
@@ -7274,7 +7464,7 @@ export const scenarios = {
 
   // Several lines of another program's formatted text (Google Docs' colored text) pasted into a
   // table's cell, which cannot split, go in as the lines of what the import read (the colors as the
-  // kit's, joined by a space), the same marks as one line of it pasted into another cell.
+  // kit's, a line break between two), the same marks as one line of it pasted into another cell.
   async pasteIntoCell(t) {
     t.newReport("cellpaste", "单元格粘贴");
     const starter = await t.read("cellpaste");
@@ -7314,7 +7504,7 @@ export const scenarios = {
     await click(2, 1);
     await paste(`<p>${red("红一")}和<b>粗</b></p>`, "红一和粗");
     await t.settle("saved", 15000);
-    // Several lines of Markdown with no HTML: read() makes blocks of them, so the markers go and the marks stay.
+    // Several lines of plain text with no HTML: its lines, "- " lines a list's items, the marks read.
     await click(2, 0);
     await page.evaluate(() => {
       const transfer = new DataTransfer();
@@ -7323,9 +7513,9 @@ export const scenarios = {
     });
     await t.settle("saved", 15000);
     const cells = [...(await t.read("cellpaste")).matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((match) => match[1].replace(/ data-block-id="[^"]*"/g, ""));
-    t.check(cells[1] === 'a<span class="doc-text-red">红一</span>和<strong>粗</strong> <span class="doc-text-red">红二</span>', "several colored lines in a cell: joined by a space, the colors the kit's", JSON.stringify(cells));
+    t.check(cells[1] === 'a<span class="doc-text-red">红一</span>和<strong>粗</strong><br><span class="doc-text-red">红二</span>', "several colored lines in a cell: a line break between them, the colors the kit's", JSON.stringify(cells));
     t.check(cells[3] === 'b<span class="doc-text-red">红一</span>和<strong>粗</strong>', "one colored line in another cell: the same marks", JSON.stringify(cells));
-    t.check(cells[2] === '乙子一 <strong>子二</strong>', "several lines of Markdown in a cell: the list markers go, the bold stays, joined by a space", JSON.stringify(cells));
+    t.check(cells[2] === '乙<ul><li>子一</li><li><strong>子二</strong></li></ul>', "several lines of plain text in a cell: \"- \" lines a list of the cell's, the bold kept", JSON.stringify(cells));
   },
   // Cells copied with a table's tools paste as cells (the user's 2026-11-09: two
   // cells copied in one table and pasted in another's cell all went into that one cell): the caret in
@@ -7545,7 +7735,212 @@ export const scenarios = {
     await paste("u\tv\nw");
     await t.settle();
     now = await rows();
-    t.check(now[2] === "r|su v w" && now.length === 3, "uneven lines: the editor's paste at the caret, in the one cell, its lines joined", JSON.stringify(now));
+    t.check(now[2] === "r|su v<br>w" && now.length === 3, "uneven lines: the editor's paste at the caret, in the one cell, its lines kept", JSON.stringify(now));
+    await checkOverlays(t, "nothing stray at the end");
+  },
+
+  // Copying and pasting in a table's cells loses nothing (the user's, 2026-11-22: lines typed with
+  // Shift+Enter, copied and pasted into another cell, came in on one line, the page saying 这里不能分段):
+  // a cell's text pasted with the caret in a cell, another or itself, is the same text, its line breaks,
+  // an empty line, its marks (bold, italic, underline, strike, code, colors, a link, a formula, a page
+  // chip, bold over a line break) and its lists; so is a cell copied whole onto a selected cell (its
+  // looks stay with the cell they are on); another program's plain text goes in as its lines ("- " lines
+  // a list), its formatted lines and the page's own blocks as lines and lists; a caret in a cell's list
+  // takes a pasted list's items as items. Copied into a paragraph, a cell's lines stay lines and its
+  // lists lists. Each one undo step, and nothing said of lines joined.
+  async cellPasteLossless(t) {
+    t.newReport("other", "别的页");
+    const { page } = t;
+    const formatted = '<strong>粗</strong><em>斜</em><u>下</u><s>删</s> <code>码</code> <span class="doc-text-red">红</span><span class="doc-highlight-yellow">黄</span><a href="https://example.com/">链</a> <span class="doc-math-inline">\\(x^2\\)</span> <a class="doc-link-mention" href="../other/doc.html"><span class="doc-link-mention-icon"></span>别的页</a><br><strong>行一<br>行二</strong>';
+    const listed = "前<ul><li>一</li><li><strong>二</strong></li></ul>后<ol><li>甲</li></ol>";
+    const row = (...cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`;
+    await t.agentEdit(pageOf("单元格无损", `
+    <p>表格之前。</p>
+    <div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>源</th><th>目标</th><th>别处</th></tr></thead><tbody>
+    ${row("", "", "")}
+    ${row(formatted, "", "")}
+    ${row(listed, "", "<ul><li>项A</li><li>项B</li></ul>")}
+    <tr><td class="doc-highlight-yellow"><strong>原</strong></td><td></td><td></td></tr>
+    </tbody></table></div>
+    <p>表格之后的段落。</p>
+    <p>尾段。</p>`));
+    await t.open();
+    const strip = (html) => html.replace(/ data-block-id="[^"]*"/g, "");
+    const cells = async () => [...(await t.read()).match(/<tbody>([\s\S]*?)<\/tbody>/)[1].matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((match) => [...match[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((cell) => strip(cell[1])));
+    const body = async () => strip((await t.read()).match(/<\/table><\/div>([\s\S]*)<\/main>/)[1]).replace(/\s+/g, " ").replace(/> </g, "><").trim();
+    const point = ([r, c], where = "center") => page.evaluate(([r, c, where]) => {
+      const cell = document.querySelector("main .doc-table").tBodies[0].rows[r].cells[c];
+      cell.scrollIntoView({ block: "center" });
+      const rect = cell.getBoundingClientRect();
+      return { x: where === "center" ? rect.left + rect.width / 2 : rect.right - 6, y: rect.top + rect.height / 2 };
+    }, [r, c, where]);
+    const click = async (at) => {
+      const { x, y } = await point(at);
+      await page.mouse.click(x, y);
+      await t.sleep(200);
+    };
+    // The caret at the end of a cell's text (in the last item of a list it ends with: its own end).
+    const caretEnd = (at) => page.evaluate(([r, c]) => {
+      const cell = document.querySelector("main .doc-table").tBodies[0].rows[r].cells[c];
+      cell.focus();
+      const range = document.createRange();
+      range.selectNodeContents(cell);
+      range.collapse(false);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+    }, at);
+    // All of a cell's text selected.
+    const selectAll = (at) => page.evaluate(([r, c]) => {
+      const cell = document.querySelector("main .doc-table").tBodies[0].rows[r].cells[c];
+      cell.focus();
+      const range = document.createRange();
+      range.selectNodeContents(cell);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+    }, at);
+    const send = (types) => page.evaluate((types) => {
+      const data = new DataTransfer();
+      for (const [type, value] of Object.entries(types)) data.setData(type, value);
+      (document.activeElement ?? document.body).dispatchEvent(new ClipboardEvent("paste", { clipboardData: data, bubbles: true, cancelable: true }));
+    }, types);
+    const joinedSaid = async () => (await t.status()).includes("不能分段");
+    const undo = async () => {
+      await t.combo("Control", "z");
+      await t.settle();
+    };
+
+    // Lines typed with Shift+Enter (an empty one among them), copied and pasted with the caret in another cell.
+    await click([0, 0]);
+    await t.type("第一行");
+    await t.combo("Shift", "Enter");
+    await t.type("第二行");
+    await t.combo("Shift", "Enter");
+    await t.combo("Shift", "Enter");
+    await t.type("第三行");
+    await t.settle();
+    let now = await cells();
+    const typed = now[0][0];
+    t.check(typed === "第一行<br>第二行<br><br>第三行", "lines typed with Shift+Enter: line breaks, an empty line among them", typed);
+    const before = await cells();
+    await selectAll([0, 0]);
+    await t.combo("Control", "c");
+    await click([0, 1]);
+    await t.combo("Control", "v");
+    await t.settle();
+    now = await cells();
+    t.check(now[0][1] === typed && !(await joinedSaid()), "pasted into another cell: the same lines, the empty one too, nothing said of joining", JSON.stringify({ now: now[0], said: await t.status() }));
+    await undo();
+    t.check(JSON.stringify(await cells()) === JSON.stringify(before), "one undo step", JSON.stringify(await cells()));
+    // Into the same cell, at its end.
+    await caretEnd([0, 0]);
+    await t.combo("Control", "v");
+    await t.settle();
+    now = await cells();
+    t.check(now[0][0] === `${typed}${typed}`, "pasted into the cell it was copied in, at its end: its lines after the last", now[0][0]);
+    await undo();
+
+    // Marks of every kind, a formula, a page chip and bold over a line break: the same in another cell.
+    const source = (await cells())[1][0];
+    await selectAll([1, 0]);
+    await t.combo("Control", "c");
+    await click([1, 1]);
+    await t.combo("Control", "v");
+    await t.settle();
+    now = await cells();
+    t.check(now[1][1].replace(/<strong>行一<\/strong><br><strong>行二<\/strong>/, "<strong>行一<br>行二</strong>") === source && !(await joinedSaid()), "a cell's marks, formula, link and page chip pasted into another cell: the same", JSON.stringify({ source, pasted: now[1][1] }));
+
+    // A cell's lists: its text copied and pasted into another cell; the cell selected and pasted over a selected cell.
+    await selectAll([2, 0]);
+    await t.combo("Control", "c");
+    await click([2, 1]);
+    await t.combo("Control", "v");
+    await t.settle();
+    now = await cells();
+    t.check(now[2][1] === listed, "a cell's lists pasted with the caret in another cell: its lists", now[2][1]);
+    await undo();
+    await click([2, 0]);
+    await t.press("Escape");
+    await t.combo("Control", "c");
+    await click([2, 1]);
+    await t.press("Escape");
+    await t.combo("Control", "v");
+    await t.settle();
+    now = await cells();
+    t.check(now[2][1] === listed, "a cell copied whole onto a selected cell: its lists", now[2][1]);
+    await undo();
+    // With the caret at the end of an item of a cell's list: the first line joins the item, the lists' items its list's.
+    await selectAll([2, 0]);
+    await t.combo("Control", "c");
+    await t.caret("项A", { where: "end" });
+    await page.evaluate(() => {
+      const item = [...document.querySelectorAll("main td li")].find((node) => node.textContent === "项A");
+      const range = document.createRange();
+      range.setStart(item.firstChild, item.firstChild.length);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+    });
+    await t.combo("Control", "v");
+    await t.settle();
+    now = await cells();
+    t.check(now[2][2] === "<ul><li>项A前</li><li>一</li><li><strong>二</strong></li><li>后</li></ul><ol><li>甲</li></ol><ul><li>项B</li></ul>", "pasted at the end of an item: the first line joins it, items follow, the numbered list's items a list of their kind", now[2][2]);
+    await undo();
+    t.check((await cells())[2][2] === "<ul><li>项A</li><li>项B</li></ul>" && (await cells())[2][1] === "", "one undo puts the list back", JSON.stringify((await cells())[2]));
+
+    // A cell copied whole onto another: its words, the looks staying with the cells they are on.
+    await click([3, 0]);
+    await t.press("Escape");
+    await t.combo("Control", "c");
+    await click([1, 2]);
+    await t.press("Escape");
+    await t.combo("Control", "v");
+    await t.settle();
+    const looks = await page.evaluate(() => [...document.querySelector("main .doc-table").tBodies[0].rows].map((row) => [...row.cells].map((cell) => cell.className.split(" ").filter((name) => name.startsWith("doc-")).join(" "))));
+    now = await cells();
+    t.check(now[1][2] === "<strong>原</strong>" && looks[1][2] === "" && looks[3][0] === "doc-highlight-yellow", "a cell copied whole onto a selected one: its words, the looks staying where they are", JSON.stringify({ text: now[1][2], looks }));
+    await undo();
+
+    // Another program's plain text: its lines (an empty one kept), "- " lines a list; its formatted lines; the page's own blocks.
+    for (const [label, types, expected] of [
+      ["plain text of several lines", { "text/plain": "外一\n外二\n\n外三" }, "外一<br>外二<br><br>外三"],
+      ["plain text with \"- \" lines", { "text/plain": "- 子一\n- **子二**\n尾" }, "<ul><li>子一</li><li><strong>子二</strong></li></ul>尾"],
+      ["a web page's paragraphs", { "text/html": "<p>网一</p><p><b>网二</b></p>", "text/plain": "网一\n网二" }, "网一<br><strong>网二</strong>"],
+      ["the page's own blocks", { "application/x-gallery-blocks": JSON.stringify({ v: 1, report: "elsewhere", blocks: [{ type: "heading2", html: "标题甲" }, { type: "paragraph", html: "段落一" }, { type: "bullets", blocks: [{ type: "item", html: "项一", lists: [] }, { type: "item", html: "项二", lists: [] }] }, { type: "paragraph", html: "段落二" }] }), "text/plain": "x" }, "标题甲<br>段落一<ul><li>项一</li><li>项二</li></ul>段落二"],
+    ]) {
+      await click([3, 1]);
+      await send(types);
+      await t.sleep(250);
+      await t.settle();
+      now = await cells();
+      t.check(now[3][1] === expected && !(await joinedSaid()), `${label} pasted into a cell: ${expected}`, JSON.stringify({ cell: now[3][1], said: await t.status() }));
+      await undo();
+      t.check((await cells())[3][1] === "", `${label}: one undo step`, (await cells())[3][1]);
+    }
+
+    // A cell's text copied into a paragraph: its lines, the empty one too; its lists lists of the page.
+    const paragraphs = await body();
+    await selectAll([0, 0]);
+    await t.combo("Control", "c");
+    await t.caret("表格之后的段落", { after: "表格之后" });
+    await t.combo("Control", "v");
+    await t.settle();
+    t.check((await body()).startsWith(`<p>表格之后${typed}的段落。</p>`), "a cell's lines pasted into a paragraph: line breaks, the empty one too", await body());
+    await undo();
+    await selectAll([2, 0]);
+    await t.combo("Control", "c");
+    await t.caret("尾段", { where: "end" });
+    await t.combo("Control", "v");
+    await t.settle();
+    t.check((await body()).endsWith("<p>尾段。前</p><ul><li>一</li><li><strong>二</strong></li></ul><p>后</p><ol><li>甲</li></ol>"), "a cell's lists pasted into a paragraph: the line before them joins it, the lists lists of their kind, the line between a paragraph", await body());
+    await undo();
+    // A table of another document's made again from its data: its cells' lines, an empty one too, and lists.
+    await t.caret("尾段", { where: "end" });
+    await send({ "application/x-gallery-blocks": JSON.stringify({ v: 1, report: "elsewhere", blocks: [{ type: "table", rows: [["表一", "表二"], [typed, listed]] }] }), "text/plain": "x" });
+    await t.sleep(300);
+    await t.settle();
+    const made = [...(await body()).matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((match) => match[1]);
+    t.check(made.includes(typed) && made.includes(listed), "a table made of another document's data: its cells' lines and lists", JSON.stringify(made));
+    await undo();
+    t.check((await body()) === paragraphs, "undone", await body());
     await checkOverlays(t, "nothing stray at the end");
   },
 
@@ -8966,6 +9361,66 @@ const c = 3;</code></pre></div>
     await t.sleep(200);
     t.check(!(await rows()).open, "right after a word's last letter it opens nothing, in a cell too");
     await t.press("Backspace");
+  },
+
+  // A menu's fades reach its very edges (the user's 2026-11-24: the fade seemed to stand off the edge): a row
+  // scrolled so that its words sit in the card's last pixels is faded into the card's ground there, at the
+  // bottom and, scrolled on, at the top, light and dark (menu.mjs: the sticky strip offset by the card's padding).
+  async menuFadeEdges(t) {
+    const { page } = t;
+    await t.agentEdit((text) => text.replace(/<script>[\s\S]*?<\/script>/g, "<script></script>").replace(/<main([^>]*)>[\s\S]*<\/main>/, `<main$1>
+    <header class="doc-header"><h1 class="doc-title">渐隐</h1></header>
+    <p>第一段</p>
+  </main>`));
+    await t.open();
+    await t.caret("第一段");
+    await t.press("Enter");
+    await t.type("/");
+    await t.sleep(300);
+    // How far the card's ground is from the words in a band of `edge`'s last pixels: the band's farthest pixel
+    // from the card's own color, a row's words placed in it first (its label's middle 3px in from the card's inside).
+    const band = async (edge) => {
+      const spot = await page.evaluate((edge) => {
+        const card = [...document.querySelectorAll(".ge-pop")].find((each) => each.getBoundingClientRect().height > 0);
+        const box = card.getBoundingClientRect();
+        const border = parseFloat(getComputedStyle(card).borderTopWidth) || 0;
+        const inner = edge === "bottom" ? box.bottom - border : box.top + border;
+        const labels = [...card.querySelectorAll(".ge-pop-row .ge-pop-label")];
+        const label = edge === "bottom" ? labels[labels.length - 4] : labels[3];
+        const r = label.getBoundingClientRect();
+        card.scrollTop += edge === "bottom" ? (r.top + r.height / 2) - (inner - 3) : (r.top + r.height / 2) - (inner + 3);
+        card.dispatchEvent(new Event("scroll"));
+        return { left: box.left + 14, width: box.width - 40, top: edge === "bottom" ? inner - 5 : inner + 1, color: getComputedStyle(card).backgroundColor, fade: card.hasAttribute(edge === "bottom" ? "data-fade-b" : "data-fade-t") };
+      }, edge);
+      await t.sleep(200);
+      const shot = await page.screenshot({ encoding: "base64", clip: { x: spot.left, y: spot.top, width: spot.width, height: 4 } });
+      const far = await page.evaluate(async (shot, color) => {
+        const img = new Image();
+        img.src = `data:image/png;base64,${shot}`;
+        await img.decode();
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const g = canvas.getContext("2d");
+        g.drawImage(img, 0, 0);
+        const data = g.getImageData(0, 0, img.width, img.height).data;
+        const [r, gr, b] = color.match(/\d+/g).map(Number);
+        let most = 0;
+        for (let i = 0; i < data.length; i += 4) most = Math.max(most, Math.abs(data[i] - r), Math.abs(data[i + 1] - gr), Math.abs(data[i + 2] - b));
+        return most;
+      }, shot, spot.color);
+      return { far, fade: spot.fade };
+    };
+    for (const theme of ["light", "dark"]) {
+      await page.evaluate((theme) => document.documentElement.setAttribute("data-doc-theme", theme), theme);
+      await t.sleep(150);
+      const bottom = await band("bottom");
+      t.check(bottom.fade && bottom.far < 40, `${theme}: words at the card's bottom edge faded into its ground`, JSON.stringify(bottom));
+      const top = await band("top");
+      t.check(top.fade && top.far < 40, `${theme}: scrolled on, words at its top edge faded too`, JSON.stringify(top));
+    }
+    await page.keyboard.press("Escape");
+    t.check(t.takeErrors().length === 0, "no errors on the page");
   },
 
   async slashMenu(t) {
@@ -21664,7 +22119,7 @@ let second = 2;
 
   // The families of colors (components/colors.mjs, registry.mjs COLOR_FAMILIES): a paragraph takes a
   // text color and a background at once, 默认背景 taking the background only; a code block a
-  // background only; a file block none (no 颜色 › in its menu).
+  // background only; a file block 颜色 › as a paragraph's (since 2026-11-24: colorKinds sets both on one).
   async blockColorFamilies(t) {
     const { page } = t;
     await t.agentEdit((text) => text.replace(/<script>[\s\S]*?<\/script>/g, "<script></script>").replace(/<main([^>]*)>[\s\S]*<\/main>/, `<main$1>
@@ -21705,7 +22160,7 @@ let second = 2;
     await page.keyboard.press("Escape");
     await openBlockMenu(t, "main figure.doc-file", { dy: 10 });
     const rows = await menuRows(t);
-    t.check(!rows.includes("颜色"), "a file block: no 颜色", JSON.stringify(rows));
+    t.check(rows.includes("颜色"), "a file block: 颜色 in its menu", JSON.stringify(rows));
     await page.keyboard.press("Escape");
   },
 
@@ -21820,9 +22275,10 @@ let second = 2;
   },
 
   // Which blocks take a color (registry.mjs COLOR_FAMILIES, the user's): the 颜色 row of the block
-  // menu for text, a callout and a code block, none for a formula block, a file, a bookmark, a quote,
+  // menu for text, a callout, a code block and a file, none for a formula block, a bookmark, a quote,
   // a divider or a table; a background picked for a callout and a code block is written as the kit's
-  // class and drawn in the block's own look, and they offer no text color.
+  // class and drawn in the block's own look, and they offer no text color; a file takes both, as a
+  // text block does (the user's of 2026-11-24): its figure's fill and its name's color.
   async colorKinds(t) {
     const { page } = t;
     await t.agentEdit((text) => text.replace(/<script>[\s\S]*?<\/script>/g, "<script></script>").replace(/<main([^>]*)>[\s\S]*<\/main>/, `<main$1>
@@ -21859,7 +22315,7 @@ let second = 2;
       return { background: style.backgroundColor, color: style.color };
     }, selector);
     // What the block menu offers: a color for the kinds that take one.
-    for (const [selector, takes] of [["main > p", true], ["main .doc-callout", true], ["main .doc-code", true], ["main .doc-math-block", false], ["main figure.doc-file", false], ["main figure.doc-bookmark", false], ["main > blockquote", false], ["main > hr", false], ["main table", false]]) {
+    for (const [selector, takes] of [["main > p", true], ["main .doc-callout", true], ["main .doc-code", true], ["main .doc-math-block", false], ["main figure.doc-file", true], ["main figure.doc-bookmark", false], ["main > blockquote", false], ["main > hr", false], ["main table", false]]) {
       const rows = await openBlockMenu(t, selector, { dy: 10 });
       t.check(rows.some((row) => row.text === "颜色") === takes, `${selector}: 颜色 ${takes ? "is" : "is not"} in its block menu`, JSON.stringify(rows));
       await page.keyboard.press("Escape");
@@ -21884,6 +22340,16 @@ let second = 2;
       await page.keyboard.press("Escape");
       await page.keyboard.press("Escape");
     }
+    // A file: a background, then a text color, both kept, each written as the kit's class and drawn.
+    const fileBefore = await look("main figure.doc-file");
+    const nameBefore = await look("main figure.doc-file .doc-file-name");
+    await colored("main figure.doc-file", "蓝色背景");
+    await colored("main figure.doc-file", "红色文本");
+    const fileText = await body();
+    const fileShown = await look("main figure.doc-file");
+    const nameShown = await look("main figure.doc-file .doc-file-name");
+    t.check(/<figure class="doc-file doc-(highlight-blue doc-text-red|text-red doc-highlight-blue)"/.test(fileText) && fileShown.background !== fileBefore.background && fileShown.background !== "rgba(0, 0, 0, 0)" && nameShown.color !== nameBefore.color,
+      "a file: a background and a text color written as the kit's classes, its fill and its name's color drawn", JSON.stringify({ text: fileText.slice(0, 600), fileBefore, fileShown, nameBefore, nameShown }));
     // A quote, which takes none, has none.
     t.check(!(await body()).includes("<blockquote class="), "a quote takes no color class", await body());
     await checkOverlays(t, "nothing stray");
@@ -22625,7 +23091,7 @@ let second = 2;
   // A table's frame and the wheel: a frame that scrolls down holds its scroll (no bounce past its
   // ends) and the wheel at its bottom scrolls the page on; one that scrolls sideways only hands
   // the wheel down to the page as the browser does; the block handle stays while the table
-  // scrolls under the pointer (it blinked).
+  // scrolls under the pointer (it blinked). Its thumbs giving way past an end: scrollSqueezeTable.
   async tableScroll(t) {
     const { page } = t;
     const rows = Array.from({ length: 50 }, (_, index) => `<tr><td>第 ${index + 1} 行</td><td>${index}</td></tr>`).join("");
@@ -22655,6 +23121,34 @@ let second = 2;
     const after = await page.evaluate(() => scrollY);
     t.check(behaviors.join() === "none,auto" && after > at.page + 100, "a frame that scrolls down holds its scroll, the wheel at its bottom scrolling the page on; one that scrolls sideways only hands the wheel on as the browser does", JSON.stringify({ behaviors, before: at.page, after }));
 
+    // Laid out between pixels (a zoom here; on a screen at 225% the rows' own heights fall between pixels): the
+    // rails stay inside their frame, and the frame that scrolls only sideways never scrolls down (the user's
+    // 2026-11-23: its bottom rail, placed by the rounded clientHeight, reached 0.44px past a frame 1051.56px high,
+    // the frame scrolled down that much once a cell had the caret, and the wheel over it stopped there).
+    const strays = [];
+    for (let zoom = 89; zoom <= 121; zoom += 1) {
+      strays.push(...await page.evaluate(async (zoom) => {
+        document.documentElement.style.zoom = String(zoom / 100);
+        await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+        return ["#tall", "#wide"].flatMap((id) => {
+          const frame = document.querySelector(id);
+          const box = frame.getBoundingClientRect();
+          const rails = [...frame.querySelectorAll(".doc-scrollbar")].filter((rail) => getComputedStyle(rail).display !== "none").map((rail) => rail.getBoundingClientRect());
+          const out = rails.filter((rail) => rail.bottom > box.bottom + 0.01 || rail.right > box.right + 0.01).map((rail) => ({ id, zoom, past: [rail.bottom - box.bottom, rail.right - box.right].map((d) => Math.round(d * 1000) / 1000) }));
+          if (id === "#wide") {
+            const was = frame.scrollTop;
+            frame.scrollTop = 20;
+            if (frame.scrollTop > 0) out.push({ id, zoom, down: frame.scrollTop });
+            frame.scrollTop = was;
+          }
+          return out;
+        });
+      }, zoom));
+    }
+    await page.evaluate(() => { document.documentElement.style.zoom = ""; });
+    await t.sleep(300);
+    t.check(strays.length === 0, "laid out between pixels (zoom 89% to 121%): the rails inside their frame, the frame that scrolls sideways never scrolling down", JSON.stringify(strays.slice(0, 6)));
+
     // The wide one scrolled sideways under the pointer: the handle stays.
     const cell = await page.evaluate(() => { const frame = document.querySelector("#wide"); frame.scrollIntoView({ block: "center" }); const r = frame.querySelector("td").getBoundingClientRect(); return { x: r.left + 20, y: r.top + r.height / 2 }; });
     await page.mouse.move(cell.x, cell.y, { steps: 3 });
@@ -22664,6 +23158,7 @@ let second = 2;
     await t.sleep(250);
     const kept = await page.evaluate(() => ({ handle: Boolean(document.querySelector(".ge-handle")?.isConnected), scrolled: document.querySelector("#wide").scrollLeft }));
     t.check(before && kept.handle && kept.scrolled > 0, "the handle stays while the table scrolls under the pointer", JSON.stringify({ before, kept }));
+
     await checkOverlays(t, "nothing stray at the end");
   },
 
@@ -25244,7 +25739,7 @@ let d = 4;</code></pre></div><p>分区后的话</p></section>
   // Pasted at a caret in a paragraph, the paragraph keeps its text before the caret, the blocks follow
   // and the text after the caret goes on in the last (only a paragraph first
   // joins it); in an empty paragraph they take its place; in an item of a list of their kind they are
-  // its items; at a caret in a cell their words joined, no marker, in a selected cell their lines (editor.md,
+  // its items; at a caret in a cell and in a selected cell a numbered list of the cell's (editor.md,
   // cells pasted into cells, "Tables"). Each paste one undo step; Ctrl+X takes the
   // selection out and pastes back as it was.
   async copyAcross(t) {
@@ -25340,13 +25835,13 @@ let d = 4;</code></pre></div><p>分区后的话</p></section>
     await undo();
     await clickAt("格子", 1);
     now = await pasted();
-    t.check(now.includes("<td>格的文字很长 第二项<strong>加粗</strong>的文字 第三子</td>"), "in a cell: their words joined, no marker", now);
+    t.check(now.includes(`<td>格<ol>${items}<li>第三</li></ol>子</td>`), "in a cell: a numbered list of the cell's, the words before and after the caret on lines of their own", now);
     await undo();
     await clickAt("格子", 1);
     await t.press("Escape"); // the cell selected
     now = await pasted();
-    // (Selected, the cell takes them as cells do, one cell of their lines: line breaks between them.)
-    t.check(now.includes("<td>的文字很长<br>第二项<strong>加粗</strong>的文字<br>第三</td>"), "in a selected cell: one cell of their lines, in place of its text", now);
+    // (Selected, the cell takes them as cells do, one cell of their text: their list the cell's.)
+    t.check(now.includes(`<td><ol>${items}<li>第三</li></ol></td>`), "in a selected cell: one cell of their list, in place of its text", now);
     await undo();
     t.check((await file()) === original, "each paste one undo step", await file());
 
@@ -29482,6 +29977,66 @@ ${panel}
     await t.settle();
     await checkOverlays(t, "nothing stray at the end");
   },
+
+  // A table's wide column dragged by its grip (page/table/): where it goes is by its copy, not the pointer
+  // (src/shared/drag-place.mjs): past the narrow column after it once the copy's right edge is past that column's
+  // middle, the pointer (in the copy's middle) still over the wide column's own place, the line then at the narrow
+  // one's right; let go, the column there in the file, one undo.
+  async tableGripEdge(t) {
+    t.newReport("gripedge", "拖列");
+    const starter = await t.read("gripedge");
+    const body = `
+    <p>表格之前。</p>
+    <div class="doc-table-wrap">
+      <table class="doc-table">
+        <thead>
+          <tr><th>这一列的标题写得很长很长，让它比旁边的列宽得多</th><th>短</th><th>其次一列</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>第一行的说明文字也写得比较长</td><td>甲</td><td>说明</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>表格之后。</p>`;
+    await t.write(starter.replace(/\n[ \t]*<!-- Starter content:[^\n]*-->\n[ \t]*<section\b[^>]*\sdata-doc-placeholder\b[\s\S]*?<\/section>/, body), "gripedge");
+    await t.open("gripedge");
+    const { page } = t;
+    const heads = async () => [...(await t.read("gripedge")).matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map((match) => match[1].slice(0, 2));
+    const columns = await page.evaluate(() => {
+      const table = document.querySelector("main .doc-table");
+      table.scrollIntoView({ block: "center" });
+      return [...table.rows[0].cells].map((cell) => { const rect = cell.getBoundingClientRect(); return { left: rect.left, right: rect.right, width: rect.width, top: rect.top }; });
+    });
+    const [wide, narrow] = columns;
+    // The grip at the wide column's top edge.
+    await page.mouse.move(wide.left + wide.width / 2, wide.top + 12, { steps: 2 });
+    await t.sleep(150);
+    await page.mouse.move(wide.left + wide.width / 2, wide.top + 3, { steps: 3 });
+    await t.sleep(200);
+    const grip = await page.evaluate(() => { const rect = document.querySelector('.ge-tgrip[data-axis="column"]')?.getBoundingClientRect(); return rect ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 } : null; });
+    t.check(Boolean(grip) && wide.width > narrow.width * 3, "the wide column's grip shows at its top edge", JSON.stringify({ grip, wide, narrow }));
+    if (!grip) return;
+    const past = narrow.left + narrow.width / 2 + 3 - wide.right; // the copy's right edge 3px past the narrow one's middle
+    await page.mouse.move(grip.x, grip.y);
+    await page.mouse.down();
+    await page.mouse.move(grip.x + 6, grip.y, { steps: 2 });
+    await page.mouse.move(grip.x + past - 10, grip.y, { steps: 4 });
+    await t.sleep(150);
+    const lineAt = () => page.evaluate(() => { const rect = document.querySelector(".ge-tline")?.getBoundingClientRect(); return rect ? (rect.left + rect.right) / 2 : null; });
+    const short = await lineAt();
+    await page.mouse.move(grip.x + past, grip.y, { steps: 2 });
+    await t.sleep(150);
+    const line = await lineAt();
+    t.check(short === null && line !== null && Math.abs(line - narrow.right) < 3 && grip.x + past < narrow.left, "the copy's edge short of the narrow column's middle: no line; past it, the pointer still over the wide column: the line at the narrow one's right", JSON.stringify({ short, line, narrow, pointer: grip.x + past }));
+    await page.mouse.up();
+    await t.sleep(250);
+    await t.settle();
+    t.check((await heads()).join() === "短,这一,其次", "let go: the wide column after the narrow one in the file", JSON.stringify(await heads()));
+    await t.combo("Control", "z");
+    await t.settle();
+    t.check((await heads()).join() === "这一,短,其次", "one undo", JSON.stringify(await heads()));
+    await checkOverlays(t, "nothing stray at the end");
+  },
   // A box selection drawn from beside a table (selection/marquee.mjs, the press in the gap left of it
   // or right of it, at its height) shows the blocks it covers filled and nothing of the table's own
   // tools (table/index.mjs), not even those the pointer showed there before the press: before, the
@@ -29725,7 +30280,7 @@ ${panel}
     const pasted = await state();
     await t.settle();
     written = await rows();
-    t.check(written.length === 4 && written[2].endsWith("<td>甲</td>") && written[3] === "<td></td><td></td><td>乙</td>" && pasted.covered === "22,32", "pasted at the last cell: a row put in for what overflows, the pasted cells selected", JSON.stringify({ written, pasted }));
+    t.check(written.length === 4 && written[2].endsWith("<td>甲</td>") && written[3] === '<td class="doc-bold doc-highlight-yellow"></td><td></td><td>乙</td>' && pasted.covered === "22,32", "pasted at the last cell: a row put in for what overflows (the first column's shared color and bold on its cell there), the pasted cells selected", JSON.stringify({ written, pasted }));
     await t.combo("Control", "z");
     await t.settle();
     written = await rows();
@@ -30861,6 +31416,149 @@ function score(count: number) {
     await t.settle();
     const old = await firsts("old");
     t.check(checked.includes("标题列") && old.join() === '<td class="doc-bold doc-highlight-gray">甲</td>,<td class="doc-bold doc-highlight-gray">乙</td>', "an older file's header column with the look: 标题列 checked; off, its look kept", JSON.stringify({ checked, old }));
+    await checkOverlays(t, "nothing stray at the end");
+  },
+
+  // A row put in wears, in each column, the look that column's body cells all share (the header row
+  // not counted), a column put in, in each row, the look that row's cells share; where they differ,
+  // plain (the user's, 2026-11-22: a look set on a whole column is meant for the rows put in later).
+  // By a row's grip (在下方插入), the corner's +, Shift+Enter on the last row's cell and a column's +;
+  // each one undo step that takes the row (column) out with its looks; the file holds the looks.
+  async tableInsertKeepsLooks(t) {
+    t.newReport("looks", "表格样式");
+    const starter = await t.read("looks");
+    const gray = 'class="doc-bold doc-highlight-gray"';
+    const body = `
+    <p>表格之前。</p>
+    <div class="doc-table-wrap" id="rows">
+      <table class="doc-table">
+        <thead>
+          <tr><th ${gray}>项目</th><th ${gray}>负责人</th><th ${gray}>状态</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="doc-bold">清洗</td><td class="doc-text-blue doc-align-center">小王</td><td class="doc-highlight-green">完成</td></tr>
+          <tr><td class="doc-bold">训练</td><td class="doc-align-center doc-text-blue">小李</td><td class="doc-highlight-yellow">进行中</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>两个表格之间。</p>
+    <div class="doc-table-wrap" id="columns">
+      <table class="doc-table">
+        <thead>
+          <tr><th ${gray}>指标</th><th ${gray}>一月</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="doc-highlight-blue doc-align-right">收入</td><td class="doc-highlight-blue doc-align-right">10</td></tr>
+          <tr><td>支出</td><td class="doc-text-red">5</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>表格之后。</p>`;
+    await t.write(starter.replace(/\n[ \t]*<!-- Starter content:[^\n]*-->\n[ \t]*<section\b[^>]*\sdata-doc-placeholder\b[\s\S]*?<\/section>/, body), "looks");
+    await t.open("looks");
+    const { page } = t;
+    // A table's rows as the file writes them (`id`: its frame's).
+    const rows = async (id) => {
+      const text = await t.read("looks");
+      const at = text.indexOf(`id="${id}"`);
+      return [...text.slice(at, text.indexOf("</table>", at)).matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((match) => match[1].replace(/ data-block-id="[^"]*"/g, ""));
+    };
+    // Each cell's look on the page, row by row ("" for none).
+    const looks = (id) => page.evaluate((id) => [...document.querySelectorAll(`#${id} tr`)].map((row) => [...row.cells].map((cell) => [...cell.classList].filter((name) => name.startsWith("doc-")).sort().join(" "))), id);
+    const ROWS = await rows("rows");
+    const COLUMNS = await rows("columns");
+    // The pointer on the cell holding `text` of table `id`, then (`edge`) on its left edge beside its row or its top edge over its column.
+    const hover = async (id, text, edge = null) => {
+      const at = await page.evaluate((id, text, edge) => {
+        const cell = [...document.querySelectorAll(`#${id} td, #${id} th`)].find((node) => node.textContent === text);
+        cell.scrollIntoView({ block: "center" });
+        const rect = cell.getBoundingClientRect();
+        const table = cell.closest("table").getBoundingClientRect();
+        const middle = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+        return { middle, edge: edge === "row" ? { x: table.left + 3, y: middle.y } : edge === "column" ? { x: middle.x, y: table.top + 3 } : null };
+      }, id, text, edge);
+      await page.mouse.move(at.middle.x, at.middle.y, { steps: 2 });
+      await t.sleep(150);
+      if (!at.edge) return;
+      await page.mouse.move(at.edge.x, at.edge.y, { steps: 4 });
+      await t.sleep(150);
+    };
+    // The centre of the tool `selector` nearest a corner of table `id` (`near`: "left" / "right", "top" / "bottom").
+    const toolAt = (id, selector, near) => page.evaluate((id, selector, near) => {
+      const table = document.querySelector(`#${id} table`).getBoundingClientRect();
+      const point = { x: near.x === "right" ? table.right : table.left, y: near.y === "bottom" ? table.bottom : table.top };
+      return [...document.querySelectorAll(selector)].map((node) => node.getBoundingClientRect()).map((rect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }))
+        .sort((a, b) => Math.hypot(a.x - point.x, a.y - point.y) - Math.hypot(b.x - point.x, b.y - point.y))[0] ?? null;
+    }, id, selector, near);
+    const click = async (at) => {
+      await page.mouse.move(at.x, at.y, { steps: 2 });
+      await t.sleep(100);
+      await page.mouse.click(at.x, at.y);
+      await t.sleep(250);
+    };
+    const undo = async () => {
+      await t.caret("表格之后");
+      await t.combo("Control", "z");
+      await t.settle();
+    };
+    const NEW_ROW = ["doc-bold", "doc-align-center doc-text-blue", ""];
+    const WRITTEN_ROW = '<td class="doc-bold"></td><td class="doc-align-center doc-text-blue"></td><td></td>';
+
+    // A row's grip, 在下方插入: column one's bold and column two's blue, centered (the header row's
+    // bold and gray not counted), column three's green and yellow differ: plain. Written so.
+    await hover("rows", "训练", "row");
+    await click(await toolAt("rows", '.ge-tgrip[data-axis="row"]', { x: "left", y: "bottom" }));
+    await clickRow(t, "在下方插入");
+    const inserted = await looks("rows");
+    await t.settle();
+    let now = await rows("rows");
+    t.check(JSON.stringify(inserted[3]) === JSON.stringify(NEW_ROW) && now.length === 4 && now[3] === WRITTEN_ROW && now.slice(0, 3).join() === ROWS.join(),
+      "a row put in by its grip: each column's shared body look (the header row's not counted), plain where they differ; written so", JSON.stringify({ inserted: inserted[3], now }));
+    // One undo: the row and its looks gone, the file as it was.
+    await undo();
+    now = await rows("rows");
+    t.check(now.join() === ROWS.join() && (await looks("rows")).length === 3, "one undo takes the row out with its looks", JSON.stringify(now));
+
+    // The corner's +: a row at the end, the same looks.
+    await hover("rows", "进行中");
+    await click(await toolAt("rows", ".ge-tgrow", { x: "right", y: "bottom" }));
+    const grown = await looks("rows");
+    await t.settle();
+    now = await rows("rows");
+    t.check(JSON.stringify(grown[3]) === JSON.stringify(NEW_ROW) && now[3] === WRITTEN_ROW, "a row put in by the corner's +: the same looks, written", JSON.stringify({ grown: grown[3], now }));
+    await undo();
+    t.check((await rows("rows")).join() === ROWS.join(), "undone", JSON.stringify(await rows("rows")));
+
+    // Shift+Enter on the last row's cell: a row below, typed into; its looks the same, the words
+    // typed in it bold as the column's cells.
+    const last = await page.evaluate(() => { const r = [...document.querySelectorAll("#rows td")].find((node) => node.textContent === "训练").getBoundingClientRect(); return { x: r.left + 12, y: r.top + r.height / 2 }; });
+    await page.mouse.click(last.x, last.y);
+    await t.sleep(150);
+    await t.press("Escape");
+    await t.sleep(150);
+    await t.combo("Shift", "Enter");
+    await t.type("部署");
+    await t.settle();
+    now = await rows("rows");
+    const weight = await page.evaluate(() => getComputedStyle([...document.querySelectorAll("#rows td")].find((node) => node.textContent === "部署")).fontWeight);
+    t.check(now[3] === '<td class="doc-bold">部署</td><td class="doc-align-center doc-text-blue"></td><td></td>' && Number(weight) >= 600, "Shift+Enter on the last row: a row with the columns' looks, typed into bold", JSON.stringify({ now, weight }));
+    await undo();
+    await undo();
+    t.check((await rows("rows")).join() === ROWS.join(), "undone: its words, then the row", JSON.stringify(await rows("rows")));
+
+    // A column's + at the right edge: the header row's shared look; the first body row's blue fill,
+    // right aligned, as both its cells; the second's differ: plain. One undo takes it out.
+    await hover("columns", "一月", "column");
+    await click(await toolAt("columns", ".ge-tplus", { x: "right", y: "top" }));
+    const widened = await looks("columns");
+    await t.settle();
+    now = await rows("columns");
+    t.check(JSON.stringify(widened.map((row) => row[2])) === JSON.stringify(["doc-bold doc-highlight-gray", "doc-align-right doc-highlight-blue", ""])
+      && now[0].endsWith(`<th ${gray}></th>`) && now[1].endsWith('<td class="doc-align-right doc-highlight-blue"></td>') && now[2] === '<td>支出</td><td class="doc-text-red">5</td><td></td>',
+      "a column put in: each row's shared look (the header row's too), plain where they differ; written so", JSON.stringify({ widened, now }));
+    await undo();
+    now = await rows("columns");
+    t.check(now.join() === COLUMNS.join() && (await looks("columns")).every((row) => row.length === 2), "one undo takes the column out with its looks", JSON.stringify(now));
     await checkOverlays(t, "nothing stray at the end");
   },
 
@@ -33345,6 +34043,198 @@ const c = 3;</code></pre></div>
     t.check(await waitFor(t, async () => (await measure(page)).wide.across), "and on again from the menu", JSON.stringify(await measure(page)));
   },
 
+  // 宽表格 offered only where the page holds a table it acts on, one standing in the body (table-across.mjs
+  // holdsBodyTables; the user's 2026-11-23): the top bar's 更多 of a document with no table, and of one whose only table
+  // is in a disclosure, has 全宽 and no 宽表格; one with a table in the body has it. An export's display menu the same.
+  async wideTablesOnlyWithTables(t) {
+    const { page } = t;
+    await page.setViewport({ width: 1440, height: 900 });
+    await wideTablesDocument(t);
+    t.newReport("plain", "没有表格");
+    await t.agentEdit((text) => text.replace(/<main([^>]*)>[\s\S]*<\/main>/, `<main$1>
+    <header class="doc-header"><h1 class="doc-title">没有表格</h1></header>
+    <p>只有一段正文，没有表格。</p>
+  </main>`), "plain");
+    t.newReport("boxed", "折叠块里的表格");
+    await t.agentEdit((text) => text.replace("</main>", `  <details class="doc-details" open>
+      <summary><span class="doc-details-summary-label">折叠块</span></summary>
+      <div class="doc-details-content"><div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>名称</th><th>数量</th></tr></thead><tbody><tr><td>甲</td><td>1</td></tr></tbody></table></div></div>
+    </details>
+</main>`), "boxed");
+    await openHome(t);
+    const labels = async (slug) => {
+      await page.evaluate((slug) => { location.hash = slug; }, slug);
+      await frameReady(t, slug);
+      await page.mouse.move(5, 600);
+      await page.click('.tb-right [aria-label="操作"]');
+      await page.waitForSelector(".menu .menu-item", { timeout: 5000 });
+      await t.sleep(150);
+      const said = await page.evaluate(() => [...document.querySelectorAll(".menu .menu-item .mi-label")].map((label) => label.textContent));
+      for (let tries = 0; tries < 3 && (await page.evaluate(() => Boolean(document.querySelector(".menu")))); tries++) await t.press("Escape");
+      await t.sleep(200);
+      return said;
+    };
+    const plain = await labels("plain");
+    t.check(plain.includes("全宽") && !plain.includes("宽表格"), "no table: 更多 has 全宽 and no 宽表格", JSON.stringify(plain));
+    const boxed = await labels("boxed");
+    t.check(boxed.includes("全宽") && !boxed.includes("宽表格"), "its only table in a disclosure, which 宽表格 leaves as it is: no 宽表格", JSON.stringify(boxed));
+    const wide = await labels("wide");
+    t.check(wide.includes("宽表格"), "a table in the body: 宽表格 is there", JSON.stringify(wide));
+
+    // An export's display menu: the same rule.
+    const menuOf = async (slug) => {
+      await page.goto(t.exportReport(slug), { waitUntil: "load" });
+      await page.waitForSelector("[data-doc-ready]", { timeout: 15000 });
+      await page.click(".doc-display-button");
+      await page.waitForSelector(".doc-display-menu:not([hidden])", { timeout: 5000 });
+      return page.evaluate(() => {
+        const item = document.querySelector(".doc-display-item[data-doc-tables]");
+        return { tables: Boolean(item) && !item.hidden && item.getBoundingClientRect().height > 0, width: [...document.querySelectorAll(".doc-display-item")].some((row) => /全宽/.test(row.textContent) && row.getBoundingClientRect().height > 0) };
+      });
+    };
+    const plainExport = await menuOf("plain");
+    t.check(plainExport.width && !plainExport.tables, "an export with no table: its display menu has 全宽显示 and no 宽表格", JSON.stringify(plainExport));
+    const wideExport = await menuOf("wide");
+    t.check(wideExport.tables, "an export with a table in the body: 宽表格 is there", JSON.stringify(wideExport));
+  },
+
+  // 宽多维表格 (the top bar's 更多, right under 宽表格: LookMenu.tsx wideDatabasesEntry; the document's own look.databases,
+  // the kit's data-doc-databases="wide": src/shared/document-look.mjs, render/kit/database/across.js; docs/render.md
+  // "Databases"): a switch of 宽表格's look, off. Off, a database whose table view is wider than the text stands in the
+  // text, its table scrolling. On, at once (never reloaded, doc.html as it was, look.databases written) the drawing (its
+  // head, its bar, its table) stands centred past the text on both sides, as wide as its table; a wider one as wide as
+  // the page's area, scrolling in it; a narrow one and one in a disclosure as they were. gallery set --wide-databases
+  // does it too; the export carries it on its <html> and its display menu's 宽多维表格 is on.
+  async wideDatabasesSwitch(t) {
+    const { page } = t;
+    await page.setViewport({ width: 1440, height: 900 });
+    await wideDatabasesDocument(t);
+    await openHome(t);
+    await page.evaluate(() => { location.hash = "widedb"; });
+    await frameReady(t, "widedb");
+    const frame = () => shownFrame(t);
+    await frame().waitForFunction(() => document.querySelectorAll(".doc-database-app .tbl").length === 4, { timeout: 15000 });
+    const look = async () => (await t.readJson("widedb")).look ?? null;
+    const measure = (target = frame()) => target.evaluate(wideDatabasesMeasure);
+    const rows = () => page.evaluate(() => [...document.querySelectorAll(".menu .menu-item")].map((row) => ({ label: row.querySelector(".mi-label").textContent, role: row.getAttribute("role"), checked: row.getAttribute("aria-checked"), tip: row.getAttribute("data-tip") })));
+    const openMenu = async () => {
+      await page.mouse.move(5, 600);
+      await page.click('.tb-right [aria-label="操作"]');
+      await page.waitForSelector(".menu .menu-item", { timeout: 5000 });
+      await t.sleep(150);
+    };
+    const closeMenus = async () => {
+      for (let tries = 0; tries < 3 && (await page.evaluate(() => Boolean(document.querySelector(".menu")))); tries++) await t.press("Escape");
+      await t.sleep(300);
+    };
+    const flip = (label) => page.evaluate((label) => [...document.querySelectorAll(".menu .menu-item")].find((row) => row.querySelector(".mi-label").textContent === label).click(), label);
+    const near = (a, b, slack = 1.5) => Math.abs(a - b) <= slack;
+    const inText = (one, now) => near(one.left, now.column.left) && one.right <= now.column.right + 1.5 && !one.wide;
+
+    const off = await measure();
+    t.check(off.attr === null && inText(off.medium, off) && off.medium.scrolls && inText(off.widest, off), "off: the databases stand in the text, a wide table scrolling there", JSON.stringify(off));
+    await frame().evaluate(() => { window.__notReloaded = true; });
+    const file = await t.read("widedb");
+
+    await openMenu();
+    const menu = await rows();
+    const at = menu.findIndex((row) => row.label === "全宽");
+    t.check(at >= 0 && menu[at + 1]?.label === "宽多维表格" && menu[at + 1].role === "menuitemcheckbox" && menu[at + 1].checked === "false", "更多: 宽多维表格 under 全宽 (no table of the body here: no 宽表格), a switch, off", JSON.stringify(menu.slice(at - 1, at + 2)));
+    t.check(/多维表格/.test(menu[at + 1]?.tip ?? "") && /滚动/.test(menu[at + 1]?.tip ?? ""), "its tip says what it does", menu[at + 1]?.tip);
+
+    await flip("宽多维表格");
+    t.check(await waitFor(t, async () => (await measure()).medium.wide), "on: the medium database placed past the text at once", JSON.stringify(await measure()));
+    await t.sleep(300);
+    const on = await measure();
+    const centred = (one, now = on) => near((one.left + one.right) / 2, (now.column.left + now.column.right) / 2);
+    t.check(on.attr === "wide" && on.medium.left < on.column.left - 20 && on.medium.right > on.column.right + 20 && centred(on.medium) && !on.medium.scrolls && near(on.medium.right - on.medium.left, on.medium.table, 2) && near(on.medium.head, on.medium.right - on.medium.left, 2),
+      "the medium database: past the text on both sides, centred, its head and its frame as wide as its table, whole", JSON.stringify(on.medium));
+    t.check(on.widest.wide && near(on.widest.left, on.edge) && near(on.widest.right, on.width - on.edge) && on.widest.scrolls, "the widest: as wide as the page's area, scrolling in it", JSON.stringify(on.widest));
+    t.check(JSON.stringify(on.narrow) === JSON.stringify(off.narrow), "a database narrower than the text as it was", JSON.stringify({ on: on.narrow, off: off.narrow }));
+    t.check(!on.inside.wide && on.inside.left >= on.column.left && on.inside.right <= on.column.right + 1 && on.inside.scrolls, "the one in a disclosure stays in it, scrolling there", JSON.stringify(on.inside));
+    t.check(on.kept, "never reloaded", JSON.stringify(on));
+    t.check(await waitFor(t, async () => JSON.stringify(await look()) === JSON.stringify({ databases: "wide" })), "look.databases written into doc.json", JSON.stringify(await look()));
+    t.check(await t.read("widedb") === file, "doc.html untouched: the look is doc.json's");
+
+    await flip("宽多维表格");
+    t.check(await waitFor(t, async () => { const now = await measure(); return now.attr === null && inText(now.medium, now) && now.medium.scrolls; }), "off again: back in the text, scrolling", JSON.stringify(await measure()));
+    await closeMenus();
+
+    const said = t.gallery("set", "widedb", "--wide-databases", "on");
+    t.check(/wide databases: off → on/.test(said), "gallery set --wide-databases on says it", said);
+    t.check(await waitFor(t, async () => (await measure()).medium.wide), "and the open page shows it", JSON.stringify(await measure()));
+
+    const url = t.exportReport("widedb");
+    const exported = await t.exported("widedb");
+    t.check(/<html\b[^>]*\sdata-doc-databases="wide"/.test(exported ?? ""), "the export's <html> carries it", /<html\b[^>]*>/.exec(exported ?? "")?.[0]);
+    await page.goto(url, { waitUntil: "load" });
+    await page.waitForSelector(".doc-database-app .tbl", { timeout: 15000 });
+    await t.sleep(500);
+    const shown = await measure(page);
+    t.check(shown.medium.wide && centred(shown.medium, shown) && !shown.medium.scrolls, "the exported file: the database past the text, centred, whole", JSON.stringify(shown.medium));
+    const item = await page.evaluate(() => {
+      const node = document.querySelector(".doc-display-item[data-doc-databases]");
+      return node && { label: node.textContent.trim(), checked: node.getAttribute("aria-checked") };
+    });
+    t.check(item?.label === "宽多维表格" && item.checked === "true", "its display menu: 宽多维表格, on as the document was", JSON.stringify(item));
+    await page.click(".doc-display-button");
+    await page.waitForSelector(".doc-display-menu:not([hidden])", { timeout: 5000 });
+    await page.click(".doc-display-item[data-doc-databases]");
+    t.check(await waitFor(t, async () => { const now = await measure(page); return now.attr === null && inText(now.medium, now); }), "the reader's click there: back in the text", JSON.stringify(await measure(page)));
+  },
+
+  // 宽多维表格 offered only where the page holds a database it acts on, one standing in the body (table-across.mjs
+  // holdsBodyDatabases): a document with no database, and one whose database is in a disclosure, has no 宽多维表格 in
+  // the top bar's 更多; one with a database in the body has it. An export's display menu the same.
+  async wideDatabasesOnlyWithDatabases(t) {
+    const { page } = t;
+    await page.setViewport({ width: 1440, height: 900 });
+    await wideDatabasesDocument(t);
+    t.newReport("plain", "没有多维表格");
+    await t.agentEdit((text) => text.replace(/<main([^>]*)>[\s\S]*<\/main>/, `<main$1>
+    <header class="doc-header"><h1 class="doc-title">没有多维表格</h1></header>
+    <p>只有一段正文。</p>
+  </main>`), "plain");
+    t.newReport("boxed", "折叠块里的多维表格");
+    await t.agentEdit((text) => text.replace("</main>", `  <details class="doc-details" open>
+      <summary><span class="doc-details-summary-label">折叠块</span></summary>
+      <div class="doc-details-content">${wideDatabase("boxed1", 2)}</div>
+    </details>
+</main>`), "boxed");
+    await openHome(t);
+    const labels = async (slug) => {
+      await page.evaluate((slug) => { location.hash = slug; }, slug);
+      await frameReady(t, slug);
+      await shownFrame(t).waitForFunction(() => !document.querySelector(".doc-database") || document.querySelector(".doc-database-app"), { timeout: 15000 });
+      await page.mouse.move(5, 600);
+      await page.click('.tb-right [aria-label="操作"]');
+      await page.waitForSelector(".menu .menu-item", { timeout: 5000 });
+      await t.sleep(150);
+      const said = await page.evaluate(() => [...document.querySelectorAll(".menu .menu-item .mi-label")].map((label) => label.textContent));
+      for (let tries = 0; tries < 3 && (await page.evaluate(() => Boolean(document.querySelector(".menu")))); tries++) await t.press("Escape");
+      await t.sleep(200);
+      return said;
+    };
+    const plain = await labels("plain");
+    t.check(plain.includes("全宽") && !plain.includes("宽多维表格"), "no database: no 宽多维表格", JSON.stringify(plain));
+    const boxed = await labels("boxed");
+    t.check(boxed.includes("全宽") && !boxed.includes("宽多维表格"), "its only database in a disclosure: no 宽多维表格", JSON.stringify(boxed));
+    const wide = await labels("widedb");
+    t.check(wide.includes("宽多维表格"), "a database in the body: 宽多维表格 is there", JSON.stringify(wide));
+    const menuOf = async (slug) => {
+      await page.goto(t.exportReport(slug), { waitUntil: "load" });
+      await page.waitForSelector("[data-doc-ready]", { timeout: 15000 });
+      await page.click(".doc-display-button");
+      await page.waitForSelector(".doc-display-menu:not([hidden])", { timeout: 5000 });
+      return page.evaluate(() => {
+        const item = document.querySelector(".doc-display-item[data-doc-databases]");
+        return { databases: Boolean(item) && !item.hidden && item.getBoundingClientRect().height > 0 };
+      });
+    };
+    t.check(!(await menuOf("plain")).databases, "an export with no database: no 宽多维表格 in its display menu");
+    t.check((await menuOf("widedb")).databases, "an export with a database in the body: 宽多维表格 is there");
+  },
+
   // 宽表格's table and the page editor's tools over it (page/table/widths.mjs, annotate/, handle/, the kit's
   // tables/across.js): the handle left of it, its column grip over the column under the pointer, its 批注 button right
   // of it; a column's strip dragged wider keeps its edge under the pointer, the table growing on both sides, centred
@@ -35621,6 +36511,59 @@ return delta;</code></pre>
   // 中文示例: a new tab, 项目报告写作规范, selected and shown, reports/preferences/项目报告写作规范.md the example byte
   // for byte (opening it rewrites nothing), the note gone; closed and opened again, still gone (.gallery/hints.json).
   // The note brought back, English example: grey under the pointer, then the same for the English example.
+  // 写作偏好's tabs reordered by a drag (the browser's own, caught as it starts: CDP Input.setInterceptDrags, then
+  // dragged over with what it carries): where the dragged tab goes is by its picture, under the pointer where it was
+  // pressed (src/shared/drag-place.mjs), not the pointer: pressed at its left end, no line while its right edge is
+  // short of the next tab's middle, the line after that tab once it is past it with the pointer still over the
+  // dragged tab, and dropped there the two change places.
+  async writingPreferencesOrderEdge(t) {
+    const { page } = t;
+    await openHome(t);
+    await settingsMenu(t, "写作偏好");
+    await page.waitForSelector(".wp-editor:not([hidden]) iframe:not([data-pending])");
+    await page.click(".wp-new");
+    await page.waitForSelector(".wp-tab .pop-input");
+    await page.type(".wp-tab .pop-input", "纪要");
+    await page.keyboard.press("Enter");
+    await page.waitForFunction(() => document.querySelectorAll(".wp-tab").length === 2 && !document.querySelector(".wp-tab .pop-input"));
+    await t.sleep(400);
+    const tabs = () => page.$$eval(".wp-tab", (nodes) => nodes.map((node) => {
+      const rect = node.getBoundingClientRect();
+      return { name: node.querySelector(".wp-tab-name")?.textContent ?? "", left: rect.left, right: rect.right, width: rect.width, y: rect.top + rect.height / 2, drop: node.dataset.drop ?? null };
+    }));
+    const [first, second] = await tabs();
+    const client = await page.createCDPSession();
+    await client.send("Input.setInterceptDrags", { enabled: true });
+    const press = { x: first.left + 6, y: first.y };
+    const caught = new Promise((done) => { client.once("Input.dragIntercepted", done); setTimeout(() => done(null), 5000); });
+    await client.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: press.x, y: press.y });
+    await client.send("Input.dispatchMouseEvent", { type: "mousePressed", x: press.x, y: press.y, button: "left", clickCount: 1 });
+    for (let step = 1; step <= 4; step++) await client.send("Input.dispatchMouseEvent", { type: "mouseMoved", x: press.x + step * 2, y: press.y, button: "left", buttons: 1 });
+    const dragged = await caught;
+    const past = second.left + second.width / 2 + 3 - first.right; // its right edge 3px past the next one's middle
+    const over = async (x, type = "dragOver") => {
+      await client.send("Input.dispatchDragEvent", { type, x, y: press.y, data: dragged.data });
+      await t.sleep(150);
+    };
+    let short = null;
+    let during = null;
+    if (dragged) {
+      await over(press.x + 8, "dragEnter");
+      await over(press.x + past - 12);
+      short = await tabs();
+      await over(press.x + past);
+      during = await tabs();
+      await over(press.x + past, "drop");
+    }
+    await client.send("Input.dispatchMouseEvent", { type: "mouseReleased", x: press.x + past, y: press.y, button: "left", clickCount: 1 });
+    await client.send("Input.setInterceptDrags", { enabled: false });
+    await client.detach();
+    t.check(Boolean(dragged) && short?.every((tab) => tab.drop === null) && during?.[1].drop === "after" && press.x + past < first.right, "its edge short of the next tab's middle: no line; past it, the pointer still over the dragged tab: the line after the next", JSON.stringify({ first, second, short, during }));
+    await page.waitForFunction(() => [...document.querySelectorAll(".wp-tab .wp-tab-name")].map((node) => node.textContent).join() === "纪要,通用写作", { timeout: 5000, polling: 50 }).catch(() => {});
+    const names = (await tabs()).map((tab) => tab.name);
+    t.check(names.join() === "纪要,通用写作", "dropped there: the two change places", JSON.stringify(names));
+  },
+
   async writingPreferencesExamples(t) {
     const hints = path.join(t.root, "reports", ".gallery", "hints.json");
     await fs.writeFile(hints, `${JSON.stringify({ home: "closed by the test harness", homeCards: HOME_CARDS })}\n`); // the harness closes the note for every other scenario
@@ -36639,6 +37582,117 @@ ${Array.from({ length: 60 }, (_, index) => `    <p id="p${index}" style="min-hei
     await open("sample");
     await t.sleep(600);
     t.check(await (await visibleFrame(t)).evaluate(() => Math.round(scrollY)) === 0, "after F5: at its top", JSON.stringify(before));
+  },
+
+  // The same with a table across the window's top (the user's 2026-11-22: the caret after a table half hidden under
+  // the top bar, a look at another document and back, the page showed further up first and then jumped back; the
+  // caret in a table's cell came back in its first cell). The row that stood at the top of the window is there
+  // again from the very frame the page is shown in, though the kit draws the table's scrollbars (an element it
+  // puts first in the table's frame) only as it lays the table out; the caret is back at the end of the paragraph
+  // after the table, and, left in a cell further in, back in that cell at its offset.
+  async scrollKeptTable(t) {
+    const rows = Array.from({ length: 20 }, (_, index) => `      <tr><td>第 ${index + 1} 行</td><td>方案 ${index + 1} 的取舍</td><td>结论 ${index + 1}</td></tr>`).join("\n");
+    const filler = (from, count) => Array.from({ length: count }, (_, index) => `  <p>填充的第 ${from + index} 段，让表格离页面顶上远一些。</p>`).join("\n");
+    await t.agentEdit((text) => text.replace("</main>", `${filler(1, 12)}
+  <table data-block-id="tablekept">
+    <thead>
+      <tr><th>模型</th><th>看到的</th><th>写的</th></tr>
+    </thead>
+    <tbody>
+${rows}
+    </tbody>
+  </table>
+  <p data-block-id="afterkept">表格后面的一段，光标停在这一段的末尾。</p>
+${filler(13, 30)}
+</main>`));
+    await openHome(t);
+    t.newReport("another", "另一份报告");
+    await waitRow(t, "另一份报告");
+    const open = async (id) => {
+      await t.page.click(`.row[data-scope="tree"][data-id="${id}"]`);
+      await frameReady(t, id);
+    };
+    // The table's bottom 300px down the window (its top well above it), the first body row whose top is in the
+    // window: its number and how far down it stands.
+    const stand = async () => {
+      const frame = await visibleFrame(t);
+      await frame.evaluate(() => {
+        const table = document.querySelector('main [data-block-id="tablekept"] table, main table[data-block-id="tablekept"]');
+        scrollTo(0, Math.round(table.getBoundingClientRect().bottom + scrollY - 300));
+      });
+      await t.sleep(300);
+      return frame.evaluate(() => {
+        const table = document.querySelector('main [data-block-id="tablekept"] table, main table[data-block-id="tablekept"]');
+        const rows = [...table.querySelectorAll("tbody tr")];
+        const row = rows.findIndex((node) => node.getBoundingClientRect().top >= 0);
+        return { tableTop: Math.round(table.getBoundingClientRect().top), row, at: row < 0 ? null : Math.round(rows[row].getBoundingClientRect().top), y: Math.round(scrollY) };
+      });
+    };
+    // Where the caret is: the cell it is in (its number among the table's cells, -1 for none) or the paragraph's
+    // words, and its offset in that host's text.
+    const caretNow = (frame) => frame.evaluate(() => {
+      const selection = getSelection();
+      const node = selection.anchorNode;
+      const host = (node?.nodeType === 1 ? node : node?.parentElement)?.closest?.("[contenteditable='true']") ?? null;
+      let offset = null;
+      if (host) {
+        const head = document.createRange();
+        head.setStart(host, 0);
+        head.setEnd(selection.anchorNode, selection.anchorOffset);
+        offset = head.toString().length;
+      }
+      const cells = [...document.querySelectorAll('main [data-block-id="tablekept"] th, main [data-block-id="tablekept"] td')];
+      return {
+        cell: host ? cells.indexOf(host.closest("th, td")) : -1, text: host?.textContent.slice(0, 20) ?? null, offset, collapsed: selection.isCollapsed,
+        focused: Boolean(host) && document.activeElement === host && window.frameElement?.ownerDocument.activeElement === window.frameElement,
+      };
+    });
+    const backAt = async (label, before, caret) => {
+      await t.sleep(900);
+      const frame = await visibleFrame(t);
+      const seen = await seenShown(t);
+      const off = seen.frames.filter((spot) => spot.top === null || Math.abs(spot.top - before.at) > 2);
+      t.check(Boolean(seen.first) && seen.first.top !== null && Math.abs(seen.first.top - before.at) <= 2, `${label}: in the first frame it is shown in, the row that was at the top of the window there again, as far down`, JSON.stringify({ before, first: seen.first }));
+      t.check(seen.frames.length > 0 && off.length === 0, `${label}: and in every frame after: no jump, no scrolling`, JSON.stringify({ frames: seen.frames.length, off: off.slice(0, 4) }));
+      const now = await caretNow(frame);
+      t.check(now.cell === caret.cell && now.offset === caret.offset && now.collapsed && now.focused, `${label}: the caret back where it was, with the focus`, JSON.stringify({ was: caret, now }));
+    };
+
+    // The caret at the end of the paragraph after the table.
+    let before = await stand();
+    t.check(before.tableTop < -200 && before.row > 0, "the table across the window's top, a row of it at the top", JSON.stringify(before));
+    let caret = await (await visibleFrame(t)).evaluate(() => {
+      const host = [...document.querySelectorAll("main [contenteditable='true']")].find((node) => node.textContent.startsWith("表格后面的一段"));
+      host.focus({ preventScroll: true });
+      const range = document.createRange();
+      range.selectNodeContents(host);
+      range.collapse(false);
+      getSelection().removeAllRanges();
+      getSelection().addRange(range);
+      return { cell: -1, offset: host.textContent.length };
+    });
+    await t.sleep(400);
+    await open("another");
+    await watchShown(t, "/generated/sample.html", `main [data-block-id="tablekept"] tbody tr:nth-child(${before.row + 1})`);
+    await open("sample");
+    await backAt("the caret after the table", before, caret);
+
+    // The caret in a cell further in: the second cell of a row in the window.
+    before = await stand();
+    caret = await (await visibleFrame(t)).evaluate((row) => {
+      const cells = [...document.querySelectorAll('main [data-block-id="tablekept"] th, main [data-block-id="tablekept"] td')];
+      const cell = document.querySelectorAll('main [data-block-id="tablekept"] tbody tr')[row + 2].children[1];
+      const text = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT).nextNode();
+      cell.focus({ preventScroll: true });
+      getSelection().collapse(text, 3);
+      return { cell: cells.indexOf(cell), offset: 3 };
+    }, before.row);
+    await t.sleep(400);
+    t.check(caret.cell > 3 + 2, "the caret in a body cell, not the first", JSON.stringify(caret));
+    await open("another");
+    await watchShown(t, "/generated/sample.html", `main [data-block-id="tablekept"] tbody tr:nth-child(${before.row + 1})`);
+    await open("sample");
+    await backAt("the caret in a cell", before, caret);
   },
 
   // The same for a custom page (free HTML, no block ids: by its elements' own ids): left for a document and
@@ -37737,6 +38791,35 @@ ${Array.from({ length: 60 }, (_, index) => `    <p id="p${index}" style="min-hei
       await page.keyboard.up("Control");
       await t.sleep(700);
     };
+
+    // The sidebar dragged wider with no card open: the page writes none of its sheets at a step (a rule on its root
+    // is a style recalculation of the whole page, every step of the drag: it lagged behind the pointer, the user's
+    // 2026-11-23); the card opened after it stands in the middle of the window all the same (below).
+    await (await visibleFrame(t)).evaluate(() => {
+      window.__sheetWrites = 0;
+      const replace = CSSStyleSheet.prototype.replaceSync;
+      CSSStyleSheet.prototype.replaceSync = function counted(text) {
+        window.__sheetWrites += 1;
+        return replace.call(this, text);
+      };
+    });
+    const sidebarWidth = () => page.evaluate(() => Math.round(document.querySelector(".sb-container").getBoundingClientRect().width));
+    const narrow = await sidebarWidth();
+    const grip = await (await page.$(".sb-resizer")).boundingBox();
+    await page.mouse.move(grip.x + grip.width / 2, grip.y + 300);
+    await page.mouse.down();
+    for (let step = 1; step <= 10; step++) await page.mouse.move(grip.x + grip.width / 2 + step * 6, grip.y + 300);
+    await page.mouse.up();
+    await t.sleep(400);
+    const wide = await sidebarWidth();
+    const writes = await (await visibleFrame(t)).evaluate(() => window.__sheetWrites);
+    t.check(wide - narrow >= 50 && writes === 0, "the sidebar dragged 60px wider with no card open: no sheet of the page written meanwhile", JSON.stringify({ narrow, wide, writes }));
+    // Back as wide as it was (wider, the window's middle would leave the card less than 24px clear of the frame).
+    await page.mouse.move(grip.x + grip.width / 2 + 60, grip.y + 300);
+    await page.mouse.down();
+    for (let step = 9; step >= 0; step--) await page.mouse.move(grip.x + grip.width / 2 + step * 6, grip.y + 300);
+    await page.mouse.up();
+    await t.sleep(400);
 
     t.check(await open(), "its link opens the card, the workbench's bars covered");
     let now = await seen();
@@ -42337,6 +43420,195 @@ ${Array.from({ length: 60 }, (_, index) => `    <p id="p${index}" style="min-hei
     t.check((await files()) === before, "every folder where it was: only outline.json changed");
   },
 
+  // A page of the sidebar dragged into the document shown (docs/editor.md "Dropping a page from the sidebar",
+  // docs/workbench.md "The sidebar"): out of the sidebar over the page a thin blue caret stands where the pointer
+  // is in the text, the sidebar's own line gone; let go in the middle of a paragraph's words it is the page block
+  // "@" puts for that page, at that place, written as the file form, the caret after it and the focus in the page,
+  // the outline untouched; one Ctrl+Z takes it out; let go past a paragraph's words (its empty right side, or the
+  // margin right of the column) it goes at their end; the page shown itself is a page block too (as "@" lists it);
+  // in a link's words beside the link, in a list item and a table cell, in an empty paragraph; the caret in light and dark.
+  async pageDropInText(t) {
+    t.newReport("target", "目标页");
+    const data = await t.readJson("target");
+    await fs.writeFile(path.join(t.root, "reports", "target", "doc.json"), JSON.stringify({ ...data, icon: "🎯" }));
+    await t.agentEdit(pageOf("起点", `
+    <p>前面的文字后面的文字</p>
+    <p>第二段</p>
+    <p>第三段的文字</p>
+    <p>有一个<a href="https://example.com/">外面的链接</a>在这里</p>
+    <ul><li>列表里的一项</li></ul>
+    <div class="doc-table-wrap"><table class="doc-table"><thead><tr><th>甲</th><th>乙</th></tr></thead><tbody><tr><td>格子里的字</td><td>另一格</td></tr></tbody></table></div>
+    <p></p>`));
+    const outline = `${JSON.stringify({ version: 2, children: { "": ["sample", "target"] }, groups: [{ id: "docs" }] })}\n`;
+    await fs.writeFile(path.join(t.root, "reports", ".gallery", "outline.json"), outline);
+    await openHome(t);
+    await t.page.click('.row[data-scope="tree"][data-id="sample"]');
+    await frameReady(t, "sample");
+    const frame = shownFrame(t);
+    const body = async () => (await t.read()).replace(/ data-block-id="[^"]*"/g, "").match(/<\/header>([\s\S]*)<\/main>/)[1].replace(/\s+/g, " ").trim();
+    const CHIP = '<a class="doc-link-mention" href="../target/doc.html"><span class="doc-link-mention-icon"></span>目标页</a>';
+    const caret = () => frame.evaluate(() => {
+      const node = document.querySelector(".ge-page-drop:not([hidden])");
+      const rect = node?.getBoundingClientRect();
+      return rect ? { left: rect.left, top: rect.top, width: rect.width, height: rect.height, color: getComputedStyle(node).backgroundColor } : null;
+    });
+
+    // In the middle of the words: the caret stands between 前面的文字 and 后面的文字 while it is over them.
+    const middle = await pagePoint(t, frame, "前面的文字后面的文字", 5);
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), middle, async () => {
+      const shown = await caret();
+      t.check(Boolean(shown) && Math.abs(shown.left + shown.width / 2 - middle.inside.x) <= 2 && shown.width === 2 && shown.height >= 14 && shown.color !== "rgba(0, 0, 0, 0)", "over the words a thin blue caret where the page block would go", JSON.stringify({ shown, middle }));
+      t.check(!(await t.page.evaluate(() => Boolean(document.querySelector(".sb-scroll > .drop-line.show, .drop-inside")))), "and no line of the sidebar's");
+    });
+    t.check(await waitFor(t, () => frame.evaluate(() => Boolean(document.querySelector("main p a.doc-link-mention[href]"))), 5000), "let go: a page block in the paragraph");
+    const made = await frame.evaluate(() => {
+      const chip = document.querySelector("main p a.doc-link-mention[href]");
+      const rest = getSelection().rangeCount ? getSelection().getRangeAt(0).cloneRange() : null;
+      rest?.setEnd(chip.parentElement, chip.parentElement.childNodes.length);
+      return { title: chip.textContent, atom: chip.hasAttribute("data-ge-atom"), icon: chip.querySelector(".doc-link-mention-icon")?.localName, after: rest?.toString(), focus: document.hasFocus(), caret: document.querySelector(".ge-page-drop") === null };
+    });
+    t.check(made.title === "目标页" && made.atom && made.icon === "img", "the page block \"@\" puts, with its icon", JSON.stringify(made));
+    t.check(made.after === "后面的文字" && made.focus && made.caret, "the caret after it, the page focused, the drop caret gone", JSON.stringify(made));
+    await frame.waitForFunction(() => document.documentElement.getAttribute("data-ge-save") === "saved", { timeout: 15000 });
+    await t.sleep(300);
+    t.check((await body()).includes(`<p>前面的文字${CHIP}后面的文字</p>`), "the file holds it as \"@\" writes it", await body());
+    t.check((await t.file("reports/.gallery/outline.json")) === outline, "the sidebar's order untouched", await t.file("reports/.gallery/outline.json"));
+    // One Ctrl+Z takes it out.
+    await t.combo("Control", "z");
+    t.check(await waitFor(t, () => frame.evaluate(() => !document.querySelector("main a.doc-link-mention") && document.querySelector("main p").textContent === "前面的文字后面的文字"), 3000), "one undo takes it out");
+    await frame.waitForFunction(() => document.documentElement.getAttribute("data-ge-save") === "saved", { timeout: 15000 });
+    await t.sleep(300);
+    t.check(!(await body()).includes("doc-link-mention"), "and the file has none", await body());
+
+    // Past a paragraph's words (its empty right side): at their end.
+    const past = await pagePoint(t, frame, "第二段", 3, { right: 120 });
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), past, async () => {
+      const shown = await caret();
+      const end = await pagePoint(t, frame, "第二段", 3);
+      t.check(Boolean(shown) && Math.abs(shown.left + shown.width / 2 - end.inside.x) <= 3, "past the words the caret stands at their end", JSON.stringify({ shown, end }));
+    });
+    await frame.waitForFunction(() => document.documentElement.getAttribute("data-ge-save") === "saved", { timeout: 15000 });
+    await t.sleep(300);
+    t.check(await waitFor(t, async () => (await body()).includes(`<p>第二段${CHIP}</p>`), 5000), "let go there: at the end of the paragraph", await body());
+    // Further right, past the column's edge, at that height: at the end of that line too.
+    const margin = await pagePoint(t, frame, "第三段的文字", 6, { margin: 40 });
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), margin);
+    await frame.waitForFunction(() => document.documentElement.getAttribute("data-ge-save") === "saved", { timeout: 15000 });
+    await t.sleep(300);
+    t.check(await waitFor(t, async () => (await body()).includes(`<p>第三段的文字${CHIP}</p>`), 5000), "let go in the margin right of the column: at the end of the line at that height", await body());
+
+    // The page shown itself: a page block of it, as "@" lists it.
+    const own = await pagePoint(t, frame, "前面的文字后面的文字", 2);
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="sample"]'), own);
+    await frame.waitForFunction(() => document.documentElement.getAttribute("data-ge-save") === "saved", { timeout: 15000 });
+    await t.sleep(300);
+    t.check(await waitFor(t, async () => /<p>前面<a class="doc-link-mention" href="\.\.\/sample\/doc\.html"><span class="doc-link-mention-icon"><\/span>[^<]+<\/a>的文字后面的文字<\/p>/.test(await body()), 5000), "the page shown itself: a page block of it", await body());
+    t.check((await t.file("reports/.gallery/outline.json")) === outline, "the sidebar's order still untouched");
+
+    // In a link's words: beside the link (no page block in a link), on the side of its half the pointer is on; in a
+    // list item's words, a table cell's; on an empty paragraph, in it.
+    const saved = () => frame.waitForFunction(() => document.documentElement.getAttribute("data-ge-save") === "saved", { timeout: 15000 });
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), await pagePoint(t, frame, "外面的链接", 4));
+    await saved();
+    t.check(await waitFor(t, async () => (await body()).includes(`<p>有一个<a href="https://example.com/">外面的链接</a>${CHIP}在这里</p>`), 5000), "in a link's words: after the link", await body());
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), await pagePoint(t, frame, "列表里的一项", 3));
+    await saved();
+    t.check(await waitFor(t, async () => (await body()).includes(`<li>列表里${CHIP}的一项</li>`), 5000), "in a list item's words", await body());
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), await pagePoint(t, frame, "格子里的字", 2));
+    await saved();
+    t.check(await waitFor(t, async () => (await body()).includes(`<td>格子${CHIP}里的字</td>`), 5000), "in a table cell's words", await body());
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), await pagePoint(t, frame, "", 0, { empty: true }));
+    await saved();
+    t.check(await waitFor(t, async () => (await body()).endsWith(`<p>${CHIP}</p>`), 5000), "on an empty paragraph: in it", await body());
+    t.check(await frame.evaluate(() => !document.querySelector("main p:last-of-type")?.hasAttribute("data-ge-placeholder")), "its placeholder gone");
+
+    // Dark: the caret as plain.
+    await t.page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: "dark" }]);
+    await t.sleep(400);
+    const dark = await pagePoint(t, frame, "第二段", 1);
+    await pageDrag(t, await sideBox(t, '.row[data-scope="tree"][data-id="target"]'), dark, async () => {
+      const shown = await caret();
+      t.check(Boolean(shown) && shown.width === 2 && shown.color === "rgb(35, 131, 226)", "in dark the caret is the same blue", JSON.stringify(shown));
+    }, { cancel: true });
+    await t.page.emulateMediaFeatures([]);
+    t.check(await waitFor(t, async () => (await caret()) === null, 2000), "Esc: the caret gone");
+    await t.sleep(600);
+    t.check(!(await body()).includes(`第${CHIP}二段`), "and letting go after it puts nothing in (the press in the sidebar took the keys from the page)", await body());
+  },
+
+  // Where a page dragged from the sidebar goes in nowhere (docs/editor.md "Dropping a page from the sidebar"): over
+  // the title and a code block no caret stands and letting go writes nothing; Esc over the text cancels; a web
+  // link of the sidebar and a draft of another workspace (which "@" cannot link here) never become one; dragged out
+  // over the page and back into the sidebar it is the sidebar's drag again, reordering, the document untouched; a
+  // custom page shown takes none.
+  async pageDropRefused(t) {
+    t.newReport("target", "目标页");
+    const web = /web link (\S+)/.exec(t.gallery("link", "add", "https://example.com/one", "网页一"))[1];
+    await t.agentEdit(pageOf("起点", `
+    <p>一段文字</p>
+    <div class="doc-code"><div class="doc-code-title"></div><pre><code>代码块里的字</code></pre></div>
+    <p>最后一段</p>`));
+    await fs.writeFile(path.join(t.root, "reports", ".gallery", "outline.json"), `${JSON.stringify({ version: 2, children: { "": ["sample", "target", web] }, groups: [{ id: "docs" }] })}\n`);
+    t.gallery("page", "new", "board", "看板");
+    const other = otherWorkspace(t, "drop/ws", "别处", [["far", "别处的文档"]]);
+    try {
+      await openHome(t);
+      await t.page.click('.row[data-scope="tree"][data-id="sample"]');
+      await frameReady(t, "sample");
+      const frame = shownFrame(t);
+      await frame.waitForFunction(() => document.documentElement.getAttribute("data-ge-save") === "saved", { timeout: 15000 });
+      const before = await t.read();
+      const stored = async () => JSON.parse((await t.file("reports/.gallery/outline.json")) ?? "{}");
+      const caret = () => frame.evaluate(() => Boolean(document.querySelector(".ge-page-drop:not([hidden])")));
+      const row = (id) => sideBox(t, `.row[data-scope="tree"][data-id="${id}"]`);
+
+      // The title, a code block: no caret, nothing written.
+      const title = await pagePoint(t, frame, "起点", 1);
+      await pageDrag(t, await row("target"), title, async () => t.check(!(await caret()), "over the title no caret"));
+      const code = await pagePoint(t, frame, "代码块里的字", 2);
+      await pageDrag(t, await row("target"), code, async () => t.check(!(await caret()), "over a code block none"));
+      // Esc over the text: the caret goes, nothing goes in.
+      const text = await pagePoint(t, frame, "一段文字", 2);
+      await pageDrag(t, await row("target"), text, async () => t.check(await caret(), "over a paragraph's words one stands"), { cancel: true });
+      t.check(!(await caret()), "Esc: it goes");
+      // A web link and another workspace's draft: never one.
+      await pageDrag(t, await row(web), text, async () => t.check(!(await caret()), "a web link of the sidebar: none"));
+      await t.page.waitForSelector(`.row[data-scope="tree"][data-id="${other.entry("far")}"]`, { timeout: 20000 });
+      await pageDrag(t, await row(other.entry("far")), text, async () => t.check(!(await caret()), "a draft of another workspace: none"));
+      await t.sleep(800);
+      t.check((await t.read()) === before && !(await frame.evaluate(() => Boolean(document.querySelector("main a.doc-link-mention")))), "nothing written into the document", await t.read());
+
+      // Out over the page and back into the sidebar: the sidebar's drag (target after the web link), nothing in the document.
+      const last = await row(web);
+      const from = await row("target");
+      await t.page.mouse.move(from.x, from.y);
+      await t.page.mouse.down();
+      await t.page.mouse.move(from.x, from.y + 8, { steps: 3 });
+      await t.page.mouse.move(text.x, text.y, { steps: 10 });
+      await t.sleep(200);
+      t.check(await caret(), "over the page: the caret");
+      await t.page.mouse.move(last.x, last.bottom - 3, { steps: 10 });
+      await t.sleep(200);
+      const back = { caret: await caret(), line: await t.page.evaluate(() => Boolean(document.querySelector(".sb-scroll > .drop-line.show"))) };
+      t.check(!back.caret && back.line, "back in the sidebar: its line again, the caret gone", JSON.stringify(back));
+      await t.page.mouse.up();
+      t.check(await waitFor(t, async () => JSON.stringify((await stored()).children?.[""]) === JSON.stringify(["sample", web, "target"]), 5000), "let go there: reordered", JSON.stringify(await stored()));
+      await t.sleep(600);
+      t.check((await t.read()) === before, "the document untouched");
+
+      // A custom page shown: dragged over it nothing happens.
+      await t.page.evaluate(() => { location.hash = "@board"; });
+      await t.page.waitForFunction(() => /\/pages\/board/.test(document.querySelector("iframe.report-frame:not([data-pending])")?.getAttribute("src") ?? ""), { timeout: 10000 });
+      await t.sleep(1500);
+      const board = await t.page.evaluate(() => { const r = document.querySelector("iframe.report-frame:not([data-pending])").getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + 200 }; });
+      const outlineBefore = await t.file("reports/.gallery/outline.json");
+      await pageDrag(t, await row("target"), board);
+      t.check((await t.file("reports/.gallery/outline.json")) === outlineBefore && (await t.read()) === before, "a custom page: nothing written, the sidebar's order as it was");
+    } finally {
+      await stopOther(t, other);
+    }
+  },
+
   // A draft of another workspace opened in this workbench (docs/workbench.md "Drafts of other workspaces"):
   // its workspace's column called by its name, a draft of a workspace the sidebar does not show grey
   // (找不到底稿); opened, its own server started for it (none ran) and its page shown from there, the session
@@ -42448,7 +43720,7 @@ ${Array.from({ length: 60 }, (_, index) => `    <p id="p${index}" style="min-hei
       await t.page.click(rowOf("sample"));
       await frameReady(t, "sample");
       const ownMenu = await t.page.evaluate(() => { document.querySelector('.tb-right [aria-label="操作"]').click(); return true; }).then(() => t.page.waitForSelector(".menu .mi-label", { timeout: 5000 })).then(() => t.page.evaluate(() => [...document.querySelectorAll(".menu .mi-label")].map((node) => node.textContent)));
-      t.check(JSON.stringify(ownMenu) === '["复制页面内容","复制本地路径","演示视图","历史版本","在新标签页打开","导入","导出","移至回收区","字体与布局","目录","全宽","宽表格"]', "a document's 更多操作", JSON.stringify(ownMenu));
+      t.check(JSON.stringify(ownMenu) === '["复制页面内容","复制本地路径","演示视图","历史版本","在新标签页打开","导入","导出","移至回收区","字体与布局","目录","全宽"]', "a document's 更多操作", JSON.stringify(ownMenu));
       await t.press("Escape");
       const gone =await t.page.evaluate((selector) => { const row = document.querySelector(selector); return { missing: row?.classList.contains("missing"), tag: row?.querySelector(".row-tag")?.textContent }; }, rowOf(ghost));
       t.check(gone.missing === true && gone.tag === "找不到底稿", "a draft of a workspace the sidebar does not show: kept, grey, 找不到底稿", JSON.stringify(gone));
@@ -46745,9 +48017,9 @@ ${Array.from({ length: 60 }, (_, index) => `    <p id="p${index}" style="min-hei
     const closeMenu = () => t.page.evaluate(() => document.body.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })));
     const before = await state();
     t.check(!before.margin && before.rows === 0, "off at first: no outline, no room taken", JSON.stringify(before));
-    t.check(JSON.stringify(await switchRow()) === JSON.stringify(["目录:false", "全宽:false", "宽表格:false"]), "更多 has the 目录 switch, off, and 全宽 and 宽表格 right under it, off");
+    t.check(JSON.stringify(await switchRow()) === JSON.stringify(["目录:false", "全宽:false"]), "更多 has the 目录 switch, off, and 全宽 right under it, off (no 宽表格: the sample holds no table in its body)");
     await flip();
-    t.check(JSON.stringify(await t.page.evaluate(() => [...document.querySelectorAll('.menu [role="menuitemcheckbox"]')].map((row) => row.getAttribute("aria-checked")))) === '["true","false","false"]', "a click switches it on, the menu staying open (全宽 under it not touched)");
+    t.check(JSON.stringify(await t.page.evaluate(() => [...document.querySelectorAll('.menu [role="menuitemcheckbox"]')].map((row) => row.getAttribute("aria-checked")))) === '["true","false"]', "a click switches it on, the menu staying open (全宽 under it not touched)");
     await closeMenu();
     t.check(await waitFor(t, async () => (await state()).rows > 20, 3000), "the open page shows its outline at once");
     const on = await state();
@@ -46761,12 +48033,12 @@ ${Array.from({ length: 60 }, (_, index) => `    <p id="p${index}" style="min-hei
     const elsewhere = await state(another());
     t.check(!elsewhere.margin && elsewhere.dock === null && elsewhere.rows === 0, "another report: no outline, no room taken (the switch is the document's)", JSON.stringify(elsewhere));
     const otherRow = await switchRow();
-    t.check(JSON.stringify(otherRow) === JSON.stringify(["目录:false", "全宽:false", "宽表格:false"]), "its switch off", JSON.stringify(otherRow));
+    t.check(JSON.stringify(otherRow) === JSON.stringify(["目录:false", "全宽:false"]), "its switch off", JSON.stringify(otherRow));
     await closeMenu();
     await clickReport(t, title);
     await frameReady(t, "sample");
     t.check(await waitFor(t, async () => { const now = await state(); return now.rows > 20 && now.left === on.left && now.dock === on.dock; }, 3000), "the sample again: its outline on, the column where it was", JSON.stringify(await state()));
-    t.check(JSON.stringify(await switchRow()) === JSON.stringify(["目录:true", "全宽:false", "宽表格:false"]), "its switch on");
+    t.check(JSON.stringify(await switchRow()) === JSON.stringify(["目录:true", "全宽:false"]), "its switch on");
     await closeMenu();
     await t.page.setViewport({ width: 1280, height: 900 });
     // 1280 with the sidebar open: a page of 995 with a classic scrollbar, 1010 without (the list's 200px
@@ -46838,7 +48110,7 @@ ${Array.from({ length: 60 }, (_, index) => `    <p id="p${index}" style="min-hei
     t.check(await tab.evaluate(() => !document.querySelector(".ge-outline, .ge-outline-strip") && !document.documentElement.hasAttribute("data-ge-margin")), "演示视图's page: none");
     await tab.goto("about:blank");
     await tab.close();
-    t.check(JSON.stringify(await switchRow()) === JSON.stringify(["目录:true", "全宽:false", "宽表格:false"]), "the switch shows it on");
+    t.check(JSON.stringify(await switchRow()) === JSON.stringify(["目录:true", "全宽:false"]), "the switch shows it on");
     await flip();
     await closeMenu();
     t.check(await waitFor(t, async () => { const now = await state(); return !now.margin && now.dock === null && now.left === before.left; }, 3000), "off: gone, the column centered again", JSON.stringify(await state()));
@@ -58810,20 +60082,22 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
     }
   },
 
-  // 0.3.1 (the user's word of 2026-11-19): Gallery's own blocks for documents, gallery/card, chart-card, chart-view, kanban
-  // and metric, count in the default pack (shared/components/installed.mjs packOf), Gallery 风格 holding its page cards
-  // alone, their ids and folders as ever. A workspace as 0.3.0 left it (both packs installed, Gallery 风格's pack.json of
-  // then, the board an older copy as installed) holding a document written then with the five, started by this Gallery:
-  // the pack.json and the board brought up to this Gallery's; the document shows each block drawn by its own (no
-  // fallback) and edits as ever (a word typed in the card's body reaches the file, a number in the table moves the
-  // metric); 设置 › 组件列表: the five are lines of 默认块包, none of Gallery 风格's, whose card counts its page cards
-  // alone; Gallery 风格 switched off, "/" still offers the five; 默认块包 off, none of them.
+  // 0.3.1 (the user's word of 2026-11-19): Gallery's own blocks for documents, gallery/card, chart-card and metric,
+  // count in the default pack (shared/components/installed.mjs packOf), Gallery 风格 holding its page cards alone,
+  // their ids and folders as ever. A workspace as 0.3.0 left it (both packs installed, Gallery 风格's pack.json of
+  // then, the metric an older copy as installed, and a board and a chart the pack held then) holding a document
+  // written then with the three, started by this Gallery: the pack.json and the metric brought up to this Gallery's, the
+  // two blocks the pack no longer has taken out as they were installed; the document shows each block drawn by its own
+  // (no fallback) and edits as ever (a word typed in the card's body reaches the file, a number in the table moves the
+  // metric); 设置 › 组件列表: the three are lines of 默认块包, none of Gallery 风格's, whose card counts its page cards
+  // alone; Gallery 风格 switched off, "/" still offers the metric; 默认块包 off, none of them.
   async packsDocumentBlocks(t) {
     const { page } = t;
     const reports = path.join(t.root, "reports");
     const settingsBefore = await fs.readFile(path.join(reports, "gallery.json"), "utf8");
-    const FIVE = ["gallery/card", "gallery/chart-card", "gallery/chart-view", "gallery/kanban", "gallery/metric"];
-    const NAMES = ["卡片", "表格图表卡片", "图表", "看板", "指标"];
+    const THREE = ["gallery/card", "gallery/chart-card", "gallery/metric"];
+    const GONE = ["gallery/chart-view", "gallery/kanban"]; // blocks of the pack's 1.1.0 that its 1.2.0 has not
+    const NAMES = ["卡片", "表格图表卡片", "指标"];
     const OLD_PACK = `{\n  "id": "gallery",\n  "name": { "zh": "Gallery 风格", "en": "Gallery style" },\n  "description": { "zh": "Gallery 自己的样子：克制、清楚的首页卡片，以及文档里用的看板、指标、图表、卡片和图表卡。", "en": "Gallery's own look: quiet, clear cards for the home page, and the board, metric, chart, card and chart card for documents." },\n  "version": "1.0.0",\n  "author": "Gallery",\n  "icon": "🗂️"\n}\n`;
     const packSwitch = (pack) => `.comp-pack[data-pack="${pack}"] [role="switch"]`;
     const flipCard = async (pack, to) => {
@@ -58835,7 +60109,7 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
       await settingsMenu(t, "组件列表");
       await page.waitForSelector(".comp-pack", { timeout: 5000 });
     };
-    // What "/" offers of the five, by name, typed after the first paragraph.
+    // What "/" offers of the three, by name, typed after the first paragraph.
     const offered = async () => {
       await t.open();
       await t.caret("前面一段");
@@ -58865,39 +60139,49 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
     ${shippedViewBench()}`;
     try {
       await t.restart({ env: { GALLERY_NO_PACKS: "" } });
-      t.check(FIVE.every(Boolean) && (await Promise.all(FIVE.map((id) => t.file(`reports/components/${id}/component.json`)))).every(Boolean), "a start installs Gallery 风格's folder, the five in it as ever");
-      // As 0.3.0 left the workspace: its pack.json and an older board, each recorded as installed; the document written then.
-      const kanban = path.join(reports, "components", "gallery", "kanban");
-      const shippedKanban = JSON.parse(await fs.readFile(path.join(kanban, "component.json"), "utf8")).version;
+      t.check((await Promise.all(THREE.map((id) => t.file(`reports/components/${id}/component.json`)))).every(Boolean), "a start installs Gallery 风格's folder, the three in it as ever");
+      // As 0.3.0 left the workspace: its pack.json, an older metric and the two blocks since taken out of the pack, each
+      // recorded as installed; the document written then.
+      const metric = path.join(reports, "components", "gallery", "metric");
+      const shippedMetric = JSON.parse(await fs.readFile(path.join(metric, "component.json"), "utf8")).version;
       await t.restart({
         env: { GALLERY_NO_PACKS: "" },
         between: async () => {
           await fs.writeFile(path.join(reports, "components", "gallery", "pack.json"), OLD_PACK);
-          const manifest = path.join(kanban, "component.json");
+          const manifest = path.join(metric, "component.json");
           await fs.writeFile(manifest, (await fs.readFile(manifest, "utf8")).replace(/"version": "[^"]*"/, '"version": "0.9.0"'));
-          await fs.appendFile(path.join(kanban, "style.css"), "/* 0.3.0 */\n");
+          await fs.appendFile(path.join(metric, "style.css"), "/* 0.3.0 */\n");
           const record = recordOf(reports);
-          record.packs.gallery = { ...record.packs.gallery, version: "1.0.0", fingerprint: fingerprintOfFiles([{ name: "pack.json", data: Buffer.from(OLD_PACK) }]) };
-          record["gallery/kanban"] = { version: "0.9.0", fingerprint: fingerprintOf(kanban) };
+          record.packs.gallery = { ...record.packs.gallery, version: "1.0.0", fingerprint: fingerprintOfFiles([{ name: "pack.json", data: Buffer.from(OLD_PACK) }]), blocks: [...record.packs.gallery.blocks, ...GONE] };
+          record["gallery/metric"] = { version: "0.9.0", fingerprint: fingerprintOf(metric) };
+          for (const id of GONE) {
+            const folder = path.join(reports, "components", ...id.split("/"));
+            await fs.mkdir(folder, { recursive: true });
+            await fs.writeFile(path.join(folder, "component.json"), `${JSON.stringify({ id, apiVersion: 1, version: "1.0.0", name: { zh: id, en: id }, places: ["document"] }, null, 2)}\n`);
+            record[id] = { version: "1.0.0", fingerprint: fingerprintOf(folder) };
+          }
           writeRecord(reports, record);
           await t.agentEdit(pageOf("块包", `<p>前面一段。</p>\n    ${body}`));
         },
       });
       const pack = JSON.parse(await t.file("reports/components/gallery/pack.json"));
       t.check(pack.version !== "1.0.0" && !pack.description.zh.includes("看板"), "the start of this Gallery: Gallery 风格's pack.json as it ships now, of its page cards alone", JSON.stringify(pack));
-      const board = JSON.parse(await t.file("reports/components/gallery/kanban/component.json"));
-      t.check(board.version === shippedKanban && !(await t.file("reports/components/gallery/kanban/style.css")).includes("0.3.0"), "and the board as installed brought up to this Gallery's, its id as ever", board.version);
+      const brought = JSON.parse(await t.file("reports/components/gallery/metric/component.json"));
+      t.check(brought.version === shippedMetric && !(await t.file("reports/components/gallery/metric/style.css")).includes("0.3.0"), "and the metric as installed brought up to this Gallery's, its id as ever", brought.version);
+      const left = await Promise.all(GONE.map((id) => t.file(`reports/components/${id}/component.json`).then(Boolean, () => false)));
+      const recorded = recordOf(reports);
+      t.check(left.every((there) => !there) && GONE.every((id) => !(id in recorded) && !recorded.packs.gallery.blocks.includes(id)), "the board and the chart, which this Gallery's pack has not, taken out as they were installed, and out of the record", JSON.stringify({ left, packed: recorded.packs.gallery.blocks }));
 
-      // The document written with the five: each drawn by its block, none shown as a block that is not there.
+      // The document written with the three: each drawn by its block, none shown as a block that is not there.
       await t.open();
       const drawn = () => page.evaluate((ids) => ids.map((id) => {
         const node = document.querySelector(`main [data-doc-component="${id}"]`);
         return { id, there: Boolean(node), fallback: node?.hasAttribute("data-doc-fallback") ?? null, face: Boolean(node?.querySelector(":scope > [class^='gallery-']")) || id === "gallery/card", title: node?.querySelector(":scope > h3")?.textContent ?? null };
-      }), FIVE);
+      }), THREE);
       const seen = await drawn();
-      t.check(seen.every(({ there, fallback, face }) => there && fallback === false && face), "each of the five drawn by its own block, as 0.3.0 drew it", JSON.stringify(seen));
+      t.check(seen.every(({ there, fallback, face }) => there && fallback === false && face), "each of the three drawn by its own block, as 0.3.0 drew it", JSON.stringify(seen));
       const look = await shippedLook(page);
-      t.check(look.kanban?.groups?.length > 0 && look.metric?.number === "6" && look.chart?.bars?.length > 0, "the views read their table: the board's groups, the metric's sum, the chart's bars", JSON.stringify(look));
+      t.check(look.metric?.number === "6", "the metric reads its table: the sum", JSON.stringify(look));
       await t.caret("卡片里的一段");
       await t.press("End");
       await page.keyboard.type("还能编辑");
@@ -58908,27 +60192,27 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
       t.check(await waitFor(t, async () => (await shippedLook(page)).metric?.number === "12", 5000), "a number changed in the table moves the metric", JSON.stringify((await shippedLook(page)).metric));
       await t.settle();
 
-      // 设置 › 组件列表: the five in 默认块包, Gallery 风格 its page cards alone.
+      // 设置 › 组件列表: the three in 默认块包, Gallery 风格 its page cards alone.
       await dialog();
       const packs = (await (await fetch(`${t.home()}__gallery/workspace/components`)).json()).packs;
       const counted = Object.fromEntries(packs.map(({ id, blocks }) => [id, blocks]));
       const cards = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll(".comp-pack[data-pack]")].map((card) => [card.getAttribute("data-pack"), card.querySelector(".comp-pack-count")?.textContent ?? null])));
       // The studio's own blocks (local/) count there too.
       const own = (await t.list("reports/components/local")).length;
-      t.check(counted.local === FIVE.length + own && counted.gallery === 10 && cards.local === `${FIVE.length + own} 个块` && cards.gallery === "10 个块", "the cards: 默认块包 counts the five with the studio's own blocks, Gallery 风格 its ten page cards", JSON.stringify({ counted, cards, own }));
+      t.check(counted.local === THREE.length + own && counted.gallery === 10 && cards.local === `${THREE.length + own} 个块` && cards.gallery === "10 个块", "the cards: 默认块包 counts the three with the studio's own blocks, Gallery 风格 its ten page cards", JSON.stringify({ counted, cards, own }));
       await compPack(t, "local/x");
       const inLocal = await page.evaluate(() => ({ rows: [...document.querySelectorAll('.comp-pack-view[data-pack="local"] .comp-row.comp-pkg')].map((row) => row.getAttribute("data-id")), says: document.querySelector(".comp-pack-says")?.textContent ?? "" }));
-      t.check(JSON.stringify(inLocal.rows.filter((id) => !id.startsWith("local/"))) === JSON.stringify(FIVE) && inLocal.rows.length === FIVE.length + own && inLocal.says.includes("看板") && inLocal.says.includes("没有指定块包"), "默认块包 entered: the five a line each beside the studio's own, its words saying so", JSON.stringify(inLocal));
+      t.check(JSON.stringify(inLocal.rows.filter((id) => !id.startsWith("local/"))) === JSON.stringify(THREE) && inLocal.rows.length === THREE.length + own && inLocal.says.includes("指标") && inLocal.says.includes("没有指定块包"), "默认块包 entered: the three a line each beside the studio's own, its words saying so", JSON.stringify(inLocal));
       await compPack(t, "gallery/todos");
       const inGallery = await page.evaluate(() => ({ rows: [...document.querySelectorAll('.comp-pack-view[data-pack="gallery"] .comp-row.comp-pkg')].map((row) => row.getAttribute("data-id")), says: document.querySelector(".comp-pack-says")?.textContent ?? "" }));
-      t.check(inGallery.rows.length === 10 && !inGallery.rows.some((id) => FIVE.includes(id)) && !inGallery.says.includes("看板"), "Gallery 风格 entered: its page cards alone", JSON.stringify(inGallery));
+      t.check(inGallery.rows.length === 10 && !inGallery.rows.some((id) => THREE.includes(id)) && !inGallery.says.includes("指标"), "Gallery 风格 entered: its page cards alone", JSON.stringify(inGallery));
       await compPack(t, "code");
 
-      // The switches: Gallery 风格 off leaves the five in "/", 默认块包 off takes them out.
+      // The switches: Gallery 风格 off leaves the three in "/", 默认块包 off takes them out.
       t.check(await flipCard("gallery", false), "Gallery 风格 switched off");
       await t.press("Escape");
-      // The card and the chart card are off until the reader turns them on (packsDefaultOff): "/" offers the other three.
-      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["图表", "看板", "指标"]), 8000), `Gallery 风格 off: "/" still offers the three views`, JSON.stringify(await offered()));
+      // The card and the chart card are off until the reader turns them on (packsDefaultOff): "/" offers the metric.
+      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["指标"]), 8000), `Gallery 风格 off: "/" still offers the metric`, JSON.stringify(await offered()));
       await dialog();
       t.check(await flipCard("gallery", true) && await flipCard("local", false), "Gallery 风格 on again, 默认块包 off");
       await t.press("Escape");
@@ -58944,7 +60228,7 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
 
   // Gallery's card and chart card (gallery/card, gallery/chart-card), which Gallery keeps out of the menus until the user
   // turns them on (their manifests' listed: false; the user's word of 2026-11-20, 默认块包里就不需要再出现什么"卡片"了):
-  // a workspace started with the packs offers neither in "/", the three views of a table as ever; a document written
+  // a workspace started with the packs offers neither in "/", the metric as ever; a document written
   // with both shows each drawn by its own block (no fallback) and edits as ever (a word typed in the card's body
   // reaches the file, the chart card's bars drawn from its table); 设置 › 组件列表 lists both in 默认块包, their master
   // switches off, the card's opened line saying so; the card turned on is written in gallery.json's listed, "/" offers
@@ -58965,9 +60249,9 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
       if (!selector) return void await page.screenshot({ path: file });
       await (await page.$(selector)).screenshot({ path: file });
     };
-    const NAMES = ["卡片", "表格图表卡片", "图表", "看板", "指标"];
+    const NAMES = ["卡片", "表格图表卡片", "指标"];
     const components = async () => JSON.parse(await fs.readFile(settingsFile, "utf8")).components ?? {};
-    // What "/" offers of Gallery's five blocks for documents, by name, typed after the first paragraph.
+    // What "/" offers of Gallery's three blocks for documents, by name, typed after the first paragraph.
     const offered = async ({ picture = null } = {}) => {
       await t.open();
       await t.caret("前面一段");
@@ -59018,7 +60302,7 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
     try {
       await t.restart({ env: { GALLERY_NO_PACKS: "" } });
       await t.agentEdit(pageOf("默认关着的块", body));
-      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["图表", "看板", "指标"]), 8000), `"/" offers the three views, neither the card nor the chart card`, JSON.stringify(await offered()));
+      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["指标"]), 8000), `"/" offers the metric, neither the card nor the chart card`, JSON.stringify(await offered()));
       await offered({ picture: "slash-menu" });
 
       // The document written with both: each drawn by its own block, edited as ever.
@@ -59043,7 +60327,7 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
 
       // 设置 › 组件列表: both in 默认块包, off; the card's line opened says why.
       await dialog();
-      t.check((await master("gallery/card")) === "false" && (await master("gallery/chart-card")) === "false" && (await master("gallery/metric")) === "true", "默认块包 lists both, their master switches off, the views' on", JSON.stringify([await master("gallery/card"), await master("gallery/chart-card"), await master("gallery/metric")]));
+      t.check((await master("gallery/card")) === "false" && (await master("gallery/chart-card")) === "false" && (await master("gallery/metric")) === "true", "默认块包 lists both, their master switches off, the metric's on", JSON.stringify([await master("gallery/card"), await master("gallery/chart-card"), await master("gallery/metric")]));
       await page.click(`${row("gallery/card")} .comp-head`);
       const said = await page.evaluate((selector) => document.querySelector(`${selector} .comp-default-off`)?.textContent ?? null, row("gallery/card"));
       t.check(said === "这个块默认不在菜单里，打开右边的开关后才提供；已经写在文档里的照常显示。", "its opened line says it is off by default", said);
@@ -59051,7 +60335,7 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
       t.check(await flip("gallery/card", true), "the card turned on");
       t.check(await waitFor(t, async () => JSON.stringify((await components()).listed) === JSON.stringify(["gallery/card"]), 5000), "written in gallery.json's listed", JSON.stringify(await components()));
       await t.press("Escape");
-      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["卡片", "图表", "看板", "指标"]), 8000), `"/" offers the card now, the chart card still not`, JSON.stringify(await offered()));
+      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["卡片", "指标"]), 8000), `"/" offers the card now, the chart card still not`, JSON.stringify(await offered()));
       // Turned on, it works as ever: "/" puts one in.
       await t.open();
       await t.caret("后面一段");
@@ -59067,14 +60351,14 @@ DocKit.component({ id: "${id}", mount(host) { host.querySelector("output").textC
       // A switch of before stays as the reader left it: the card unlisted, the metric hidden (a 0.3.0 reader's).
       const marker = JSON.parse(settingsBefore);
       await fs.writeFile(settingsFile, `${JSON.stringify({ ...marker, components: { ...marker.components, hidden: ["gallery/metric"], disabled: [], unlisted: ["gallery/card"] } }, null, 2)}\n`);
-      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["图表", "看板"]), 10000), `a gallery.json of before: the card off, the metric out of "/", as the reader left them`, JSON.stringify(await offered()));
+      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify([]), 10000), `a gallery.json of before: the card off, the metric out of "/", as the reader left them`, JSON.stringify(await offered()));
       await dialog();
       t.check((await master("gallery/card")) === "false" && (await master("gallery/metric")) === "true", "the card's master switch off, the metric's on (its menu switch is the one off)");
       t.check(await flip("gallery/card", true), "the card turned on again");
       const now = await components();
       t.check(JSON.stringify(now.listed) === JSON.stringify(["gallery/card"]) && JSON.stringify(now.unlisted) === "[]" && JSON.stringify(now.hidden) === JSON.stringify(["gallery/metric"]), "listed, out of unlisted, the metric still hidden", JSON.stringify(now));
       await t.press("Escape");
-      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["卡片", "图表", "看板"]), 8000), `"/" offers the card, the metric still hidden`, JSON.stringify(await offered()));
+      t.check(await waitFor(t, async () => JSON.stringify(await offered()) === JSON.stringify(["卡片"]), 8000), `"/" offers the card, the metric still hidden`, JSON.stringify(await offered()));
     } finally {
       for (const name of ["gallery", "gallery-soft"]) await fs.rm(path.join(reports, "components", name), { recursive: true, force: true });
       await fs.rm(path.join(reports, ".gallery", "blocks.json"), { force: true });
@@ -60632,133 +61916,43 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
       t.check(viewsWithin(without, withViews), `typing with three views of 500 rows: ${VIEW_BOUND}`, JSON.stringify({ without, withViews }));
     });
   },
-  // ---------- Gallery's own views of a table (src/packs/gallery/: kanban, metric, chart-view) ----------
+  // ---------- Gallery's own view of a table (src/packs/gallery/metric) ----------
 
-  // 看板 on its table, its groups as its settings order them: a card dragged to another group before a
-  // card of it one intent and one undo step (its 状态 set where it stands), to a group with no card its cell
-  // set alone, within its group its row put before the card it is dropped on; dropped where it was, or
-  // Escape before the release, nothing written. The + of a group's head a row (its title then typed: a step
-  // more), its title typed over where it stands its first cell (shippedKanbanWords), 🗑 the row, the ⚙'s
-  // 分组依据 its settings: each one undo step, each undone to the file before it byte for byte, the board
-  // drawing each. The three views are rows of "/" (bound to the
-  // table above the block they are made at), and the table's menu has no 视图 ›.
-  async shippedKanban(t) {
+  // 指标 is a row of "/" like any block's (the user, 2026-11-09), found by its words and by the initials of its
+  // pinyin; one made from "/" reads the table above it (the table's menu has no 视图 ›); a table the editor's tools
+  // do not manage (a <tfoot>) is read by its body alone: the metric leaves the footer out.
+  async shippedMetric(t) {
     await withShippedViews(t, async () => {
-      await t.agentEdit(pageOf("看板", shippedViewBench({ views: ["kanban"] })));
+      await t.agentEdit(pageOf("指标", shippedViewBench({ views: [], foot: "\n        <tfoot><tr><td>合计</td><td></td><td></td><td>6</td></tr></tfoot>" })));
       await t.open();
-      const rowsNow = async () => tableRows(await t.read()).slice(1).map((row) => row.slice(0, 2).join("/"));
-      const groupsNow = async () => (await shippedLook(t.page)).kanban.groups;
-      let seen = await shippedLook(t.page);
-      t.check(JSON.stringify(seen.kanban.groups) === JSON.stringify([["待办", "写方案", "发布"], ["进行中", "做评审"], ["已完成"]]) && seen.kanban.writes && seen.kanban.caption === "按“状态”分组 · 3 张卡片", "its groups as its order says, the empty one too, and it writes", JSON.stringify(seen.kanban));
-      // A card's 🗑 is there for the keys too: hidden (faded, kept focusable) while nothing is on the card, reached by focus
-      // and shown while the keys are in it; blurred, hidden again.
-      const toolsOf = () => t.page.evaluate(() => {
-        const tools = document.querySelector('main [data-doc-component="gallery/kanban"] .gallery-kanban-card > .gallery-kanban-tools');
-        const style = getComputedStyle(tools);
-        return { display: style.display, opacity: style.opacity, events: style.pointerEvents };
-      });
-      const rested = await toolsOf();
-      await t.page.mouse.move(2, 2);
-      await t.page.evaluate(() => document.querySelector('main [data-doc-component="gallery/kanban"] .gallery-kanban-card .gallery-kanban-remove').focus());
-      await t.sleep(300);
-      const keyed = await toolsOf();
-      const reached = await t.page.evaluate(() => document.activeElement?.classList.contains("gallery-kanban-remove") ?? false);
-      await t.page.evaluate(() => document.activeElement?.blur());
-      await t.sleep(300);
-      const left = await toolsOf();
-      t.check(rested.display !== "none" && rested.opacity === "0" && rested.events === "none" && reached && keyed.opacity === "1" && keyed.events === "auto" && left.opacity === "0", "a card's 🗑 kept focusable while faded: the keys reach it and it shows while the keys are in the card, hidden again after", JSON.stringify({ rested, reached, keyed, left }));
-      const files = [withoutIds(await t.read())];
-      const step = async (label, act, rows, groups) => {
-        await act();
-        await t.settle();
-        files.push(withoutIds(await t.read()));
-        t.check(JSON.stringify(await rowsNow()) === JSON.stringify(rows) && (groups === null || JSON.stringify(await groupsNow()) === JSON.stringify(groups)), label, JSON.stringify({ rows: await rowsNow(), groups: await groupsNow() }));
-      };
-      await step("做评审 dragged before 发布 in 待办: its 状态 set where it stands", () => dragKanban(t.page, "做评审", { before: "发布" }), ["写方案/待办", "做评审/待办", "发布/待办"], [["待办", "写方案", "做评审", "发布"], ["进行中"], ["已完成"]]);
-      await step("写方案 dragged to 已完成, which has no card: its cell alone", () => dragKanban(t.page, "写方案", { group: "已完成" }), ["写方案/已完成", "做评审/待办", "发布/待办"], [["待办", "做评审", "发布"], ["进行中"], ["已完成", "写方案"]]);
-      await step("发布 dragged before 做评审 in its group: its row before that one's", () => dragKanban(t.page, "发布", { before: "做评审" }), ["写方案/已完成", "发布/待办", "做评审/待办"], [["待办", "发布", "做评审"], ["进行中"], ["已完成", "写方案"]]);
-      const steady = await t.read();
-      await dragKanban(t.page, "做评审", { stay: true });
-      // Pressed on its title (words typed in where they stand, DocKit.text) and dragged: a drag, no caret left in the words, nothing of them selected.
-      const pressed = await t.page.evaluate(() => ({ caret: document.activeElement?.isContentEditable ?? false, selected: getSelection().toString(), lit: [...document.querySelectorAll(".gallery-kanban-title")].filter((node) => getComputedStyle(node).boxShadow.includes("inset") && node.matches(":focus")).length }));
-      t.check(!pressed.caret && pressed.selected === "" && pressed.lit === 0, "a card dragged by its title: no caret left in it, nothing selected", JSON.stringify(pressed));
-      const escaped = await dragKanban(t.page, "发布", { group: "进行中", escape: true });
-      await t.sleep(400);
-      t.check((await t.read()) === steady && (await t.state()) === "saved", "a drop where it was, and Escape before the release, write nothing");
-      t.check(escaped.lifted === 1 && escaped.after === 0, "a card held: a copy of it lifted under the pointer while it moves, gone after Escape and the release", JSON.stringify(escaped));
-      await step("+ of 进行中: a row at the table's end, its 状态 the group's, its title open to type", () => pressKanban(t.page, "进行中", "add"), ["写方案/已完成", "发布/待办", "做评审/待办", "/进行中"], null);
-      const field = await t.page.evaluate(() => (document.activeElement?.matches?.(".gallery-kanban-title") && document.activeElement.isContentEditable) ?? false);
-      t.check(field, "the new card's title is where the caret is");
-      await step("its title typed, Enter: its first cell", async () => { await t.page.keyboard.type("新任务"); await t.press("Enter"); }, ["写方案/已完成", "发布/待办", "做评审/待办", "新任务/进行中"], [["待办", "发布", "做评审"], ["进行中", "新任务"], ["已完成", "写方案"]]);
-      await step("words typed over its title where it stands: its first cell", () => typeViewWords(t, t.page, ".gallery-kanban-title", "新任务", "整理文档"), ["写方案/已完成", "发布/待办", "做评审/待办", "整理文档/进行中"], [["待办", "发布", "做评审"], ["进行中", "整理文档"], ["已完成", "写方案"]]);
-      await step("🗑 on it: its row taken out", () => pressKanban(t.page, "整理文档", "remove"), ["写方案/已完成", "发布/待办", "做评审/待办"], [["待办", "发布", "做评审"], ["进行中"], ["已完成", "写方案"]]);
-      await step("⚙ › 分组依据 负责人: its settings, grouped by it", () => groupKanban(t, "负责人"), ["写方案/已完成", "发布/待办", "做评审/待办"], [["小王", "写方案", "发布"], ["小李", "做评审"]]);
-      t.check(/<script type="application\/json">\{"group":"负责人"\}<\/script>/.test(await t.read()), "written in its settings, on one line, the order of the groups of 状态 gone with it", (await t.read()).match(/<div data-doc-component="gallery\/kanban"[\s\S]*?<\/div>/)?.[0]);
-      for (let index = files.length - 1; index > 0; index--) {
-        await t.combo("Control", "z");
-        await t.settle();
-        const got = withoutIds(await t.read());
-        const differs = [...got].findIndex((char, at) => char !== files[index - 1][at]);
-        t.check(got === files[index - 1], `one undo takes back step ${index}`, JSON.stringify({ rows: await rowsNow(), got: got.slice(Math.max(0, differs - 160), differs + 160), want: files[index - 1].slice(Math.max(0, differs - 160), differs + 160) }));
-      }
-      seen = await shippedLook(t.page);
-      t.check(JSON.stringify(seen.kanban.groups) === JSON.stringify([["待办", "写方案", "发布"], ["进行中", "做评审"], ["已完成"]]), "all undone: the board as it opened", JSON.stringify(seen.kanban));
-      // The views are rows of "/" like any block's (the user, 2026-11-09), found by their words and by the
-      // initials of their pinyin; the table's menu has no 视图 ›; one made from "/" reads the table above it.
       await t.caret("后面一段。");
       await t.press("Enter");
-      for (const [typed, name] of [["kanban", "看板"], ["zb", "指标"], ["tb", "图表"]]) {
+      for (const typed of ["metric", "zb"]) {
         await t.type(`/${typed}`);
         await t.sleep(300);
         const slash = await menuRows(t);
         await t.press("Escape");
         await t.press("Backspace", typed.length + 1);
-        t.check(slash.includes(name), `"/${typed}" offers ${name}`, JSON.stringify(slash));
+        t.check(slash.includes("指标"), `"/${typed}" offers 指标`, JSON.stringify(slash));
       }
-      await t.type("/kanban");
+      await t.type("/zb");
       await t.sleep(300);
       await t.press("Enter");
       await t.settle();
       const made = await t.page.evaluate(() => {
-        const boards = [...document.querySelectorAll('main [data-doc-component="gallery/kanban"]')];
-        return { key: document.querySelector("main .doc-table-wrap").getAttribute("data-doc-chart-source"), from: boards.at(-1)?.getAttribute("data-doc-from"), count: boards.length };
+        const metrics = [...document.querySelectorAll('main [data-doc-component="gallery/metric"]')];
+        return { key: document.querySelector("main .doc-table-wrap").getAttribute("data-doc-chart-source"), from: metrics.at(-1)?.getAttribute("data-doc-from"), count: metrics.length };
       });
-      t.check(made.key && made.from === made.key && made.count === 2, "a board made from \"/\" reads the table above it", JSON.stringify(made));
+      t.check(made.key && made.from === made.key && made.count === 1, "a metric made from \"/\" reads the table above it", JSON.stringify(made));
+      const seen = await shippedLook(t.page);
+      t.check(seen.metric?.label === "行数" && seen.metric.number === "3", "the metric leaves the footer out: three rows, not four", JSON.stringify(seen.metric));
       const rows = await openBlockMenu(t, "main .doc-table-wrap", { dy: 12 });
       await t.press("Escape");
       t.check(!rows.some((row) => row.text?.startsWith("视图")), "the table's menu has no 视图 ›", JSON.stringify(rows));
     });
   },
 
-  // A card dragged to another group while the Agent changed the same cell: the table's conflict, its card,
-  // the file the Agent's and the board the page's; 仍然调整 writes the move, the board drawing the file's.
-  async shippedKanbanConflict(t) {
-    await withShippedViews(t, async () => {
-      await t.agentEdit(pageOf("看板", shippedViewBench({ views: ["kanban"] })));
-      await t.open();
-      await t.offline();
-      await dragKanban(t.page, "做评审", { group: "待办" });
-      await t.agentEdit((text) => text.replace("<td>做评审</td><td>进行中</td>", "<td>做评审</td><td>搁置</td>"));
-      await t.offline(false);
-      await t.combo("Control", "s");
-      await t.settle("held");
-      const cards = await t.page.evaluate(() => [...document.querySelectorAll(".ge-conflict p")].map((node) => node.textContent));
-      const rows = tableRows(await t.read()).slice(1).map((row) => row.slice(0, 2).join("/"));
-      const seen = await shippedLook(t.page);
-      t.check(cards.length === 1 && cards[0].includes("已被 Agent 修改") && rows.join() === "写方案/待办,做评审/搁置,发布/待办", "held: the table's card, the file as the Agent left it", JSON.stringify({ cards, rows }));
-      t.check(JSON.stringify(seen.kanban.groups) === JSON.stringify([["待办", "写方案", "发布", "做评审"], ["进行中"], ["已完成"]]), "the board draws what the page holds", JSON.stringify(seen.kanban));
-      const shown = t.reloaded();
-      await clickConflict(t, "仍然调整");
-      await shown;
-      const after = tableRows(await t.read()).slice(1).map((row) => row.slice(0, 2).join("/"));
-      const look = await shippedLook(t.page);
-      t.check(after.join() === "写方案/待办,发布/待办,做评审/待办" && (await t.state()) === "saved", "仍然调整 writes the move with its 状态", JSON.stringify(after));
-      t.check(JSON.stringify(look.kanban.groups) === JSON.stringify([["待办", "写方案", "发布", "做评审"], ["进行中"], ["已完成"]]), "and the board draws the file's table", JSON.stringify(look.kanban));
-    });
-  },
-
-  // An export: the three views draw their table offline, the board with nothing to drag, add, rename or
-  // remove and no ⚙, a drag there moving nothing; nothing asked of a server.
+  // An export: the metric draws its table offline, with no ⚙ and its words read-only, nothing asked of a server.
   async shippedViewsExport(t) {
     await withShippedViews(t, async () => {
       await t.agentEdit(pageOf("视图", shippedViewBench()));
@@ -60766,87 +61960,34 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
       const { reader, heard } = await openOffline(t, t.exportReport());
       try {
         const seen = await shippedLook(reader);
-        const controls = await reader.evaluate(() => [...document.querySelectorAll(".gallery-kanban-add, .gallery-kanban-gear, .gallery-kanban-tools, .gallery-metric-gear, .gallery-chart-view-gear")].filter((node) => node.getClientRects().length > 0).length);
-        t.check(heard.length === 0 && !seen.kanban.writes && controls === 0 && JSON.stringify(seen.kanban.groups) === JSON.stringify([["待办", "写方案", "发布"], ["进行中", "做评审"], ["已完成"]]), "the board drawn, read-only, no control shown", JSON.stringify({ seen, controls, heard }));
-        t.check(seen.metric.number === "6" && seen.metric.unit === "小时" && seen.metric.label === "工时合计" && JSON.stringify(seen.chart.bars.map(([label, value]) => `${label}:${value}`)) === JSON.stringify(["待办:2", "进行中:1"]), "the metric and the chart drawn from its table", JSON.stringify(seen));
-        await dragKanban(reader, "写方案", { group: "已完成" });
-        t.check(JSON.stringify((await shippedLook(reader)).kanban.groups) === JSON.stringify(seen.kanban.groups) && heard.length === 0, "a drag there moves nothing", JSON.stringify(await shippedLook(reader)));
-        // Their words read-only there (DocKit.text): none typed in, none lit under the pointer, a press and keys changing nothing.
-        const typed = [];
-        for (const [selector, words] of [[".gallery-kanban-title", "写方案"], [".gallery-kanban-name", "待办"], [".gallery-metric-label", "工时合计"], [".gallery-chart-view-title", "各状态的行数"], [".gallery-chart-view-label", "进行中"]]) {
-          const each = await typeViewWords(t, reader, selector, words, "改了");
-          typed.push({ selector, editable: each.rest.editable, lit: each.lit.shadow, focused: each.pressed.focused, after: each.after.text ?? null });
-        }
+        const controls = await reader.evaluate(() => [...document.querySelectorAll(".gallery-metric-gear")].filter((node) => node.getClientRects().length > 0).length);
+        t.check(heard.length === 0 && controls === 0 && seen.metric.number === "6" && seen.metric.unit === "小时" && seen.metric.label === "工时合计", "the metric drawn from its table, no control shown", JSON.stringify({ seen, controls, heard }));
+        // Its words read-only there (DocKit.text): none typed in, none lit under the pointer, a press and keys changing nothing.
+        const typed = await typeViewWords(t, reader, ".gallery-metric-label", "工时合计", "改了");
         const marked = await reader.evaluate(() => document.querySelectorAll('main [data-doc-component^="gallery/"] [contenteditable]').length);
-        t.check(marked === 0 && typed.every((each) => !each.editable && !each.lit.includes("inset") && !each.focused) && JSON.stringify((await shippedLook(reader)).kanban.groups) === JSON.stringify(seen.kanban.groups) && heard.length === 0, "their words read-only: none typed in, none lit, a press and keys change nothing", JSON.stringify({ marked, typed }));
+        t.check(marked === 0 && !typed.rest.editable && !typed.lit.shadow.includes("inset") && !typed.pressed.focused && JSON.stringify((await shippedLook(reader)).metric) === JSON.stringify(seen.metric) && heard.length === 0, "its words read-only: none typed in, none lit, a press and keys change nothing", JSON.stringify({ marked, typed }));
       } finally {
         await reader.close();
       }
     });
   },
 
-  // 点看板上的链接: a card whose title links to a document of its own (a task's details) has a chip that
-  // opens that document (context.workspace.open: the page alone goes there once saved), and a link to the
-  // web a chip that opens a new tab; pressing a chip drags nothing.
-  async shippedKanbanLink(t) {
-    await withShippedViews(t, async () => {
-      t.newReport("plan-details", "写方案的细节");
-      await t.agentEdit(pageOf("看板", shippedViewBench({ views: ["kanban"], rows: [['<a href="../plan-details/doc.html">写方案</a>', "待办", "小王", "3"], ["做评审", "进行中", '<a href="https://example.com/issue/12">评审单</a>', "2"]] })));
-      await t.open();
-      const chips = await t.page.evaluate(() => [...document.querySelectorAll(".gallery-kanban-link")].map((chip) => ({ card: chip.closest(".gallery-kanban-card").querySelector(".gallery-kanban-title").textContent, words: chip.textContent, page: chip.dataset.page ?? null, target: chip.target, href: chip.getAttribute("href") })));
-      t.check(chips.length === 2 && chips[0].card === "写方案" && chips[0].words === "打开" && chips[0].page === "plan-details" && chips[1].card === "做评审" && chips[1].words === "评审单" && chips[1].page === null && chips[1].target === "_blank" && chips[1].href === "https://example.com/issue/12", "a chip a link: a document's (its words the title's: 打开) and the web's", JSON.stringify(chips));
-      const at = await t.page.evaluate(() => {
-        const chip = document.querySelector('.gallery-kanban-link[data-page="plan-details"]');
-        chip.scrollIntoView({ block: "center" });
-        const rect = chip.getBoundingClientRect();
-        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-      });
-      const before = await t.read();
-      await Promise.all([t.page.waitForNavigation({ waitUntil: "load", timeout: 15000 }), t.page.mouse.click(at.x, at.y)]);
-      t.check(new URL(t.page.url()).pathname === "/generated/plan-details.html" && (await t.read()) === before, "its press opens the document, the board's file as it was", t.page.url());
-    });
-  },
-
-  // The views follow the table as it is typed in, before it is saved: the metric's sum, the chart's bars
-  // by 状态 and the board's card.
+  // The metric follows the table as it is typed in, before it is saved: its sum.
   async shippedViewsLive(t) {
     await withShippedViews(t, async () => {
       await t.agentEdit(pageOf("视图", shippedViewBench()));
       await t.open();
-      let seen = await shippedLook(t.page);
-      t.check(seen.metric.number === "6" && JSON.stringify(seen.chart.bars.map(([label, value]) => `${label}:${value}`)) === JSON.stringify(["待办:2", "进行中:1"]), "drawn from the table", JSON.stringify(seen));
+      const seen = await shippedLook(t.page);
+      t.check(seen.metric.number === "6", "drawn from the table", JSON.stringify(seen));
       await cellCaret(t, 1, 3);
       await t.page.keyboard.type("0");
       t.check(await waitFor(t, async () => (await shippedLook(t.page)).metric.number === "33", 1500), "工时 3 typed 30: the sum 33 at once", JSON.stringify(await shippedLook(t.page)));
-      await cellCaret(t, 2, 1, true);
-      await t.page.keyboard.type("待办");
-      t.check(await waitFor(t, async () => JSON.stringify((await shippedLook(t.page)).chart.bars.map(([label, value]) => `${label}:${value}`)) === JSON.stringify(["待办:3"]), 1500), "做评审's 状态 typed 待办: one bar of 3", JSON.stringify(await shippedLook(t.page)));
-      seen = await shippedLook(t.page);
-      t.check(JSON.stringify(seen.kanban.groups) === JSON.stringify([["待办", "写方案", "做评审", "发布"], ["进行中"], ["已完成"]]), "and its card in 待办", JSON.stringify(seen.kanban));
       await t.settle();
-      t.check(tableRows(await t.read())[2].slice(0, 2).join("/") === "做评审/待办", "saved as typed");
+      t.check(tableRows(await t.read())[1][3] === "30", "saved as typed");
     });
   },
 
-  // A table the editor's tools do not manage (a <tfoot>): the board shows it, says it cannot change it
-  // and offers nothing to do; a drag writes nothing. The metric leaves the footer out.
-  async shippedKanbanReadOnly(t) {
-    await withShippedViews(t, async () => {
-      await t.agentEdit(pageOf("看板", shippedViewBench({ views: ["kanban", "metric"], foot: "\n        <tfoot><tr><td>合计</td><td></td><td></td><td>6</td></tr></tfoot>" })));
-      await t.open();
-      const seen = await shippedLook(t.page);
-      const add = await t.page.evaluate(() => getComputedStyle(document.querySelector(".gallery-kanban-add")).display);
-      t.check(!seen.kanban.writes && add === "none" && seen.kanban.line === "这张表格有表尾，或者各行的格数不一样，看板改不了它，这里只能看。" && seen.kanban.groups.length === 3, "read-only, said so, nothing to add", JSON.stringify({ seen: seen.kanban, add }));
-      t.check(seen.metric.number === "6", "the metric leaves the footer out", JSON.stringify(seen.metric));
-      const before = await t.read();
-      await dragKanban(t.page, "做评审", { group: "待办" });
-      await t.sleep(500);
-      t.check((await t.read()) === before && (await t.state()) === "saved", "a drag writes nothing");
-    });
-  },
-
-  // Typing in a table of 500 rows that a board, a metric and a chart read: no card of the board made
-  // again, the one typed in drawn again in place, the rest untouched; from a keydown to the frame after it, the median no more than VIEW_ADDS over
+  // Typing in a table of 500 rows that a metric reads: the metric drawing what is typed; from a keydown to the frame after it, the median no more than VIEW_ADDS over
   // the same table with no view and the 90th percentile under VIEW_LATENCY (tableViewLatency's bound).
   async shippedViewsLatency(t) {
     await withShippedViews(t, async () => {
@@ -60856,33 +61997,25 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
         await t.agentEdit(pageOf("视图", shippedViewBench({ header, rows, views })));
         await t.open();
         await t.caret("任务250");
-        await t.page.evaluate(() => {
-          for (const card of document.querySelectorAll(".gallery-kanban-card")) card.__kept = true;
-        });
         const times = await typeTimed(t);
-        const cards = await t.page.evaluate(() => {
-          const all = [...document.querySelectorAll(".gallery-kanban-card")];
-          return { all: all.length, made: all.filter((card) => !card.__kept).map((card) => card.querySelector(".gallery-kanban-title").textContent), typed: all.filter((card) => card.querySelector(".gallery-kanban-title").textContent === `任务250${"x".repeat(20)}`).length };
-        });
         const seen = views.length ? await shippedLook(t.page) : null;
         await t.settle();
-        return { ...times, cards, metric: seen?.metric.number ?? null, bars: seen?.chart.bars.map(([label, value]) => `${label}:${value}`) ?? null };
+        return { ...times, metric: seen?.metric.number ?? null };
       };
       const without = await measure([]);
-      const withViews = await measure(["kanban", "metric", "chart"]);
-      console.log(`  latency: no view ${timedWords(without)}; board, metric and chart ${timedWords(withViews)}`);
-      t.check(withViews.cards.all === 500 && withViews.cards.made.length === 0 && withViews.cards.typed === 1 && withViews.metric === "1,500" && JSON.stringify(withViews.bars) === JSON.stringify(["待办:167", "进行中:167", "已完成:166"]), "no card made again, the one typed in drawn again in place, the metric and the chart as they were", JSON.stringify(withViews));
-      t.check(viewsWithin(without, withViews), `typing with the three of 500 rows: ${VIEW_BOUND}`, JSON.stringify({ without, withViews }));
+      const withViews = await measure(["metric"]);
+      console.log(`  latency: no view ${timedWords(without)}; metric ${timedWords(withViews)}`);
+      t.check(withViews.metric === "1,500", "the metric as it was", JSON.stringify(withViews));
+      t.check(viewsWithin(without, withViews), `typing with the metric of 500 rows: ${VIEW_BOUND}`, JSON.stringify({ without, withViews }));
     });
   },
 
-  // How the three look at 1280 and 600 wide, light and dark: each drawn in the kit's colors of its
-  // theme, nothing past the width of the page (the board's groups scroll inside it), the board's tools
-  // on a card under the pointer and the ⚙'s strip open. GALLERY_TEST_SHOTS=<folder> keeps the pictures.
+  // How the metric looks at 1280 and 600 wide, light and dark: drawn in the kit's colors of its theme, nothing past
+  // the width of the page, and the ⚙'s strip open. GALLERY_TEST_SHOTS=<folder> keeps the pictures.
   async shippedViewsLook(t) {
     const shots = process.env.GALLERY_TEST_SHOTS || null;
     await withShippedViews(t, async () => {
-      const rows = [['<a href="../plan-details/doc.html">写方案</a>', "待办", "小王", "3"], ["做评审", "进行中", "小李", "2"], ["发布", "待办", "小王", "1"], ["回归测试", "进行中", '<a href="https://example.com/issue/12">测试单</a>', "4"], ["确定版本号", "已完成", "小李", "1"]];
+      const rows = [["写方案", "待办", "小王", "3"], ["做评审", "进行中", "小李", "2"], ["发布", "待办", "小王", "1"], ["回归测试", "进行中", "小张", "4"], ["确定版本号", "已完成", "小李", "1"]];
       await t.agentEdit(pageOf("视图", shippedViewBench({ rows })));
       for (const [width, theme] of [[1280, "light"], [1280, "dark"], [600, "light"], [600, "dark"]]) {
         await t.page.setViewport({ width, height: 1100 });
@@ -60892,27 +62025,20 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
           theme: document.documentElement.dataset.docEffectiveTheme,
           over: document.scrollingElement.scrollWidth - innerWidth,
           surface: getComputedStyle(document.querySelector('[data-doc-component="gallery/metric"]')).backgroundColor,
-          card: getComputedStyle(document.querySelector(".gallery-kanban-card")).backgroundColor,
           failed: document.querySelectorAll("[data-doc-fallback], .doc-kit-error").length,
         }));
         const seen = await shippedLook(t.page);
         const dark = (color) => (color.match(/\d+/g) ?? []).slice(0, 3).reduce((sum, part) => sum + Number(part), 0) < 200;
-        t.check(look.theme === theme && look.over <= 0 && look.failed === 0 && dark(look.surface) === (theme === "dark") && dark(look.card) === (theme === "dark") && seen.kanban.groups.length === 3 && seen.metric.number === "11" && seen.chart.bars.length === 3, `${width} ${theme}: drawn in its theme, nothing past the page`, JSON.stringify({ look, seen }));
+        t.check(look.theme === theme && look.over <= 0 && look.failed === 0 && dark(look.surface) === (theme === "dark") && seen.metric.number === "11", `${width} ${theme}: drawn in its theme, nothing past the page`, JSON.stringify({ look, seen }));
         if (!shots) continue;
         await fs.mkdir(shots, { recursive: true });
-        const views = await t.page.$$('main [data-doc-component^="gallery/"]');
-        for (const [index, name] of ["kanban", "metric", "chart-view"].entries()) {
-          await views[index].evaluate((node) => node.scrollIntoView({ block: "center" }));
-          await views[index].screenshot({ path: path.join(shots, `${name}-${width}-${theme}.png`) });
-        }
-        // The board's tools under the pointer, and the chart's settings open.
-        const hold = await t.page.$(".gallery-kanban-card .gallery-kanban-hold");
-        await hold.hover();
+        const view = await t.page.$('main [data-doc-component="gallery/metric"]');
+        await view.evaluate((node) => node.scrollIntoView({ block: "center" }));
+        await view.screenshot({ path: path.join(shots, `metric-${width}-${theme}.png`) });
+        // Its settings open.
+        await view.evaluate((node) => node.querySelector(".gallery-metric-gear").click());
         await t.sleep(200);
-        await views[0].screenshot({ path: path.join(shots, `kanban-${width}-${theme}-hover.png`) });
-        await views[2].evaluate((node) => node.querySelector(".gallery-chart-view-gear").click());
-        await t.sleep(200);
-        await views[2].screenshot({ path: path.join(shots, `chart-view-${width}-${theme}-settings.png`) });
+        await view.screenshot({ path: path.join(shots, `metric-${width}-${theme}-settings.png`) });
       }
     });
   },
@@ -61172,97 +62298,10 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
     }
   },
 
-  // 看板's words typed in where they stand (the user, 2026-11-20: as a figure's or a layout's words, the
-  // light blue fill and the words changed in place, written to where they come from; no ✎, no 新建 at a
-  // group's foot, a + at its head): a card's title and the words under it (DocKit.text) lit under the
-  // pointer, the caret in them at a press, the file untouched while they are typed, then their cell (Enter,
-  // a press elsewhere, Escape keeping them too); a group's name every cell of its rows and its place in the
-  // settings' order, one step, into another group's name merging the two; an input method's Enter only
-  // takes its letters; a name typed empty writes nothing; the + of a group's head (its tip 新建卡片) a row
-  // of the group, its title open to type; each one undo step, undone to the file before it byte for byte.
-  async shippedKanbanWords(t) {
-    await withShippedViews(t, async () => {
-      await t.agentEdit(pageOf("看板", shippedViewBench({ views: ["kanban"] })));
-      await t.open();
-      const rowsNow = async () => tableRows(await t.read()).slice(1).map((row) => row.join("/"));
-      const orderNow = async () => viewSettings(await t.read(), "gallery/kanban")?.order ?? null;
-      const groupsNow = async () => (await shippedLook(t.page)).kanban.groups;
-      const tools = await t.page.evaluate(() => {
-        const host = document.querySelector('main [data-doc-component="gallery/kanban"]');
-        return {
-          rename: host.querySelectorAll(".gallery-kanban-rename").length,
-          remove: host.querySelectorAll(".gallery-kanban-card .gallery-kanban-remove").length,
-          foot: host.querySelectorAll(".gallery-kanban-group > .gallery-kanban-add").length,
-          head: [...host.querySelectorAll(".gallery-kanban-group-head > .gallery-kanban-add")].map((button) => ({ tip: button.dataset.docTip, label: button.getAttribute("aria-label"), words: button.textContent.trim(), shown: button.getClientRects().length > 0 })),
-        };
-      });
-      t.check(tools.rename === 0 && tools.remove === 3 && tools.foot === 0 && tools.head.length === 3 && tools.head.every((add) => add.tip === "新建卡片" && add.label === "新建卡片" && add.words === "" && add.shown), "no ✎ and no 新建 at a group's foot: a + in each group's head, its tip 新建卡片, and 🗑 on each card", JSON.stringify(tools));
-      const files = [withoutIds(await t.read())];
-      const step = async (label, act, check) => {
-        const result = await act();
-        await t.settle();
-        files.push(withoutIds(await t.read()));
-        const now = { rows: await rowsNow(), order: await orderNow(), groups: await groupsNow() };
-        t.check(check(now, result), label, JSON.stringify({ now, result }));
-      };
-      const unchanged = async () => ({ file: withoutIds(await t.read()) === files.at(-1), state: await t.state() });
-      // A card's title: lit under the pointer, the caret in it at a press, nothing written while it is typed, its cell on Enter.
-      await step("a card's title typed over, Enter: its first cell", () => typeViewWords(t, t.page, ".gallery-kanban-title", "写方案", "写技术方案", { during: unchanged }), (now, typed) =>
-        typed.rest.shadow === "none" && typed.rest.editable && typed.lit.shadow.includes("inset") && typed.pressed.focused && typed.typing.text === "写技术方案" && typed.seen.file && typed.seen.state === "saved" && !typed.after.focused
-        && now.rows[0] === "写技术方案/待办/小王/3" && JSON.stringify(now.groups[0]) === JSON.stringify(["待办", "写技术方案", "发布"]));
-      await step("the words under a card's title (负责人), left by a press elsewhere: that cell", () => typeViewWords(t, t.page, ".gallery-kanban-prop", "小李", "小张", { end: "away" }), (now) => now.rows[1] === "做评审/进行中/小张/2");
-      await step("Escape keeps what was typed, as in a figure's words", () => typeViewWords(t, t.page, ".gallery-kanban-title", "发布", "发布上线", { end: "Escape" }), (now) => now.rows[2] === "发布上线/待办/小王/1");
-      // A group's name: every cell of its rows, its place in the settings' order with it, one step.
-      await step("a group's name 待办 typed 计划: each of its rows' 状态, and the order of the groups, its place kept", () => typeViewWords(t, t.page, ".gallery-kanban-name", "待办", "计划"), (now) =>
-        JSON.stringify(now.rows) === JSON.stringify(["写技术方案/计划/小王/3", "做评审/进行中/小张/2", "发布上线/计划/小王/1"]) && now.order === "计划,进行中,已完成"
-        && JSON.stringify(now.groups) === JSON.stringify([["计划", "写技术方案", "发布上线"], ["进行中", "做评审"], ["已完成"]]));
-      await step("a group's name typed as another's: the two one group, the order without it", () => typeViewWords(t, t.page, ".gallery-kanban-name", "进行中", "计划"), (now) =>
-        JSON.stringify(now.rows.map((row) => row.split("/")[1])) === JSON.stringify(["计划", "计划", "计划"]) && now.order === "计划,已完成"
-        && JSON.stringify(now.groups) === JSON.stringify([["计划", "写技术方案", "做评审", "发布上线"], ["已完成"]]));
-      // A name typed empty writes nothing, and shows the name again.
-      const emptied = await typeViewWords(t, t.page, ".gallery-kanban-name", "已完成", "", { end: "Enter" });
-      await t.sleep(400);
-      t.check((await unchanged()).file && emptied.after.text === "已完成", "a group's name typed empty: nothing written, its name shown again", JSON.stringify(emptied.after));
-      // The + of a group's head: a row of the group, its title open to type.
-      const tip = await hoverTip(t.page, '.gallery-kanban-group[data-value="已完成"] > .gallery-kanban-group-head > .gallery-kanban-add');
-      t.check(tip === "新建卡片", "the + of a group's head says 新建卡片 under the pointer", String(tip));
-      await step("+ of 已完成: a row at the table's end, its 状态 the group's", () => pressKanban(t.page, "已完成", "add"), (now) => now.rows.length === 4 && now.rows[3] === "/已完成//");
-      const opened = await t.page.evaluate(() => {
-        const node = document.activeElement;
-        return { title: node?.matches?.('.gallery-kanban-group[data-value="已完成"] .gallery-kanban-title') ?? false, editable: node?.isContentEditable ?? false, placeholder: node ? getComputedStyle(node, "::before").content : null };
-      });
-      t.check(opened.title && opened.editable && opened.placeholder === '"无标题"', "the new card's title has the caret, 无标题 in gray while it is empty", JSON.stringify(opened));
-      // An input method's Enter puts its letters in and writes nothing; Enter after it writes the title.
-      const client = await t.page.createCDPSession();
-      const key = (type, name, code, keyCode) => client.send("Input.dispatchKeyEvent", { type, key: name, code, windowsVirtualKeyCode: keyCode, nativeVirtualKeyCode: keyCode });
-      await key("rawKeyDown", "Process", "KeyZ", 229);
-      await client.send("Input.imeSetComposition", { text: "zhengli", selectionStart: 7, selectionEnd: 7 });
-      await key("keyUp", "z", "KeyZ", 90);
-      await key("rawKeyDown", "Process", "Enter", 229);
-      await client.send("Input.insertText", { text: "整理" });
-      await key("keyUp", "Enter", "Enter", 13);
-      await client.detach();
-      await t.sleep(400);
-      const composed = await t.page.evaluate(() => ({ text: document.activeElement?.textContent ?? null, title: document.activeElement?.matches?.(".gallery-kanban-title") ?? false }));
-      t.check((await unchanged()).file && composed.title && composed.text === "整理", "an input method's Enter takes its letters in and writes nothing, the caret still in the title", JSON.stringify(composed));
-      await step("Enter after it: the new card's title", async () => { await t.page.keyboard.type("文档"); await t.press("Enter"); }, (now) => now.rows[3] === "整理文档/已完成//" && JSON.stringify(now.groups[1]) === JSON.stringify(["已完成", "整理文档"]));
-      t.check(!(await t.page.evaluate(() => Boolean([...document.querySelectorAll(".ge-format")].find((node) => !node.hidden && node.getBoundingClientRect().width > 0)))), "no format bar came over the view's words");
-      for (let index = files.length - 1; index > 0; index--) {
-        await t.combo("Control", "z");
-        await t.settle();
-        const got = withoutIds(await t.read());
-        const differs = [...got].findIndex((char, at) => char !== files[index - 1][at]);
-        t.check(got === files[index - 1], `one undo takes back step ${index}`, JSON.stringify({ rows: await rowsNow(), got: got.slice(Math.max(0, differs - 160), differs + 160), want: files[index - 1].slice(Math.max(0, differs - 160), differs + 160) }));
-      }
-      t.check(JSON.stringify(await groupsNow()) === JSON.stringify([["待办", "写方案", "发布"], ["进行中", "做评审"], ["已完成"]]), "all undone: the board as it opened", JSON.stringify(await groupsNow()));
-    });
-  },
-
-  // How the three views' words typed in where they stand look, light and dark: at rest as drawn (no fill),
-  // under the pointer and typed in the light fill of the accent a figure's words take (the page editor's
-  // data-ge-framed tint: 9% of --doc-accent inside them, 3px corners), the caret's focus with no ring; the +
-  // of a group's head a gray square under the pointer with its tip. GALLERY_TEST_SHOTS=<folder> keeps the
-  // pictures: each view at rest, its words under the pointer and typed in, and the board's + with its tip.
+  // How the metric's words typed in where they stand look, light and dark: at rest as drawn (no fill), under the
+  // pointer and typed in the light fill of the accent a figure's words take (the page editor's data-ge-framed
+  // tint: 9% of --doc-accent inside them, 3px corners), the caret's focus with no ring. GALLERY_TEST_SHOTS=<folder>
+  // keeps the pictures: the metric at rest, its name under the pointer and typed in.
   async shippedViewsWordsLook(t) {
     const shots = process.env.GALLERY_TEST_SHOTS || null;
     await withShippedViews(t, async () => {
@@ -61288,15 +62327,14 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
         await t.open();
         await t.sleep(600);
         const accent = await tint(theme);
-        for (const [name, selector] of [["kanban", '[data-doc-component="gallery/kanban"]'], ["metric", '[data-doc-component="gallery/metric"]'], ["chart-view", '[data-doc-component="gallery/chart-view"]']]) {
-          await t.page.evaluate((selector) => document.querySelector(`main ${selector}`).scrollIntoView({ block: "center" }), selector);
-          await t.page.mouse.move(2, 2);
-          await t.sleep(200);
-          await shoot(`${name}-rest-${theme}`, selector);
-        }
-        // Under the pointer: a card's title, a group's name, the metric's name, the chart's title and a bar's name.
+        const metric = '[data-doc-component="gallery/metric"]';
+        await t.page.evaluate((selector) => document.querySelector(`main ${selector}`).scrollIntoView({ block: "center" }), metric);
+        await t.page.mouse.move(2, 2);
+        await t.sleep(200);
+        await shoot(`metric-rest-${theme}`, metric);
+        // Under the pointer: the metric's name.
         const lit = [];
-        for (const [name, view, selector, words] of [["kanban-title", "kanban", ".gallery-kanban-title", "写方案"], ["kanban-group", "kanban", ".gallery-kanban-name", "进行中"], ["metric-name", "metric", ".gallery-metric-label", "工时合计"], ["chart-title", "chart-view", ".gallery-chart-view-title", "各状态的行数"], ["chart-bar", "chart-view", ".gallery-chart-view-label", "待办"]]) {
+        for (const [name, selector, words] of [["metric-name", ".gallery-metric-label", "工时合计"]]) {
           const at = await t.page.evaluate((selector, words) => {
             const node = [...document.querySelectorAll(`main ${selector}`)].find((each) => each.textContent === words);
             node.scrollIntoView({ block: "center" });
@@ -61311,12 +62349,12 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
             return { shadow: style.boxShadow, radius: style.borderTopLeftRadius, cursor: style.cursor, outline: style.outlineStyle };
           }, selector, words);
           lit.push({ name, ...look });
-          await shoot(`${name}-hover-${theme}`, `[data-doc-component="gallery/${view}"]`);
+          await shoot(`${name}-hover-${theme}`, metric);
         }
-        t.check(lit.every((each) => each.shadow.startsWith(accent) && each.shadow.includes("inset") && each.radius === "3px" && each.cursor === "text"), `${theme}: each under the pointer takes the accent's light fill inside it (${accent}), 3px corners, the text cursor`, JSON.stringify({ accent, lit }));
-        // Typed in: a card's title, the metric's name and a bar's name, each put back as it was before it ends (nothing written).
+        t.check(lit.every((each) => each.shadow.startsWith(accent) && each.shadow.includes("inset") && each.radius === "3px" && each.cursor === "text"), `${theme}: the name under the pointer takes the accent's light fill inside it (${accent}), 3px corners, the text cursor`, JSON.stringify({ accent, lit }));
+        // Typed in: the metric's name, put back as it was before it ends (nothing written).
         const typed = [];
-        for (const [name, view, selector, words, text] of [["kanban-typing", "kanban", ".gallery-kanban-title", "做评审", "做设计评审"], ["metric-typing", "metric", ".gallery-metric-label", "工时合计", "本周工时"], ["chart-typing", "chart-view", ".gallery-chart-view-label", "进行中", "处理中"]]) {
+        for (const [name, selector, words, text] of [["metric-typing", ".gallery-metric-label", "工时合计", "本周工时"]]) {
           const at = await t.page.evaluate((selector, words) => {
             const node = [...document.querySelectorAll(`main ${selector}`)].find((each) => each.textContent === words);
             node.scrollIntoView({ block: "center" });
@@ -61329,35 +62367,12 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
           await t.page.mouse.move(2, 2);
           await t.sleep(250);
           typed.push(await t.page.evaluate(() => { const node = document.activeElement; const style = getComputedStyle(node); return { text: node.textContent, shadow: style.boxShadow, outline: style.outlineStyle }; }));
-          await shoot(`${name}-${theme}`, `[data-doc-component="gallery/${view}"]`);
+          await shoot(`${name}-${theme}`, metric);
           await t.combo("Control", "a");
           await t.page.keyboard.type(words);
           await t.press("Enter");
         }
         t.check(typed.every((each) => each.shadow.startsWith(accent) && each.outline === "none"), `${theme}: typed in, the same fill with the pointer away, no ring`, JSON.stringify(typed));
-        // The + of a group's head under the pointer, its tip under it.
-        const tip = await t.page.evaluate(() => {
-          const add = document.querySelector('main .gallery-kanban-group[data-value="进行中"] .gallery-kanban-add');
-          add.scrollIntoView({ block: "center" });
-          const rect = add.getBoundingClientRect();
-          return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-        });
-        await t.sleep(250); // the scroll that brought it to the middle heard first (a scroll takes a tip away)
-        await t.page.mouse.move(tip.x, tip.y);
-        await t.page.waitForSelector(".doc-tip", { visible: true, timeout: 3000 }).catch(() => null);
-        await t.sleep(200);
-        const add = await t.page.evaluate(() => {
-          const button = document.querySelector('main .gallery-kanban-group[data-value="进行中"] .gallery-kanban-add');
-          const style = getComputedStyle(button);
-          const rect = button.getBoundingClientRect();
-          return { fill: style.backgroundColor, border: style.borderTopWidth, size: [Math.round(rect.width), Math.round(rect.height)], tip: document.querySelector(".doc-tip")?.textContent ?? null };
-        });
-        t.check(add.fill !== "rgba(0, 0, 0, 0)" && add.border === "0px" && add.size.join() === "24,24" && add.tip === "新建卡片", `${theme}: the + a 24px square, no line, a gray fill under the pointer, its tip 新建卡片`, JSON.stringify(add));
-        if (shots) {
-          const box = await t.page.evaluate(() => { const rect = document.querySelector('main .gallery-kanban-group[data-value="进行中"]').getBoundingClientRect(); return { x: rect.left, y: rect.top }; });
-          const scrolled = await t.page.evaluate(() => ({ x: scrollX, y: scrollY }));
-          await t.page.screenshot({ path: path.join(shots, `kanban-add-${theme}.png`), clip: { x: box.x - 16 + scrolled.x, y: box.y - 16 + scrolled.y, width: 420, height: 160 } });
-        }
         await t.page.mouse.move(2, 2);
         await t.settle();
       }
@@ -61365,18 +62380,13 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
     });
   },
 
-  // What typing in a view's words keeps (each found in a review of 2026-11-20 by a probe of a real browser):
-  // someone else's write of the row whose title is typed in leaves the caret there and writes nothing of it
-  // half (the card drawn again in place, not made anew); the words under a card's title typed right after
-  // its title was, all of them written (its card kept as the title's write came back); a group named with
-  // the order's comma (设计、评审) out of the order, no group made of each half; Ctrl+Z in words not typed
-  // in since they took the caret the page's undo (its last step), never the browser's of other words, and
-  // in words typed in their own, as far back as what they said then, then the page's again.
+  // What typing in the metric's words keeps (found in a review of 2026-11-20 by a probe of a real browser): Ctrl+Z in
+  // words not typed in since they took the caret the page's undo (its last step), never the browser's of other words,
+  // and in words typed in their own, as far back as what they said then, then the page's again.
   async shippedViewsWordsKept(t) {
     await withShippedViews(t, async () => {
-      await t.agentEdit(pageOf("看板", shippedViewBench({ views: ["kanban", "metric"] })));
+      await t.agentEdit(pageOf("视图", shippedViewBench()));
       await t.open();
-      const rowsNow = async () => tableRows(await t.read()).slice(1).map((row) => row.join("/"));
       const near = (selector, words, side = "start") => t.page.evaluate((selector, words, side) => {
         const node = [...document.querySelectorAll(`main ${selector}`)].find((each) => each.textContent === words);
         if (!node) throw new Error(`no ${selector} reading ${words}: ${[...document.querySelectorAll(`main ${selector}`)].map((each) => each.textContent).join("|")}`);
@@ -61384,38 +62394,6 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
         const rect = node.getBoundingClientRect();
         return [side === "end" ? rect.right - 2 : rect.left + 6, rect.top + rect.height / 2];
       }, selector, words, side);
-      // Someone else's write of the row as its title is typed in.
-      await t.page.mouse.click(...(await near(".gallery-kanban-title", "写方案")));
-      await t.sleep(150);
-      await t.combo("Control", "a");
-      await t.page.keyboard.type("写技术");
-      const shown = t.reloaded();
-      await t.agentEdit((text) => text.replace("<td>写方案</td><td>待办</td><td>小王</td>", "<td>写方案</td><td>待办</td><td>小赵</td>"));
-      await shown;
-      await t.sleep(400);
-      const mid = await t.page.evaluate(() => ({ title: document.activeElement?.matches?.(".gallery-kanban-title") ?? false, words: document.activeElement?.textContent ?? null, prop: [...document.querySelectorAll("main .gallery-kanban-prop")].map((node) => node.textContent) }));
-      const midRows = await rowsNow();
-      await t.page.keyboard.type("方案");
-      await t.press("Enter");
-      await t.settle();
-      t.check(t.lastShown === "pull" && mid.title && mid.words === "写技术" && mid.prop.includes("小赵") && midRows[0] === "写方案/待办/小赵/3" && (await rowsNow())[0] === "写技术方案/待办/小赵/3", "the Agent's write of the row as its title is typed in: the caret kept there, nothing of it written half, then all of it beside the Agent's", JSON.stringify({ shown: t.lastShown, mid, midRows, rows: await rowsNow() }));
-      // A card's title typed, then at once the words under it.
-      await t.page.mouse.click(...(await near(".gallery-kanban-title", "发布"))); // its start: the card's 🗑 stands over its end
-      await t.sleep(150);
-      await t.press("End");
-      await t.page.keyboard.type("上线");
-      await t.page.mouse.click(...(await near(".gallery-kanban-prop", "小王", "end")));
-      await t.press("End");
-      await t.page.keyboard.type("和小李");
-      const typing = await t.page.evaluate(() => ({ prop: document.activeElement?.matches?.(".gallery-kanban-prop") ?? false, words: document.activeElement?.textContent ?? null }));
-      await t.press("Enter");
-      await t.settle();
-      t.check(typing.prop && typing.words === "小王和小李" && (await rowsNow())[2] === "发布上线/待办/小王和小李/1", "a card's title typed, then the words under it at once: both written, nothing typed lost", JSON.stringify({ typing, rows: await rowsNow() }));
-      // A group named with the order's comma.
-      await typeViewWords(t, t.page, ".gallery-kanban-name", "待办", "设计、评审");
-      await t.settle();
-      const named = { order: viewSettings(await t.read(), "gallery/kanban")?.order, groups: (await shippedLook(t.page)).kanban.groups };
-      t.check(named.order === "进行中,已完成" && JSON.stringify(named.groups) === JSON.stringify([["进行中", "做评审"], ["已完成"], ["设计、评审", "写技术方案", "发布上线"]]), "a group named with the order's comma: out of the order, after the groups it names, no group made of each half", JSON.stringify(named));
       // Ctrl+Z in words not typed in since they took the caret: the page's undo (the metric's name written last).
       await typeViewWords(t, t.page, ".gallery-metric-label", "工时合计", "本周工时");
       await t.settle();
@@ -61429,7 +62407,9 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
       await t.press("Enter");
       await t.settle();
       t.check(written === "本周工时" && undone.label === "工时合计" && undone.unit === "小时" && undone.inUnit && afterUndo.title === undefined && JSON.stringify(viewSettings(await t.read(), "gallery/metric")) === JSON.stringify(afterUndo), "Ctrl+Z in a unit not typed in: the page's undo takes the name's write back, the unit as it was, Enter there writing nothing", JSON.stringify({ written, undone, afterUndo, now: viewSettings(await t.read(), "gallery/metric") }));
-      // Typed in: their own undo, as far back as what they said as they took the caret, then the page's.
+      // Typed in: their own undo, as far back as what they said as they took the caret, then the page's (the name written again first).
+      await typeViewWords(t, t.page, ".gallery-metric-label", "工时合计", "月度工时");
+      await t.settle();
       await t.page.mouse.click(...(await near(".gallery-metric-unit", "小时", "end")));
       await t.sleep(150);
       await t.press("End");
@@ -61439,65 +62419,16 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
       const own = await t.page.evaluate(() => document.querySelector("main .gallery-metric-unit").textContent);
       await t.combo("Control", "z");
       await t.settle();
-      const back = { unit: await t.page.evaluate(() => document.querySelector("main .gallery-metric-unit").textContent), order: viewSettings(await t.read(), "gallery/kanban")?.order, states: tableRows(await t.read()).slice(1).map((row) => row[1]) };
-      t.check(own === "小时" && back.unit === "小时" && back.order === "待办,进行中,已完成" && JSON.stringify(back.states) === JSON.stringify(["待办", "进行中", "待办"]), "typed in, Ctrl+Z its own words back to what they said, then the page's: the group's name before", JSON.stringify({ own, back }));
+      const back = { unit: await t.page.evaluate(() => document.querySelector("main .gallery-metric-unit").textContent), label: await t.page.evaluate(() => document.querySelector("main .gallery-metric-label").textContent), title: viewSettings(await t.read(), "gallery/metric")?.title };
+      t.check(own === "小时" && back.unit === "小时" && back.label === "工时合计" && back.title === undefined, "typed in, Ctrl+Z its own words back to what they said, then the page's: the name's write before", JSON.stringify({ own, back }));
     });
   },
 
-  // A group renamed while the Agent changed the board's settings (found in a review, 2026-11-20): the cells go in, the
-  // settings wait on a card; 仍然调整 writes them, one undo gives the Agent's settings back and the next the
-  // cells, the Agent's order never written over (fold in history.mjs reaches the step of the rename); 保留
-  // Agent 的 keeps the Agent's settings and the cells as renamed (a known half: the renamed group after those
-  // the order names, an empty one of the old name in its place; docs/editor.md "Table views").
-  async shippedKanbanRenameConflict(t) {
-    await withShippedViews(t, async () => {
-      const now = async () => {
-        const text = await t.read();
-        return { states: tableRows(text).slice(1).map((row) => row[1]).join(), order: viewSettings(text, "gallery/kanban")?.order, cards: await t.page.evaluate(() => document.querySelectorAll(".ge-conflict").length), state: await t.state() };
-      };
-      const renamedOffline = async () => {
-        await t.agentEdit(pageOf("看板", shippedViewBench({ views: ["kanban"] })));
-        await t.open();
-        await t.offline();
-        await typeViewWords(t, t.page, ".gallery-kanban-name", "待办", "计划");
-        await t.agentEdit((text) => text.replace('{"order":"待办,进行中,已完成"}', '{"order":"已完成,待办,进行中"}'));
-        await t.offline(false);
-        await t.combo("Control", "s");
-        await t.settle("held");
-      };
-      await renamedOffline();
-      let seen = await now();
-      t.check(seen.states === "计划,进行中,计划" && seen.order === "已完成,待办,进行中" && seen.cards === 1, "the cells written, the settings held on a card, the Agent's order in the file", JSON.stringify(seen));
-      await clickConflict(t, "仍然调整");
-      await t.settle();
-      seen = await now();
-      t.check(seen.states === "计划,进行中,计划" && seen.order === "计划,进行中,已完成" && seen.cards === 0, "仍然调整: the settings written too", JSON.stringify(seen));
-      await t.combo("Control", "z");
-      await t.settle();
-      seen = await now();
-      t.check(seen.states === "计划,进行中,计划" && seen.order === "已完成,待办,进行中", "one undo: the Agent's settings back", JSON.stringify(seen));
-      await t.combo("Control", "z");
-      await t.settle();
-      seen = await now();
-      t.check(seen.states === "待办,进行中,待办" && seen.order === "已完成,待办,进行中" && seen.cards === 0, "the next: the cells back, the Agent's order not written over", JSON.stringify(seen));
-      await renamedOffline();
-      await clickConflict(t, "保留 Agent 的");
-      await waitFor(t, async () => (await t.page.evaluate(() => document.querySelectorAll(".ge-conflict").length)) === 0 && (await shippedLook(t.page))?.kanban?.groups?.[0]?.[0] === "已完成", 15000);
-      await t.settle();
-      seen = await now();
-      const look = (await shippedLook(t.page)).kanban.groups;
-      t.check(seen.states === "计划,进行中,计划" && seen.order === "已完成,待办,进行中" && JSON.stringify(look) === JSON.stringify([["已完成"], ["待办"], ["进行中", "做评审"], ["计划", "写方案", "发布"]]), "保留 Agent 的: the Agent's order kept, the cells as renamed, the renamed group after those the order names (the known half)", JSON.stringify({ seen, look }));
-    });
-  },
-
-  // 指标 and 图表's words typed in where they stand (shippedKanbanWords): the metric's name its settings'
-  // `title`, its unit `unit`, its number no words of anyone's (not lit, no caret); the chart's title its
-  // `title`, emptied taking it out (the title it makes shown again), a bar's name (a group's value) each
-  // cell of that group's rows, a bar a row's name its row's first cell, its number nobody's. Each one undo
-  // step, undone to the file before it byte for byte.
+  // 指标's words typed in where they stand (the user, 2026-11-20): its name its settings' `title`, its unit `unit`, its
+  // number no words of anyone's (not lit, no caret). Each one undo step, undone to the file before it byte for byte.
   async shippedViewsWords(t) {
     await withShippedViews(t, async () => {
-      await t.agentEdit(pageOf("视图", shippedViewBench({ views: ["metric", "chart"] })));
+      await t.agentEdit(pageOf("视图", shippedViewBench()));
       await t.open();
       const files = [withoutIds(await t.read())];
       const rowsNow = async () => tableRows(await t.read()).slice(1).map((row) => row.join("/"));
@@ -61506,7 +62437,7 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
         await t.settle();
         files.push(withoutIds(await t.read()));
         const file = await t.read();
-        const now = { metric: viewSettings(file, "gallery/metric"), chart: viewSettings(file, "gallery/chart-view"), rows: await rowsNow(), look: await shippedLook(t.page) };
+        const now = { metric: viewSettings(file, "gallery/metric"), rows: await rowsNow(), look: await shippedLook(t.page) };
         t.check(check(now, result), label, JSON.stringify({ now, result }));
       };
       await step("the metric's name typed: its settings' title", () => typeViewWords(t, t.page, ".gallery-metric-label", "工时合计", "本周工时"), (now, typed) =>
@@ -61514,40 +62445,22 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
       await step("its unit typed, left by a press elsewhere: its unit", () => typeViewWords(t, t.page, ".gallery-metric-unit", "小时", "h", { end: "away" }), (now) => now.metric.unit === "h" && now.look.metric.unit === "h");
       const number = await viewWordsLook(t.page, ".gallery-metric-number");
       t.check(!number.editable && number.lit === "none" && !number.focused, "the metric's number is worked out: not lit, no caret in it", JSON.stringify(number));
-      await step("the chart's title typed: its settings' title", () => typeViewWords(t, t.page, ".gallery-chart-view-title", "各状态的行数", "任务分布"), (now) => now.chart.title === "任务分布" && now.look.chart.title === "任务分布");
-      await step("a bar's name (a value of 状态) typed: each cell of its rows", () => typeViewWords(t, t.page, ".gallery-chart-view-label", "待办", "计划"), (now) =>
-        JSON.stringify(now.rows.map((row) => row.split("/")[1])) === JSON.stringify(["计划", "进行中", "计划"]) && JSON.stringify(now.look.chart.bars.map(([label, value]) => `${label}:${value}`)) === JSON.stringify(["计划:2", "进行中:1"]));
-      const value = await viewWordsLook(t.page, ".gallery-chart-view-value");
-      t.check(!value.editable && value.lit === "none" && !value.focused, "a bar's number is worked out: not lit, no caret in it", JSON.stringify(value));
-      await step("the chart's title emptied: its title taken out of its settings, the one it makes shown", () => typeViewWords(t, t.page, ".gallery-chart-view-title", "任务分布", ""), (now) => !("title" in now.chart) && now.look.chart.title === "各状态的行数");
-      const undoAll = async () => {
-        for (let index = files.length - 1; index > 0; index--) {
-          await t.combo("Control", "z");
-          await t.settle();
-          const got = withoutIds(await t.read());
-          const differs = [...got].findIndex((char, at) => char !== files[index - 1][at]);
-          t.check(got === files[index - 1], `one undo takes back step ${index}`, JSON.stringify({ rows: await rowsNow(), got: got.slice(Math.max(0, differs - 160), differs + 160), want: files[index - 1].slice(Math.max(0, differs - 160), differs + 160) }));
-        }
-      };
-      await undoAll();
-      // A bar a row (no column whose words repeat, nothing to group by): its name its row's first cell.
-      await t.agentEdit(pageOf("视图", shippedViewBench({ header: ["任务", "工时"], rows: [["写方案", "3"], ["做评审", "2"], ["发布", "1"]], views: ["chart"] }).replace('{"by":"状态","op":"count"}', "{}")));
-      await t.open();
-      files.length = 0;
-      files.push(withoutIds(await t.read()));
-      t.check((await shippedLook(t.page)).chart.bars.length === 3, "a bar a row, as an Agent set it", JSON.stringify((await shippedLook(t.page)).chart));
-      await step("a bar a row: its name typed, its row's first cell", () => typeViewWords(t, t.page, ".gallery-chart-view-label", "做评审", "做设计评审"), (now) => now.rows[1] === "做设计评审/2" && now.look.chart.bars[1][0] === "做设计评审");
-      await undoAll();
-      t.check(!(await t.page.evaluate(() => Boolean([...document.querySelectorAll(".ge-format")].find((node) => !node.hidden && node.getBoundingClientRect().width > 0)))), "no format bar came over the views' words");
+      for (let index = files.length - 1; index > 0; index--) {
+        await t.combo("Control", "z");
+        await t.settle();
+        const got = withoutIds(await t.read());
+        const differs = [...got].findIndex((char, at) => char !== files[index - 1][at]);
+        t.check(got === files[index - 1], `one undo takes back step ${index}`, JSON.stringify({ rows: await rowsNow(), got: got.slice(Math.max(0, differs - 160), differs + 160), want: files[index - 1].slice(Math.max(0, differs - 160), differs + 160) }));
+      }
+      t.check(!(await t.page.evaluate(() => Boolean([...document.querySelectorAll(".ge-format")].find((node) => !node.hidden && node.getBoundingClientRect().width > 0)))), "no format bar came over the metric's words");
     });
   },
 
-  // The ⚙ of the three views (kanban, metric, chart-view): their selects open the kit's menu card, never the
-  // browser's popup, and a row chosen by the pointer is written as the browser's choice was (DocKit.input's
-  // commit on `change`: one write of the settings part): 分组依据 of the board, 计算 of the metric, 分组 of
-  // the chart. The press is taken, the card in the top layer under the select with the chosen option
+  // The ⚙ of the metric: its select opens the kit's menu card, never the browser's popup, and a row chosen by the
+  // pointer is written as the browser's choice was (DocKit.input's commit on `change`: one write of the settings
+  // part): 计算 of the metric. The press is taken, the card in the top layer under the select with the chosen option
   // checked, the focus back on the select, and the file holds the setting. GALLERY_TEST_SHOTS=<folder>
-  // keeps the picture of each card open over its strip, light and dark.
+  // keeps the picture of the card open over its strip, light and dark.
   async shippedViewsSelect(t) {
     const shots = process.env.GALLERY_TEST_SHOTS || null;
     await withShippedViews(t, async () => {
@@ -61557,9 +62470,7 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
         return found ? JSON.parse(found[1]) : null;
       };
       const views = [
-        { id: "gallery/kanban", name: "kanban", pick: "负责人", select: 0, written: (settings) => settings.group === "负责人" },
         { id: "gallery/metric", name: "metric", pick: "平均", select: 0, written: (settings) => settings.op === "average" },
-        { id: "gallery/chart-view", name: "chart-view", pick: "负责人", select: 0, written: (settings) => settings.by === "负责人" },
       ];
       for (const theme of ["light", "dark"]) {
         await t.page.emulateMediaFeatures([{ name: "prefers-color-scheme", value: theme }]);
@@ -62087,6 +62998,18 @@ ${rows.map(([task, status]) => `          <tr><td>${task}</td><td>${status}</td>
     await t.combo("Control", "z");
     await t.settle();
   },
+  // 多维表格 (database.mjs).
+  ...databaseScenarios,
+  ...databaseChartScenarios,
+  // Its layouts of cards (database-layouts.mjs).
+  ...databaseLayoutScenarios,
+  ...databaseBodyScenarios,
+  // A table or a database wide by its own switch, and what stands beside a wide one (wide-blocks.mjs).
+  ...wideBlockScenarios,
+  // The scrollbars the kit draws giving way past an end (scroll-squeeze.mjs).
+  ...squeezeScenarios,
+  // The scrollbars the kit draws: in step with their content, pressed and dragged, as a reader sees them (scrollbars.mjs).
+  ...scrollbarScenarios,
 };
 
 
@@ -62301,6 +63224,57 @@ async function wideTablesDocument(t, { look = null, long = false } = {}) {
   }
 }
 
+// A database for 宽多维表格 (wideDatabasesDocument): its title column and `columns` more of 200px each, two records.
+function wideDatabase(id, columns) {
+  const names = Array.from({ length: columns }, (_, i) => `列 ${i + 1}`);
+  const json = { columns: [{ id: "t", name: "名称", type: "title", width: 240 }, ...names.map((name, i) => ({ id: `c${i + 1}`, name, type: "text", width: 200 }))], views: [{ id: "v1", name: id, layout: "table" }] };
+  return `<div class="doc-database" id="${id}">
+      <script type="application/json">${JSON.stringify(json)}</script>
+      <table><thead><tr><th data-column="t">名称</th>${names.map((name, i) => `<th data-column="c${i + 1}">${name}</th>`).join("")}</tr></thead>
+      <tbody><tr><td>甲</td>${names.map((_, i) => `<td>${i}</td>`).join("")}</tr><tr><td>乙</td>${names.map((_, i) => `<td>${i * 2}</td>`).join("")}</tr></tbody></table>
+    </div>`;
+}
+
+// A document of databases for 宽多维表格: one of three more columns (884px: past the text, whole), one of eleven (past
+// the page's area), one of one (narrower than the text), one of three in a disclosure.
+async function wideDatabasesDocument(t) {
+  const body = `
+    <p>这一段正文标出正文栏的左右两边。</p>
+    ${wideDatabase("medium", 3)}
+    ${wideDatabase("widest", 11)}
+    ${wideDatabase("narrow", 1)}
+    <details class="doc-details" open>
+      <summary><span class="doc-details-summary-label">折叠块里的多维表格</span></summary>
+      <div class="doc-details-content">${wideDatabase("inside", 3)}</div>
+    </details>
+    <p>最后一段正文。</p>`;
+  t.newReport("widedb", "宽多维表格");
+  const starter = await t.read("widedb");
+  await t.write(starter.replace(/\n[ \t]*<!-- Starter content:[^\n]*-->\n[ \t]*<section\b[^>]*\sdata-doc-placeholder\b[\s\S]*?<\/section>/, body), "widedb");
+}
+
+// What a page of wideDatabasesDocument shows (evaluated in it): the column, each database's drawing (its edges, its
+// head's width, whether its table scrolls sideways, whether it is placed past the text, its table's width), the look's
+// attribute, the edge room, and whether the page was never reloaded.
+function wideDatabasesMeasure() {
+  const column = document.querySelector("main.doc-page").getBoundingClientRect();
+  const of = (id) => {
+    const app = document.getElementById(id).querySelector(":scope > .doc-database-app");
+    const box = app.getBoundingClientRect();
+    const frame = app.querySelector(".tbl-wrap");
+    // Its table: from its first column (the room of its rows' handles is left of the drawing) to its end.
+    const columns = app.querySelector(".tbl").getBoundingClientRect().right - app.querySelector(".tbl [data-head]").getBoundingClientRect().left;
+    return { left: Math.round(box.left * 10) / 10, right: Math.round(box.right * 10) / 10, head: Math.round(app.querySelector(".db-head").getBoundingClientRect().width * 10) / 10, scrolls: frame.scrollWidth > frame.clientWidth + 1, wide: app.classList.contains("is-wide"), table: Math.round(columns * 10) / 10 };
+  };
+  return {
+    width: document.documentElement.clientWidth, column: { left: column.left, right: column.right },
+    medium: of("medium"), widest: of("widest"), narrow: of("narrow"), inside: of("inside"),
+    attr: document.documentElement.getAttribute("data-doc-databases"),
+    edge: parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--ge-edge-room")) || null,
+    kept: window.__notReloaded === true,
+  };
+}
+
 // What a page of wideTablesDocument shows (evaluated in it): the page's width, the column, each table's frame (its
 // edges, whether it scrolls sideways, whether it is placed past the text) and its table's width, the look's
 // attribute, the edge room (the page editor's), and whether the page was never reloaded (window.__notReloaded).
@@ -62479,6 +63453,50 @@ async function sideDrag(t, from, to) {
   await t.sleep(150);
   await t.page.mouse.up();
   await t.sleep(400);
+}
+
+// ---------- a page of the sidebar dropped into the document (pageDropInText, pageDropRefused) ----------
+
+// A point of the document shown in the workbench's frame, on the block holding `text`: at the left edge of its
+// character `offset` (past the last, the right edge of the last), `right` px right of its words' end, or `margin` px
+// right of the column (.doc-page) at that line's height, or with `empty` 20px into the last empty paragraph: { x, y } in
+// the workbench's window, `inside` in the frame's.
+async function pagePoint(t, frame, text, offset, { right = null, margin = null, empty = false } = {}) {
+  const inside = await frame.evaluate((text, offset, right, margin, empty) => {
+    if (empty) { // the last empty paragraph of the page, 20px into it
+      const box = [...document.querySelectorAll("main p")].filter((node) => node.textContent === "").at(-1).getBoundingClientRect();
+      return { x: box.left + 20, y: box.top + box.height / 2, drop: null };
+    }
+    const host = [...document.querySelectorAll("main [contenteditable], main h1, main pre")].find((node) => node.textContent.includes(text) && node.getClientRects().length > 0);
+    const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+    let rest = host.textContent.indexOf(text) + offset;
+    let node = walker.nextNode();
+    while (node && rest > node.length) { rest -= node.length; node = walker.nextNode(); }
+    const range = document.createRange();
+    const end = rest === node.length;
+    range.setStart(node, end ? rest - 1 : rest);
+    range.setEnd(node, end ? rest : rest + 1);
+    const box = range.getBoundingClientRect();
+    const y = box.top + box.height / 2;
+    if (margin !== null) return { x: document.querySelector(".doc-page").getBoundingClientRect().right + margin, y, drop: null };
+    if (right !== null) return { x: box.right + right, y, drop: null };
+    return { x: end ? box.right : box.left, y, drop: end ? box.right - 1 : box.left + 1 };
+  }, text, offset, right, margin, empty);
+  const corner = await t.page.evaluate(() => { const frame = document.querySelector("iframe.report-frame:not([data-pending])"); const r = frame.getBoundingClientRect(); return { left: r.left + frame.clientLeft, top: r.top + frame.clientTop }; });
+  return { x: corner.left + (inside.drop ?? inside.x), y: corner.top + inside.y, inside };
+}
+// A sidebar row (`from`, sideBox) dragged with the mouse to `to` ({ x, y } in the workbench's window); `during()`
+// while it rests there; let go, or with `cancel` Esc first.
+async function pageDrag(t, from, to, during = null, { cancel = false } = {}) {
+  await t.page.mouse.move(from.x, from.y);
+  await t.page.mouse.down();
+  await t.page.mouse.move(from.x, from.y + 8, { steps: 3 });
+  await t.page.mouse.move(to.x, to.y, { steps: 10 });
+  await t.sleep(250);
+  if (during) await during();
+  if (cancel) await t.page.keyboard.press("Escape");
+  await t.page.mouse.up();
+  await t.sleep(500);
 }
 
 // ---------- the drafts of other workspaces (otherWorkspaceOpen, otherWorkspaceSession, addGalleryProject, agentDraftJoinsTree, workspaceColumns, newPlacement, greyTagColumn) ----------
@@ -64590,17 +65608,17 @@ const askView = (t, asks) => t.page.evaluate((asks) => {
   });
 }, asks);
 
-// ---------- Gallery's own views of a table (src/packs/gallery/kanban, metric, chart-view) ----------
+// ---------- Gallery's own view of a table (src/packs/gallery/metric) ----------
 
-// The three views (gallery block add puts them in the studio's components/gallery/) for `run`, the
-// server's catalog looked at first, taken out after it: no other scenario's menus hold them.
+// The metric (gallery block add puts it in the studio's components/gallery/) for `run`, the
+// server's catalog looked at first, taken out after it: no other scenario's menus hold it.
 async function withShippedViews(t, run) {
   const root = path.join(t.root, "reports");
-  const names = ["kanban", "metric", "chart-view"];
+  const names = ["metric"];
   for (const name of names) addShipped(root, shippedBlock(name));
   const { origin } = new URL(t.home());
   try {
-    if (!(await waitFor(t, async () => (await Promise.all(names.map((name) => fetch(`${origin}/__gallery/components/gallery/${name}/kit.js`).then((answer) => answer.ok, () => false)))).every(Boolean), 20000))) throw new Error("the views are not the server's");
+    if (!(await waitFor(t, async () => (await Promise.all(names.map((name) => fetch(`${origin}/__gallery/components/gallery/${name}/kit.js`).then((answer) => answer.ok, () => false)))).every(Boolean), 20000))) throw new Error("the metric is not the server's");
     await t.sleep(1500); // the catalog's menus
     await run();
   } finally {
@@ -64609,17 +65627,14 @@ async function withShippedViews(t, run) {
   }
 }
 
-// Each view's markup, reading the table of `key`: the board by 状态 in the order 待办, 进行中, 已完成; the
-// sum of 工时 in 小时; the rows counted by 状态.
+// Each view's markup, reading the table of `key`: the sum of 工时 in 小时.
 const SHIPPED_VIEWS = {
-  kanban: (key) => `    <div data-doc-component="gallery/kanban" data-doc-from="${key}">\n      <script type="application/json">{"order":"待办,进行中,已完成"}</script>\n    </div>`,
   metric: (key) => `    <div data-doc-component="gallery/metric" data-doc-from="${key}">\n      <script type="application/json">{"op":"sum","column":"工时","unit":"小时"}</script>\n    </div>`,
-  chart: (key) => `    <div data-doc-component="gallery/chart-view" data-doc-from="${key}">\n      <script type="application/json">{"by":"状态","op":"count"}</script>\n    </div>`,
 };
 
 // A table of tasks (`header`: 任务, 状态, 负责人, 工时) carrying `key`, `foot` after its body, and the `views` named
 // after it, between two paragraphs.
-const shippedViewBench = ({ header = ["任务", "状态", "负责人", "工时"], rows = [["写方案", "待办", "小王", "3"], ["做评审", "进行中", "小李", "2"], ["发布", "待办", "小王", "1"]], views = ["kanban", "metric", "chart"], key = "t1", foot = "" } = {}) => `<p>前面一段。</p>
+const shippedViewBench = ({ header = ["任务", "状态", "负责人", "工时"], rows = [["写方案", "待办", "小王", "3"], ["做评审", "进行中", "小李", "2"], ["发布", "待办", "小王", "1"]], views = ["metric"], key = "t1", foot = "" } = {}) => `<p>前面一段。</p>
     <div class="doc-table-wrap" data-doc-chart-source="${key}">
       <table class="doc-table">
         <thead><tr>${header.map((name) => `<th>${name}</th>`).join("")}</tr></thead>
@@ -64631,84 +65646,17 @@ ${rows.map((cells) => `          <tr>${cells.map((cell) => `<td>${cell}</td>`).j
 ${views.map((view) => SHIPPED_VIEWS[view](key)).join("\n")}
     <p>后面一段。</p>`;
 
-// What the page `where` shows of the first of each view: the board's groups (each its value, then its
-// cards' titles), whether it writes, its caption and its line; the metric's name, number, unit, foot and
-// line; the chart's title, its bars ([name, value, width in px]) and its line.
+// What the page `where` shows of the first metric: its name, number, unit, foot and line.
 const shippedLook = (where) => where.evaluate(() => {
-  const kanban = document.querySelector('main [data-doc-component="gallery/kanban"]');
   const metric = document.querySelector('main [data-doc-component="gallery/metric"]');
-  const chart = document.querySelector('main [data-doc-component="gallery/chart-view"]');
   const text = (node, selector) => {
     const found = node?.querySelector(selector);
     return found && !found.hidden ? found.textContent : null;
   };
   return {
-    kanban: kanban && {
-      groups: [...kanban.querySelectorAll(".gallery-kanban-group")].map((group) => [group.dataset.value, ...[...group.querySelectorAll(".gallery-kanban-card .gallery-kanban-title")].map((node) => node.textContent)]),
-      writes: kanban.querySelector(".gallery-kanban-groups")?.hasAttribute("data-writes") ?? false,
-      caption: text(kanban, ".gallery-kanban-caption"),
-      line: text(kanban, ".gallery-kanban-line"),
-      fallback: kanban.hasAttribute("data-doc-fallback"),
-    },
     metric: metric && { label: text(metric, ".gallery-metric-label"), number: text(metric, ".gallery-metric-number"), unit: text(metric, ".gallery-metric-unit"), foot: text(metric, ".gallery-metric-foot"), line: text(metric, ".gallery-metric-line") },
-    chart: chart && {
-      title: text(chart, ".gallery-chart-view-title"),
-      bars: [...chart.querySelectorAll(".gallery-chart-view-row")].map((row) => [row.querySelector(".gallery-chart-view-label").textContent, row.querySelector(".gallery-chart-view-value").textContent, Math.round(row.querySelector(".gallery-chart-view-bar").getBoundingClientRect().width)]),
-      line: text(chart, ".gallery-chart-view-line"),
-    },
   };
 });
-
-// A drag of the board's card `title` in the page `where`, pressed on its words: onto the upper part of the
-// card `before`, to the end of the group `group`, or (`stay`) away and back to where it was; with
-// `escape`, Escape pressed before the release.
-async function dragKanban(where, title, { group = null, before = null, stay = false, escape = false } = {}) {
-  const { from, to } = await where.evaluate((title, group, before) => {
-    const host = document.querySelector('main [data-doc-component="gallery/kanban"]');
-    host.scrollIntoView({ block: "center" });
-    const card = (named) => [...host.querySelectorAll(".gallery-kanban-card")].find((node) => node.querySelector(".gallery-kanban-title").textContent === named);
-    const hold = card(title).querySelector(".gallery-kanban-hold").getBoundingClientRect();
-    const from = { x: hold.left + 16, y: hold.top + hold.height / 2 };
-    if (before) {
-      const at = card(before).getBoundingClientRect();
-      return { from, to: { x: at.left + 16, y: at.top + 4 } };
-    }
-    if (group) {
-      const list = host.querySelector(`.gallery-kanban-group[data-value="${group}"] > .gallery-kanban-cards`).getBoundingClientRect();
-      return { from, to: { x: list.left + 16, y: list.bottom - 2 } };
-    }
-    return { from, to: from };
-  }, title, group, before);
-  await where.mouse.move(from.x, from.y);
-  await where.mouse.down();
-  if (stay) await where.mouse.move(from.x + 40, from.y, { steps: 4 });
-  await where.mouse.move(to.x, to.y, { steps: 8 });
-  // The copy of the card lifted under the pointer while it moves (0.3.1), and none once the drag is over.
-  const lifted = await where.evaluate(() => document.querySelectorAll('main [data-doc-component="gallery/kanban"] .gallery-kanban-lift > .gallery-kanban-card').length);
-  if (escape) await where.keyboard.press("Escape");
-  await where.mouse.up();
-  await new Promise((resolve) => setTimeout(resolve, 150));
-  return { lifted, after: await where.evaluate(() => document.querySelectorAll(".gallery-kanban-lift").length) };
-}
-
-// The + in the head of the board's group `name` (act "add"), or the 🗑 ("remove") of the card titled
-// `name`, pressed with the pointer, which rests on the card first (its tools show under it).
-async function pressKanban(where, name, act) {
-  const place = (name, act, part) => {
-    const host = document.querySelector('main [data-doc-component="gallery/kanban"]');
-    const card = act === "add" ? null : [...host.querySelectorAll(".gallery-kanban-card")].find((node) => node.querySelector(".gallery-kanban-title").textContent === name);
-    const node = act === "add" ? host.querySelector(`.gallery-kanban-group[data-value="${name}"] > .gallery-kanban-group-head > .gallery-kanban-add`) : part === "tool" ? card.querySelector(`.gallery-kanban-${act}`) : card;
-    if (part !== "tool") node.scrollIntoView({ block: "center" });
-    const rect = node.getBoundingClientRect();
-    return { x: rect.left + Math.min(20, rect.width / 2), y: rect.top + rect.height / 2 };
-  };
-  const at = await where.evaluate(place, name, act, "card");
-  await where.mouse.move(at.x, at.y);
-  await new Promise((resolve) => setTimeout(resolve, 150));
-  const press = act === "add" ? at : await where.evaluate(place, name, act, "tool");
-  await where.mouse.click(press.x, press.y);
-  await new Promise((resolve) => setTimeout(resolve, 200));
-}
 
 // The settings (its data part, JSON) of the first instance of the block `id` in the file `text`, or null.
 const viewSettings = (text, id) => {
@@ -64782,31 +65730,6 @@ async function typeViewWords(t, where, selector, words, text, { end = "Enter", d
   } else await where.keyboard.press(end);
   await t.sleep(300);
   return { rest, lit, pressed, typing, seen, after: await look() };
-}
-
-// The words of the kit's tooltip once the pointer rests on what `selector` finds in the page `where`, or null.
-async function hoverTip(where, selector) {
-  const at = await where.evaluate((selector) => {
-    const node = document.querySelector(`main ${selector}`);
-    node.scrollIntoView({ block: "center" });
-    const rect = node.getBoundingClientRect();
-    return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
-  }, selector);
-  await new Promise((resolve) => setTimeout(resolve, 250)); // the scroll that brought it to the middle heard first (a scroll takes a tip away)
-  await where.mouse.move(at.x, at.y);
-  await where.waitForSelector(".doc-tip", { visible: true, timeout: 3000 }).catch(() => null);
-  const words = await where.evaluate(() => document.querySelector(".doc-tip")?.textContent ?? null);
-  await where.mouse.move(2, 2);
-  return words;
-}
-
-// The board's ⚙ opened and its 分组依据 set to `column`, as a reader picks it.
-async function groupKanban(t, column) {
-  await t.page.evaluate(() => document.querySelector('main [data-doc-component="gallery/kanban"] .gallery-kanban-gear').click());
-  await t.sleep(150);
-  await t.page.select('main [data-doc-component="gallery/kanban"] .gallery-kanban-strip select', column);
-  await t.sleep(150);
-  await t.page.evaluate(() => document.activeElement?.blur());
 }
 
 // The caret at the end of the cell `column` of the row `row` of the page's first table (its header row 0),

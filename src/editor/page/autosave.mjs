@@ -1349,23 +1349,29 @@ export function reloadView(slug, view = null, notice = null) {
   keep(slug, { ...(view ?? viewNow()), notice });
 }
 
-/** Where the reader is now, as reloadView keeps it: { x, y, top, unit, self, offset, and what keepWith gives }. */
+/**
+ * Where the reader is now, as reloadView keeps it: { x, y, top, unit, self, nth, offset, and what keepWith gives }:
+ * the caret's block (`unit`), whether it is in the block's own text (`self`), else the how-manieth of the block's
+ * editable texts it is in (`nth`: a table's cell, the text of a block held in another), and its offset in that text.
+ */
 export function viewNow() {
   const selection = getSelection();
   const anchor = selection.rangeCount ? selection.anchorNode : null;
   const host = (anchor?.nodeType === 1 ? anchor : anchor?.parentElement)?.closest?.("[contenteditable='true']") ?? null; // an empty block's caret stands in the block itself
   const unit = host?.closest("[data-block-id]");
   let offset = null;
+  let nth = null;
   if (host && unit) {
     const head = document.createRange();
     head.setStart(host, 0);
     head.setEnd(selection.anchorNode, selection.anchorOffset);
     offset = head.toString().length;
+    if (unit !== host) nth = [...unit.querySelectorAll("[contenteditable='true']")].indexOf(host);
   }
   // The element at the window's top too (reading-place.mjs placeIn): the page shown again puts it where it
   // stood, so what an Agent added above moves nothing the reader sees (restoreView); the scroll position
   // where it is gone.
-  return { x: scrollX, y: scrollY, top: typeof window === "object" ? placeIn(window).top : null, unit: unit?.getAttribute("data-block-id") ?? null, self: unit === host, offset, ...kept() };
+  return { x: scrollX, y: scrollY, top: typeof window === "object" ? placeIn(window).top : null, unit: unit?.getAttribute("data-block-id") ?? null, self: unit === host, nth, offset, ...kept() };
 }
 
 let kept = () => ({});

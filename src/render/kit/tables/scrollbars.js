@@ -1,34 +1,35 @@
 // A table's frame scrolls with its own scrollbars hidden (styles/table.css), so a scrollbar never
-// takes room from the columns, whatever the system draws. The kit draws thin ones over the
-// frame instead (a sticky layer at its top-left that takes no room), each thumb a little in from
-// its edge and running only along the part that scrolls: the vertical one down the right edge from
-// below the header (which stays while the rows scroll) to above the bottom corner's curve, the
-// horizontal one along the bottom edge from after a sticky first column or a header column (or the corner's curve)
-// to before the other corner. They show while the pointer is over the frame or it scrolls. A
-// thumb can be dragged; a press beside it on its rail first moves it there. The wheel, touch
-// and keys scroll as before; a frame that scrolls down never bounces past its top or bottom
-// (styles/table.css), the wheel there scrolling what is around it instead (passOn). The same layer draws the frame's line, as big as the frame (as wide by the stylesheet, as tall by placeScrollbars): above
-// everything in it, a header row or column that sticks too (styles/table.css), and a fading right
-// edge while words lie past it (data-more), since the rails show only under the pointer. What the
-// frame hides at rest, it says on itself (noteHidden).
+// takes room from the columns, whatever the system draws. The kit draws thin ones over the frame
+// instead (../scrollbar.js, the kit's one scrollbar; a sticky layer at the frame's top-left that takes
+// no room holds them), each thumb a little in from its edge and running only along the part that
+// scrolls: the vertical one down the right edge from below the header (which stays while the rows
+// scroll) to above the bottom corner's curve, the horizontal one along the bottom edge from after a
+// sticky first column or a header column (or the corner's curve) to before the other corner. Their
+// thumbs follow the scroll on the compositor (the frame names its timelines: styles/table.css): what is
+// placed here is placed when a size changes, never as the frame scrolls. They show while the pointer is
+// over the frame or it scrolls. A thumb can be dragged; a press beside it on its rail first moves it
+// there. The wheel, touch and keys scroll as before; a frame that scrolls down never bounces past its
+// top or bottom (styles/table.css), the wheel there scrolling what is around it instead (passOn).
+// Pushed on past an end where nothing else takes the push, a thumb gives way and springs back
+// (squeeze). The same layer draws the frame's line, as big as the frame (as wide by the stylesheet, as
+// tall by placeScrollbars): above everything in it, a header row or column that sticks too
+// (styles/table.css), and a fading right edge while words lie past it (data-more), since the rails show
+// only under the pointer. What the frame hides at rest, it says on itself (noteHidden).
 
 import { tableHides } from "../../../shared/table-hides.mjs";
+import { RAIL, activity, createScrollbar, railElement, setStyle } from "../scrollbar.js";
 import { fixedFirstCell } from "./sticky.js";
 
+export { setStyle };
+
 const global = globalThis;
-const RAIL = 12; // px: a rail's thickness, what a press takes (its thumb is thinner, against the edge)
 const MIN_THUMB = 24; // px
-const scrollbars = new WeakMap(); // wrapper -> { node, table, frame, x, y, timer, axes, noted, reach }
+const scrollbars = new WeakMap(); // wrapper -> { node, table, frame, x, y, shown, axes, noted, reach, width, wide, queued, notes }
 
-// A property of an element's style set, unless it holds that value already: a value set again to what
-// it is still has the browser lay the page out again before the next read of a size.
-const probe = globalThis.document?.createElement('div');
-export function setStyle(element, property, value) {
-  probe.style.setProperty(property, value); // the value as a style holds it
-  if (element.style.getPropertyValue(property) !== probe.style.getPropertyValue(property)) element.style.setProperty(property, value);
-}
-
-export function drawScrollbars(wrapper, table) {
+// `notes: false`: what the frame hides is not said on it (noteHidden): a frame of a drawing whose columns scroll
+// by design (a database's table view), which gallery qa reads as no table of the document's. With it, `table` may be
+// any element whose size is what scrolls (a database's board, a row of columns): its right edge fades until its end.
+export function drawScrollbars(wrapper, table, {notes = true} = {}) {
   if (scrollbars.has(wrapper)) return;
   // An exported view copy has none (ui.js); a layer left from an earlier run is taken over.
   let node = wrapper.querySelector(':scope > .doc-scrollbars');
@@ -36,8 +37,7 @@ export function drawScrollbars(wrapper, table) {
     node = document.createElement('div');
     node.className = 'doc-scrollbars';
     node.setAttribute('aria-hidden', 'true');
-    node.innerHTML = '<div class="doc-scrollbar doc-scrollbar--y"><div class="doc-scrollbar-thumb"></div></div>'
-      + '<div class="doc-scrollbar doc-scrollbar--x"><div class="doc-scrollbar-thumb"></div></div>';
+    node.append(railElement('y'), railElement('x'));
     wrapper.prepend(node);
   }
   let frame = node.querySelector(':scope > .doc-scrollbars-frame');
@@ -47,15 +47,26 @@ export function drawScrollbars(wrapper, table) {
     node.prepend(frame);
   }
   frame.style.removeProperty('width'); // a width an earlier kit wrote: the line's is the stylesheet's
-  const bars = {node, table, frame, y:node.querySelector('.doc-scrollbar--y'), x:node.querySelector('.doc-scrollbar--x'), timer:0, axes:{}, noted:'', reach:0};
+  // Both rails show while the frame scrolls along either axis or is pushed at an end: one mark, on the layer.
+  const shown = activity(node);
+  const rail = (axis) => {
+    const found = node.querySelector(`:scope > .doc-scrollbar--${axis}`);
+    const bar = createScrollbar(wrapper, axis, {rail:found, least:MIN_THUMB, shown:shown.touch});
+    if (!found) node.append(bar.element);
+    return bar;
+  };
+  const bars = {node, table, frame, y:rail('y'), x:rail('x'), shown, axes:{}, noted:'', reach:0, width:0, wide:false, queued:0, notes};
   scrollbars.set(wrapper, bars);
+  // As it scrolls, only whether its right edge still fades is said again (data-more), read once a frame; the
+  // thumbs follow the scroll by themselves.
   wrapper.addEventListener('scroll', () => {
-    placeScrollbars(wrapper);
-    bars.node.setAttribute('data-active', '');
-    clearTimeout(bars.timer);
-    bars.timer = setTimeout(() => bars.node.removeAttribute('data-active'), 900);
+    if (!bars.wide || bars.queued) return;
+    bars.queued = requestAnimationFrame(() => {
+      bars.queued = 0;
+      fade(wrapper, bars);
+    });
   }, {passive:true});
-  wrapper.addEventListener('wheel', event => passOn(wrapper, event), {passive:true});
+  wrapper.addEventListener('wheel', event => squeeze(wrapper, event, passOn(wrapper, event)), {passive:true});
   // The frame's size and the table's (rows, widths, a Sheet or disclosure shown) set the thumbs. The
   // first layout places them (refreshLayout, which the table's mount queues), and the observer
   // does as it starts watching: nothing is placed before the table has its columns.
@@ -66,8 +77,8 @@ export function drawScrollbars(wrapper, table) {
 
 // Each overflowing axis's rail and thumb. The track runs along the part of the edge that
 // scrolls: not the header row, a sticky first column or a header column (they stay), not the rounded corners, not the other
-// rail. The thumb is as long and as far along as the rows (columns) shown, of those that scroll.
-// Sizes are the table's, not the frame's scroll size, which counts the rails too: a rail left
+// rail. The thumb is as long as the rows (columns) shown, of those that scroll; where it is along its track is the
+// scroll's own (../scrollbar.js). Sizes are the table's, not the frame's scroll size, which counts the rails too: a rail left
 // where a taller frame had it would make the frame seem to scroll. Placed again when the table's
 // content changes (index.js): a header row or header column switched on or off moves where the
 // part that scrolls begins without changing any size. What the frame hides is said again when a size
@@ -95,42 +106,75 @@ export function placeScrollbars(wrapper, {renote = false} = {}) {
   const sizes = `${width}x${height}:${content.width}x${content.height}`;
   if (width > 0 && (renote || sizes !== bars.noted)) {
     bars.noted = sizes;
-    bars.reach = noteHidden(wrapper, table);
+    bars.reach = bars.notes ? noteHidden(wrapper, table) : table.rows ? tableHides(wrapper, table).reach : table.offsetWidth;
   }
-  // The right edge fades while words lie past it (to where the words past the frame's edge at rest
-  // end, as the note measures them): never over the padding of a table a few pixels wider than its
-  // frame, nor over cells past the edge with nothing written there, where the words it covers would
-  // seem cut with nothing more to see.
-  bars.node.toggleAttribute('data-more', x && wrapper.scrollLeft + width < bars.reach - 1);
+  bars.width = width;
+  bars.wide = x;
+  fade(wrapper, bars);
   // How far a rounded corner's curve reaches in from the frame's inner edge.
   const corner = (radius, border) => Math.max(0, (parseFloat(style[radius]) || 0) - (parseFloat(style[border]) || 0));
   const header = table.tHead?.getBoundingClientRect().height || 0;
   const first = fixedFirstCell(table)?.getBoundingClientRect().width || 0;
-  const place = (rail, start, end, fixed, view, total, at) => {
+  const place = (bar, start, end, fixed, view, total) => {
     const track = Math.max(0, end - start);
     const size = Math.min(track, Math.max(MIN_THUMB, track * Math.max(0, view - fixed) / (total - fixed)));
-    const range = total - view;
-    setStyle(rail, '--doc-scrollbar-track', `${track}px`);
-    setStyle(rail, '--doc-scrollbar-thumb-size', `${size}px`);
-    setStyle(rail, '--doc-scrollbar-thumb-at', `${(track - size) * Math.min(1, Math.max(0, at / range))}px`);
-    return {track, size, range};
+    bar.set({track, size, range:total - view});
+    return bar.geometry;
   };
   bars.node.toggleAttribute('data-x', x);
   bars.node.toggleAttribute('data-y', y);
+  // The rails are placed against the frame's inside to the sub-pixel, as the line is: clientWidth and
+  // clientHeight are rounded, and a rail placed by them on a frame 1052.83px high (a zoom, a font size that
+  // gives rows heights between pixels) ended 0.17px below the frame and made a frame that scrolls only
+  // sideways scroll down 1px too, its rows under the header row that stays, the wheel caught there (the
+  // user's 2026-11-23).
+  const inside = insideOf(wrapper, style);
   if (y) {
     const start = Math.max(header, corner('borderTopRightRadius', 'borderTopWidth'));
-    const end = height - Math.max(corner('borderBottomRightRadius', 'borderBottomWidth'), x ? RAIL : 0);
-    setStyle(bars.y, 'left', `${width - RAIL}px`);
-    setStyle(bars.y, 'top', `${start}px`);
-    bars.axes.y = place(bars.y, start, end, header, height, content.height, wrapper.scrollTop);
+    const end = inside.height - Math.max(corner('borderBottomRightRadius', 'borderBottomWidth'), x ? RAIL : 0);
+    setStyle(bars.y.element, 'left', `${inside.width - RAIL}px`);
+    setStyle(bars.y.element, 'top', `${start}px`);
+    bars.axes.y = place(bars.y, start, end, header, height, content.height);
   }
   if (x) {
     const start = Math.max(first, corner('borderBottomLeftRadius', 'borderLeftWidth'));
-    const end = width - Math.max(corner('borderBottomRightRadius', 'borderRightWidth'), y ? RAIL : 0);
-    setStyle(bars.x, 'left', `${start}px`);
-    setStyle(bars.x, 'top', `${height - RAIL}px`);
-    bars.axes.x = place(bars.x, start, end, first, width, content.width, wrapper.scrollLeft);
+    const end = inside.width - Math.max(corner('borderBottomRightRadius', 'borderRightWidth'), y ? RAIL : 0);
+    setStyle(bars.x.element, 'left', `${start}px`);
+    setStyle(bars.x.element, 'top', `${inside.height - RAIL}px`);
+    bars.axes.x = place(bars.x, start, end, first, width, content.width);
   }
+}
+
+// The right edge fades while words lie past it (to where the words past the frame's edge at rest
+// end, as the note measures them): never over the padding of a table a few pixels wider than its
+// frame, nor over cells past the edge with nothing written there, where the words it covers would
+// seem cut with nothing more to see. Said when the frame is placed and, as it scrolls, once a frame
+// (the scroll's place read, the attribute written only when it changes).
+function fade(wrapper, bars) {
+  bars.node.toggleAttribute('data-more', bars.wide && wrapper.scrollLeft + bars.width < bars.reach - 1);
+}
+
+// An element's inside (its padding box, what clientWidth and clientHeight round), px to the sub-pixel: its
+// border box (outerSize) less its borders, where that is within a pixel of its client size (what rounding
+// makes of it); its client size where its style gives no length, or one that is not its laid-out size (a
+// layout of no browser's, a DOM of a test).
+function insideOf(element, style) {
+  const borders = (names) => names.reduce((sum, name) => sum + (parseFloat(style[name]) || 0), 0);
+  const fine = (outer, edges, client) => (outer !== null && Math.abs(outer - borders(edges) - client) < 1 ? outer - borders(edges) : client);
+  return {
+    width: fine(outerSize(element, style, 'width'), ['borderLeftWidth', 'borderRightWidth'], element.clientWidth),
+    height: fine(outerSize(element, style, 'height'), ['borderTopWidth', 'borderBottomWidth'], element.clientHeight),
+  };
+}
+
+// An element's border box width or height, px to the sub-pixel: its computed length (the layout's own, not
+// rounded) with its padding and borders, unless it is a border box's already; null where it has none.
+function outerSize(element, style, side) {
+  const length = parseFloat(style[side]);
+  if (!Number.isFinite(length)) return null;
+  if (style.boxSizing === 'border-box') return length;
+  const edges = side === 'width' ? ['paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'] : ['paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'];
+  return length + edges.reduce((sum, name) => sum + (parseFloat(style[name]) || 0), 0);
 }
 
 // An element's border box height, px to the sub-pixel: its computed height (the layout's own, not
@@ -165,49 +209,46 @@ function noteHidden(wrapper, table) {
   return hides.reach;
 }
 
+// The wheel over a frame (its thumbs giving way past an end: ../scroll-squeeze.js; pushed on past an end, by the
+// wheel or a touchpad's swipe or by a drag of the thumb, the frame does not bounce, styles/table.css, its thumb is
+// squeezed from the end it is pushed against instead and springs back the moment the pushing stops: the user's
+// 2026-11-23): every event along an axis that has a rail goes to that rail, at the end or not (it tells a hand from a
+// touchpad's momentum by the run of them); at the end, what the frame could not take of it pushes the thumb. Sideways
+// when its sideways part is the larger or Shift turns it sideways, the bottom thumb taking the push at either end;
+// down otherwise, where the frame's down axis is the page's at its ends (passOn): the right thumb takes the wheel's
+// push only where nothing around the frame could take it (`passed`: false, nothing moved; null, the frame's own).
+function squeeze(wrapper, event, passed) {
+  const bars = scrollbars.get(wrapper);
+  if (!bars || event.ctrlKey) return;
+  const unit = (page) => (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? page : 1);
+  const sideways = (event.deltaX || (event.shiftKey ? event.deltaY : 0)) * unit(wrapper.clientWidth);
+  const down = event.shiftKey ? 0 : event.deltaY * unit(wrapper.clientHeight);
+  const axis = sideways && (Math.abs(sideways) >= Math.abs(down) || event.shiftKey) ? 'x' : down ? 'y' : null;
+  if (!axis || !bars.node.hasAttribute(`data-${axis}`)) return;
+  const delta = axis === 'x' ? sideways : down;
+  const bar = bars[axis];
+  bar.push(delta, {time:event.timeStamp || undefined, end:bar.atEnd(Math.sign(delta)) && (axis === 'x' || passed === false)});
+}
+
 // The wheel at a frame's top or bottom, where it scrolls down but must not bounce (no scroll goes
 // on from it: overscroll-behavior-block none, styles/table.css): what is around it scrolls by it,
-// as the browser would have, the page or a scrolling box it stands in.
+// as the browser would have, the page or a scrolling box it stands in. Returns whether that moved
+// (false where it was at its end too), or null where the frame takes the wheel itself.
 function passOn(wrapper, event) {
-  if (event.ctrlKey || !event.deltaY || getComputedStyle(wrapper).overscrollBehaviorBlock !== 'none') return;
+  if (event.ctrlKey || !event.deltaY || getComputedStyle(wrapper).overscrollBehaviorBlock !== 'none') return null;
   const atTop = wrapper.scrollTop <= 0;
-  const atEnd = wrapper.scrollTop + wrapper.clientHeight >= wrapper.scrollHeight - 1;
-  if (!(event.deltaY < 0 ? atTop : atEnd)) return;
+  const atBottom = wrapper.scrollTop + wrapper.clientHeight >= wrapper.scrollHeight - 1;
+  if (!(event.deltaY < 0 ? atTop : atBottom)) return null;
   const delta = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? innerHeight : 1);
   for (let node = wrapper.parentElement; node && node !== document.body; node = node.parentElement) {
     const {overflowY} = getComputedStyle(node);
-    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight + 1) return node.scrollBy({top:delta, behavior:'instant'});
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight + 1) {
+      const was = node.scrollTop;
+      node.scrollBy({top:delta, behavior:'instant'});
+      return node.scrollTop !== was;
+    }
   }
+  const was = global.scrollY;
   global.scrollBy({top:delta, behavior:'instant'});
+  return global.scrollY !== was;
 }
-
-// A press on a rail is the scrollbar's, as on a native one: neither the page nor a preview's
-// editor hears it (window, capturing, comes before both), and it selects no text. On an edge
-// the preview's editor resizes the table from (it marks the page with data-ge-resize), the
-// press stays the editor's.
-global.addEventListener('pointerdown', event => {
-  const rail = event.button === 0 ? event.target.closest?.('.doc-scrollbar') : null;
-  const wrapper = rail?.parentElement.parentElement;
-  if (!scrollbars.has(wrapper) || document.documentElement.hasAttribute('data-ge-resize')) return;
-  event.preventDefault();
-  event.stopPropagation();
-  const vertical = rail.classList.contains('doc-scrollbar--y');
-  const property = vertical ? 'scrollTop' : 'scrollLeft';
-  const along = pointer => vertical ? pointer.clientY - rail.getBoundingClientRect().top : pointer.clientX - rail.getBoundingClientRect().left;
-  const {track = 0, size = 0, range = 0} = scrollbars.get(wrapper).axes[vertical ? 'y' : 'x'] ?? {};
-  const perPixel = track > size ? range / (track - size) : 0;
-  if (event.target === rail) wrapper[property] = (along(event) - size / 2) * perPixel; // beside the thumb: it goes there
-  const start = {pointer:along(event), scroll:wrapper[property]};
-  rail.setAttribute('data-drag', '');
-  rail.setPointerCapture?.(event.pointerId);
-  const move = moved => { wrapper[property] = start.scroll + (along(moved) - start.pointer) * perPixel; };
-  const end = () => {
-    rail.removeAttribute('data-drag');
-    rail.removeEventListener('pointermove', move);
-    rail.removeEventListener('pointerup', end);
-    rail.removeEventListener('pointercancel', end);
-  };
-  rail.addEventListener('pointermove', move);
-  rail.addEventListener('pointerup', end);
-  rail.addEventListener('pointercancel', end);
-}, true);

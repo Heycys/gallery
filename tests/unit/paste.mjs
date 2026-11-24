@@ -435,6 +435,18 @@ const { joinedHtml } = await import("../../src/editor/page/clipboard/own/blocks.
 assert.equal(joinedHtml(colored), '<p><span class="doc-text-red">红</span><strong>粗</strong></p><p>二</p>', "a block's text, colors as the kit's");
 assert.equal(joinedHtml([{ type: "bullets", blocks: [{ type: "item", html: "一", lists: [{ type: "numbers", blocks: [{ type: "item", html: "一.一", lists: [] }] }] }] }, { type: "code", text: "a<b\nc" }, { type: "math", tex: "x^2" }, { type: "table", rows: [["甲", "乙"]] }, { type: "divider" }]),
   '<p>一</p><p>一.一</p><p>a&lt;b</p><p>c</p><p><span class="doc-math-inline">\\(x^2\\)</span></p><p>甲</p><p>乙</p>', "items with their lists, code's lines, a formula, a table's cells; a divider none");
+// Into a table's cell (`lists`): a list a list of the cell's, a list it holds its items after its item, what
+// else an item holds its lines; items copied on their own their list's; a numbered list from 3 its lines with their numbers.
+assert.equal(joinedHtml([{ type: "heading2", html: "题" }, { type: "bullets", blocks: [{ type: "item", html: "一", lists: [{ type: "numbers", blocks: [{ type: "item", html: "一.一", lists: [] }] }, { type: "paragraph", html: "项里" }] }] }, { type: "item", html: "单独", list: "numbers" }, { type: "numbers", start: "3", blocks: [{ type: "item", html: "三", lists: [] }] }, { type: "todo", blocks: [{ type: "item", html: "待办", checked: true, lists: [] }] }], { lists: true }),
+  "<p>题</p><ul><li>一<br>项里</li><li>一.一</li></ul><ol><li>单独</li></ol><p>3. 三</p><ul><li>待办</li></ul>", "a cell's lists");
+// Another program's plain text in a cell: its lines as they are, "- " lines a list's, 1. 2. in order a numbered one's, inline Markdown read.
+{
+  const { cellText } = await import("../../src/editor/page/clipboard/import/to-blocks.mjs");
+  assert.equal(cellText("第一\n第二\n\n第三\n"), "第一<br>第二<br><br>第三", "its lines, an empty one kept, the last line break none");
+  assert.equal(cellText("- 子一\n* **子二**\n尾"), "<ul><li>子一</li><li><strong>子二</strong></li></ul>尾", "bulleted lines a list, its marks read");
+  assert.equal(cellText("1. 甲\n2. 乙\n4. 丁\n2026. 年"), "<ol><li>甲</li><li>乙</li></ol>4. 丁<br>2026. 年", "numbered from 1 in order a list; a number out of order or another start stays as written");
+  assert.equal(cellText("a\n\n- x"), "a<br><br><ul><li>x</li></ul>", "an empty line above a list a line break of its own");
+}
 // Plain text read as Markdown: a numbered list starts at its first line's number, so nothing a line began with is lost
 // ("2026. 这一年…" a list numbered from 2026, as typing it makes one); 1 is no start, and later numbers only count on.
 {

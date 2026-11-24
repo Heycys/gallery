@@ -63,7 +63,7 @@ export interface ExtensionEntry { id: string; title: string; icon?: string; url?
 export interface ExtensionMeta { id: string; file?: string; revision?: string; title: string; icon?: string; entries: ExtensionEntry[]; count: number; error?: { message?: string; text?: string; values?: unknown[] }; owner?: string; column?: string }
 
 /** 文档的字体与布局（src/shared/document-look.mjs）：字体、字体大小、正文间距、正文宽度，默认的那几项不写 */
-export interface DocLook { font?: 'serif' | 'mixed'; size?: 'small' | 'large'; spacing?: 'compact' | 'loose'; width?: 'narrow' | 'wide'; full?: 'full'; tables?: 'wide' }
+export interface DocLook { font?: 'serif' | 'mixed'; size?: 'small' | 'large'; spacing?: 'compact' | 'loose'; width?: 'narrow' | 'wide'; full?: 'full'; tables?: 'wide'; databases?: 'wide' }
 
 /** 自定义块的清单和内置块的名字：两种语言，界面用哪种显示哪种 */
 export interface BothLanguages { zh: string; en: string }

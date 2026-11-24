@@ -1,6 +1,6 @@
 import { allocateColumnWidths } from "./auto-column-widths.ts";
 import { elementFor, inferColumnSemantics, joinCodeRuns, splitCodeRuns, wrapperOf } from "./cells.js";
-import { clearAcross } from "./across.js";
+import { WIDE, clearAcross } from "./across.js";
 import { markEdges } from "./edges.js";
 import { applyLayoutDefaults, fontsChange, forgetMeasures, idleLayout, layoutObservers, layouts, pendingLayouts, queueLayout, refreshLayout } from "./layout.js";
 import { controllers, heldOrder, makeSortable } from "./sort.js";
@@ -98,7 +98,14 @@ global.DocKit.component({
       queueLayout(table);
     });
     for (const node of [table, wrapperOf(table)]) if (node) switched.observe(node, { attributes: true, attributeFilter: ["data-number-columns"] });
-    signal.addEventListener("abort", () => switched.disconnect());
+    // Its own 宽表格 switched on its frame (the page editor's block menu, undone too; an Agent's write the page took
+    // in): laid out again, past the text or back in it (across.js).
+    const widened = new MutationObserver(() => queueLayout(table));
+    if (wrapperOf(table)) widened.observe(wrapperOf(table), { attributes: true, attributeFilter: [WIDE] });
+    signal.addEventListener("abort", () => {
+      switched.disconnect();
+      widened.disconnect();
+    });
     return {
       update(reason, detail, { quiet = false } = {}) {
         if (reason === "layout") {

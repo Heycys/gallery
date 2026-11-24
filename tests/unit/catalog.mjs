@@ -17,6 +17,7 @@ import { createCatalogWatch } from "../../src/server/catalog-watch.mjs";
 import { createComponentSettings } from "../../src/server/component-settings.mjs";
 import { BLOCK_ICON, CODE_ICON, SECTION_ICON } from "../../src/editor/components/icons.mjs";
 import { followSettings } from "../../src/editor/components/installed/served.mjs";
+import { COMPONENTS } from "../../src/shared/components/index.mjs";
 import { inDocumentMenus, unlistedBy } from "../../src/shared/components/installed.mjs";
 import { projectRoot } from "../../src/shared/paths.mjs";
 import { runJob } from "../../src/transfer/jobs.mjs";
@@ -109,7 +110,11 @@ try {
     assert.equal(readCatalog().packages.get("local/full").template, '<div data-doc-component="local/full"></div>', "a template has no byte-order mark, as a manifest has none");
     fs.rmSync(folderOf("local/full"), { recursive: true });
     for (const id of KIT_ASSETS) assert.ok(ASSETS.some((asset) => asset.id === id), `${id} is a file of the kit's`);
-    assert.deepEqual(ASSETS.filter((asset) => !KIT_ASSETS.has(asset.id) && !asset.always && !asset.added && !asset.page).map(({ id }) => id), [], "every file of the kit's a page does not have anyway can be asked for (a custom page's own, the board's, on every custom page and asked for by none)");
+    // A block of the kit's own may have files of its own that a page holding one loads (its description's
+    // `assets`: the database's, a React drawing no package has a use for).
+    const blocksOwn = new Set(COMPONENTS.flatMap((component) => component.assets ?? []));
+    assert.deepEqual(ASSETS.filter((asset) => !KIT_ASSETS.has(asset.id) && !asset.always && !asset.added && !asset.page && !blocksOwn.has(asset.id)).map(({ id }) => id), [], "every file of the kit's a page does not have anyway can be asked for (a custom page's own, the board's, on every custom page and asked for by none), or is a block's of the kit's own");
+    assert.deepEqual([...blocksOwn].filter((id) => !KIT_ASSETS.has(id)).sort(), ["database", "database-styles"], "the files only a block of the kit's own loads");
   }
 
   // ---------- a package that does not load ----------

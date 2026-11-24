@@ -24,6 +24,7 @@ import { make as makeCode } from "../../src/editor/components/code/page.mjs";
 import { make as makeMath } from "../../src/editor/components/math/page.mjs";
 import { make as makeSheets } from "../../src/editor/components/sheets/page.mjs";
 import { make as makeTable } from "../../src/editor/components/table/page.mjs";
+import { make as makeDatabase } from "../../src/editor/components/database/page.mjs";
 import { inlineMark, markdownShortcut } from "../../src/editor/page/markdown/rules.mjs";
 import { guessLanguage } from "../../src/shared/code-languages.mjs";
 import { foldRegions, hiddenLines } from "../../src/render/kit/code-folds.js";
@@ -82,7 +83,7 @@ const SRC = `<main class="doc-page" data-doc-id="demo">
 
 // "Open the preview, let the kit enhance it, enter edit mode."
 // The types made on their page objects, which the editor hands to the engines.
-const PAGES = { code: { create: makeCode, textOf() {} }, math: { create: makeMath }, sheets: { create: makeSheets }, table: { create: makeTable } };
+const PAGES = { code: { create: makeCode, textOf() {} }, math: { create: makeMath }, sheets: { create: makeSheets }, table: { create: makeTable }, database: { create: makeDatabase } };
 connectPages(PAGES);
 
 function openPage(source) {
@@ -1897,6 +1898,25 @@ const WIRED = `<main>
   assert.deepEqual(pastedLines(clip, " 词语 ", { edges: { start: true, end: true } }).map(html), [" 词语 "], "kept where edges says");
   assert.deepEqual(pastedLines(clip, "\n  词语\t", { edges: { start: false, end: true } }).map(html), ["词语 "], "the end alone, one space");
   assert.deepEqual(pastedLines(clip, " 甲 <br> 乙 ", { edges: { start: true, end: true } }).map(html), [" 甲", "乙 "], "the first line's start and the last's end, none by the line break");
+  // With `lineBreaks` (a cell's text, text copied in a block): every line break one, an empty line kept, one in a mark too.
+  const broken = (text) => pastedLines(clip, text, { lineBreaks: true }).map(html);
+  assert.deepEqual(broken("a<br><br>b"), ["a", "", "b"], "an empty line between two");
+  assert.deepEqual(broken("a<br>"), ["a"], "a line break ending the text no line");
+  assert.deepEqual(broken("<br>a<br><br>"), ["", "a", ""], "empty lines at its ends kept, for the one who reads it to keep or not");
+  assert.deepEqual(broken("<strong>x<em>a<br>b</em>y</strong>"), ["<strong>x<em>a</em></strong>", "<strong><em>b</em>y</strong>"], "a line break in marks: the marks on both lines");
+  assert.deepEqual(broken("<p>a</p>\n<p>b</p><br><p>c</p>"), ["a", "b", "", "c"], "the markup's white space no line, a line break between blocks an empty one");
+  assert.deepEqual(pastedLines(clip, "a<br><br>b<strong>c<br>d</strong>").map(html), ["a", "b<strong>c d</strong>"], "without it, as before");
+  // A cell's text made of what is pasted: its lines, its lists the cell's (components/table/index.mjs cellNodes).
+  const { cellNodes, cellBlocks } = await import("../../src/editor/components/table/index.mjs");
+  const cell = (text) => html(cellNodes(clip, text, (each) => pastedLines(clip, each, { lineBreaks: true })));
+  assert.equal(cell("a<ul><li>一</li><li><strong>二</strong></li></ul>后<ol><li>甲</li></ol>"), "a<ul><li>一</li><li><strong>二</strong></li></ul>后<ol><li>甲</li></ol>", "a cell's lists as they were");
+  assert.equal(cell("a<br><br><ul><li>x</li></ul><br>b"), "a<br><br><ul><li>x</li></ul><br>b", "an empty line above a list and below it");
+  assert.equal(cell("<p>x<ul><li>a<ul><li>b</li></ul></li><li></li></ul>y</p>"), "x<ul><li>a</li><li>b</li><li><br></li></ul>y", "a list in a paragraph on lines of its own, one in an item its items after it, an empty item its line break");
+  assert.equal(cell("<br>a<br><br>"), "a", "the empty lines at its ends go");
+  assert.deepEqual(cellBlocks(clip, "前<ul><li>一</li></ul><br>后<ol><li>甲</li></ol>"), [
+    { type: "paragraph", html: "前" }, { type: "bullets", blocks: [{ type: "item", html: "一", lists: [] }] }, { type: "paragraph", html: "<br>后" }, { type: "numbers", blocks: [{ type: "item", html: "甲", lists: [] }] },
+  ], "a cell's text with lists as blocks where blocks go");
+  assert.equal(cellBlocks(clip, "a<br>b"), null, "none for text with no list");
   // Pasted into a paragraph, the lines become blocks and save in the kit's markup.
   const pastePage = openPage(source);
   const target = text(pastePage, "第三段");
@@ -3284,6 +3304,84 @@ const WIRED = `<main>
   assert.equal(part.innerHTML, "丙", "on no stack: the newer write undoes still");
   history.undo();
   assert.equal(part.innerHTML, "丙", "and nothing made before it undoes the part");
+}
+
+// A component's writes of one gesture (`merge`) fold into one step only on its own block's parts: two blocks
+// written by the same key within a second are two steps. Writes that leave the parts as the gesture found
+// them (typed and taken back, Esc) are no step, the gesture's several steps too (the writer paused): the next
+// undo undoes what came before.
+{
+  const { createHistory } = await import("../../src/editor/page/history.mjs");
+  const { document } = new JSDOM('<body><div id="a"><table id="pa"></table></div><div id="b"><table id="pb"></table></div></body>').window;
+  const history = createHistory({ changed() {}, beforeUndo() {}, blocks: () => ({ select() {}, clear() {} }), afterText() {} });
+  const write = (part, html, merge) => {
+    const was = part.innerHTML;
+    part.innerHTML = html;
+    return history.sourceStep([[part, was]], { merge });
+  };
+  const a = document.getElementById("pa");
+  const b = document.getElementById("pb");
+  write(a, "<tbody><tr><td>甲</td></tr></tbody>");
+  write(a, "<tbody><tr><td>甲1</td></tr></tbody>", "cell-r1-t#0");
+  write(b, "<tbody><tr><td>乙1</td></tr></tbody>", "cell-r1-t#0");
+  history.undo();
+  assert.deepEqual([a.textContent, b.textContent], ["甲1", ""], "two blocks of the same key: one undo takes back the second's write alone");
+  history.undo();
+  assert.deepEqual([a.textContent, b.textContent], ["甲", ""], "and the next the first's");
+  write(a, "<tbody><tr><td>甲2</td></tr></tbody>", "g#1");
+  write(a, "<tbody><tr><td>甲</td></tr></tbody>", "g#1");
+  history.undo();
+  assert.equal(a.textContent, "", "typed and taken back: no step; the undo undoes what came before");
+  history.redo();
+  const realNow = Date.now;
+  let now = realNow();
+  Date.now = () => now;
+  try {
+    write(a, "<tbody><tr><td>甲3</td></tr></tbody>", "g#2");
+    now += 1500; // a pause: a second step of the gesture
+    write(a, "<tbody><tr><td>甲34</td></tr></tbody>", "g#2");
+    now += 100;
+    write(a, "<tbody><tr><td>甲</td></tr></tbody>", "g#2");
+  } finally {
+    Date.now = realNow;
+  }
+  history.undo();
+  assert.equal(a.textContent, "", "a gesture of two steps that ends where it began: both gone");
+  // One that ends where its last step began (typed, a pause, typed and taken back to the pause): that step,
+  // which changes nothing, goes; the one before it, which changed something, stays.
+  history.redo();
+  write(a, "<tbody><tr><td>乙</td></tr></tbody>");
+  now = realNow();
+  Date.now = () => now;
+  try {
+    write(a, "<tbody><tr><td>乙3</td></tr></tbody>", "g#3");
+    now += 1500;
+    write(a, "<tbody><tr><td>乙34</td></tr></tbody>", "g#3");
+    now += 100;
+    write(a, "<tbody><tr><td>乙3</td></tr></tbody>", "g#3");
+  } finally {
+    Date.now = realNow;
+  }
+  history.undo();
+  assert.equal(a.textContent, "乙", "back where the gesture paused: one undo takes back what was typed before the pause");
+  history.undo();
+  assert.equal(a.textContent, "甲", "and the next what came before the gesture");
+  // A step of the gesture that changed something and was then changed back by a later step of its own is
+  // never one that changes nothing: two parts, one back where it was, the other not.
+  now = realNow();
+  Date.now = () => now;
+  try {
+    const was = [a.innerHTML, b.innerHTML];
+    a.innerHTML = "<tbody><tr><td>丙</td></tr></tbody>";
+    b.innerHTML = "<tbody><tr><td>丁</td></tr></tbody>";
+    history.sourceStep([[a, was[0]], [b, was[1]]], { merge: "g#4" });
+    now += 100;
+    write(a, was[0], "g#4");
+  } finally {
+    Date.now = realNow;
+  }
+  history.undo();
+  assert.deepEqual([a.textContent, b.textContent], ["甲", ""], "one part back, the other not: the step stays, its undo takes the other back");
 }
 
 // A unit the file dropped while the page still shows it is marked as made on the page, of its own

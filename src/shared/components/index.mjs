@@ -3,6 +3,7 @@ import callout from "./callout.mjs";
 import chart from "./chart.mjs";
 import code from "./code.mjs";
 import columns from "./columns.mjs";
+import database from "./database.mjs";
 import details from "./details.mjs";
 import diff from "./diff.mjs";
 import dialog from "./dialog.mjs";
@@ -98,7 +99,7 @@ export const COMPONENTS = [
   paragraph, heading, list, quote, code, divider, math, // basic blocks
   section, highlight, callout, details, dialog, sheets, table, columns, // containers
   figure, chart, image, file, bookmark, embed, // cards (a figure: a chart or a drawing of the report's own; an image, a file, a bookmark, an embed)
-  widget, diff, icon, installed, // whole blocks (the page's icon one, in the header; an instance of a component package)
+  widget, diff, database, icon, installed, // whole blocks (the page's icon one, in the header; a database; an instance of a component package)
   state, // reading state, bound to blocks of any kind
 ];
 
@@ -137,12 +138,15 @@ export const EVENTS = {
   "doc-theme-request": "a workbench asks for a theme (ui.js listens)",
   "doc-look-request": "the document's look is asked of the page (字体与布局: the page's session for the workbench, the preview's live reload for doc.json written again; ui.js puts it on <html>, src/shared/document-look.mjs)",
   "doc-look-change": "the look the page shows changed (ui.js): the page editor's session tells the workbench",
+  "doc-wide-follow": "the page's 宽表格 or 宽多维表格 flipped in the workbench (the page editor's session, `look` with `follow`): the editor takes every table's (database's) own data-doc-wide away, one undo step",
   "doc-layout-change": "a card's size changed where widths do not tell (the editor, a custom page's canvas), or the document's look changed (ui.js)",
   "doc-workspace-change": "what the workspace holds changed, the kind its detail (the page's live script, as the server's \"data <kind>\" says it): the kit tells the instances that hear data and read that kind",
   "doc-todo-set": "a block's context.workspace.setTodo asks whoever shows the page to check a to-do of a document (cancelable: a custom page's board or a document's editor cancels it and answers from the workspace's service)",
   "doc-open-request": "a block's context.workspace.open asks to open a document or a custom page (cancelable: the page's session for the workbench answers it, else the kit goes there)",
   "doc-editable": "the page takes what a component writes from now on (the editor)",
   "doc-component-edit": "a component's context.edit asks to write a part: the editor cancels it to say it took the edit, the kit writing no file (on the instance)",
+  "doc-flush": "the page editor asks a database to write what its drawing holds back unwritten, at once, before it returns: before an undo or a redo, a close or a hide (on the database)",
+  "doc-holding": "a database's drawing holds back what it has not written (detail true) or no longer (false): the page counts it as unsaved, is not shown again meanwhile, and asks doc-flush for it (on the database, bubbling)",
   "doc-table-intent": "a view's context.table() asks to change the table it reads (set a cell, move, add or take out a row), or whether it would take such a change now (canEdit, op check): the editor cancels it to say it made the change (or would), one undo step, the kit writing nothing (on the instance)",
   "doc-settings-changed": "what gallery.json says of the components changed (the page's event stream, its settings line: hidden, disabled, shown, the consents to the net, unlisted, the packs off and listed): the editor's menus follow it, and the kit starts again an instance whose block's consent changed (runtime/net.js)",
   "doc-net-fetch": "a block's context.fetch asks whoever serves the page to fetch for it (runtime/net.js sends it; the server's live script cancels it and answers from its net route)",
@@ -184,9 +188,13 @@ export const FLOW_BLOCKS = `${FLOWS.join(", ")}, :is(${GROUPING_FLOWS.join(", ")
  * component of the kit has it, so the runtime carries none).
  */
 export const RUNTIME_FIELDS = ["match", "runtime", "schema", "needs"];
+// The parts of a component of the kit's whose drawing writes some (`edit: "data"`: a database's JSON and
+// table), which its context reads and writes as a package's do (runtime/kernel.js); a package's parts its
+// catalog tells, and no other component's are carried.
+const writesData = (component) => Object.values(component.parts ?? {}).some((part) => part.edit === "data");
 export const runtimeDescriptions = (components = COMPONENTS) => components
   .filter((component) => RUNTIME_FIELDS.some((field) => component[field] !== undefined))
-  .map((component) => Object.fromEntries([["id", component.id], ...RUNTIME_FIELDS.filter((field) => component[field] !== undefined).map((field) => [field, component[field]])]));
+  .map((component) => Object.fromEntries([["id", component.id], ...RUNTIME_FIELDS.filter((field) => component[field] !== undefined).map((field) => [field, component[field]]), ...(writesData(component) ? [["parts", component.parts]] : [])]));
 
 export const componentOf = (id) => COMPONENTS.find((component) => component.id === id) ?? null;
 
@@ -381,7 +389,7 @@ export function componentProblems(components = COMPONENTS) {
     }
     if (component.category && component.within) problems.push(`component "${component.id}" is a block of its own or a block's content, not both`);
     for (const [name, part] of Object.entries(component.parts ?? {})) {
-      if (!["text", "flow", "none"].includes(part.edit)) problems.push(`component "${component.id}": part "${name}" edits as "${part.edit}" (text, flow or none)`);
+      if (!["text", "flow", "data", "none"].includes(part.edit)) problems.push(`component "${component.id}": part "${name}" edits as "${part.edit}" (text, flow, data or none)`);
     }
     for (const { a, b } of component.pairs ?? []) {
       for (const name of [a, b]) if (!component.parts?.[name]) problems.push(`component "${component.id}" pairs an unknown part "${name}"`);

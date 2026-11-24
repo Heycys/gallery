@@ -95,7 +95,7 @@ try {
   const nothing = await gallery("list");
   assert.equal(nothing.code, 0);
   assert.match(nothing.stdout, /No custom blocks yet\..*gallery block add <name>.*gallery block new <id>/);
-  assert.match(nothing.stdout, /Gallery's own blocks, to add as they are \(no check or try needed\):\ngallery\/chart-view  图表 \/ Chart  \d+\.\d+\.\d+  \(documents\)\n  说明：.*\n  gallery block add chart-view\n/, "and Gallery's own, each with its line");
+  assert.match(nothing.stdout, /Gallery's own blocks, to add as they are \(no check or try needed\):\n(?:.*\n)*?gallery\/metric  指标 \/ Metric  \d+\.\d+\.\d+  \(documents\)\n  说明：.*\n  gallery block add metric\n/, "and Gallery's own, each with its line");
   assert.ok(nothing.stdout.startsWith(`工作区：${path.resolve(workspace)}`), nothing.stdout);
 
   // new, with the default scope; what it says next names the check.
@@ -273,8 +273,8 @@ try {
     [["list", "x"], /^gallery block list takes nothing else\./],
     [["show"], /^gallery block show takes one id\./],
     [["show", "a", "b"], /^gallery block show takes one id\./],
-    [["add"], /^gallery block add takes one name of Gallery's own blocks: card, chart-card, chart-view, countdown, habit, heatmap, kanban, metric, note, recent, static, stats, today, todos, weather, gallery-soft\/countdown, gallery-soft\/habit, gallery-soft\/heatmap, gallery-soft\/note, gallery-soft\/recent, gallery-soft\/static, gallery-soft\/stats, gallery-soft\/today, gallery-soft\/todos, gallery-soft\/weather\./],
-    [["add", "nope"], /^No block of Gallery's own is called nope: card, chart-card, chart-view, countdown, habit, heatmap, kanban, metric, note, recent, static, stats, today, todos, weather/],
+    [["add"], /^gallery block add takes one name of Gallery's own blocks: card, chart-card, countdown, habit, heatmap, metric, note, recent, static, stats, today, todos, weather, gallery-soft\/countdown, gallery-soft\/habit, gallery-soft\/heatmap, gallery-soft\/note, gallery-soft\/recent, gallery-soft\/static, gallery-soft\/stats, gallery-soft\/today, gallery-soft\/todos, gallery-soft\/weather\./],
+    [["add", "nope"], /^No block of Gallery's own is called nope: card, chart-card, countdown, habit, heatmap, metric, note, recent, static, stats, today, todos, weather/],
     [["show", "a", "--recipe", "card"], /^--recipe goes with new, not show\./],
     [["new", "a", "--recipe", "card", "--script"], /^--recipe makes a block of what Gallery's card holds: --script goes with a new block of none\./],
     [["new", "a", "--recipe", "card", "--data"], /^--recipe makes a block of what Gallery's card holds: --data goes with a new block of none\./],
@@ -285,7 +285,7 @@ try {
     [["show", "a", "--data"], /^--data goes with new, not show\./],
     [["check", "a", "--page"], /^--page goes with new, not check\./],
     [["show", "a", "--replace"], /^--replace goes with try, not show\./],
-    [["new", "a", "--recipe", "nope"], /^No block of Gallery's own is called nope: card, chart-card, chart-view, countdown, habit, heatmap, kanban, metric, note, recent, static, stats, today, todos, weather, gallery-soft\/countdown, gallery-soft\/habit, gallery-soft\/heatmap, gallery-soft\/note, gallery-soft\/recent, gallery-soft\/static, gallery-soft\/stats, gallery-soft\/today, gallery-soft\/todos, gallery-soft\/weather\./],
+    [["new", "a", "--recipe", "nope"], /^No block of Gallery's own is called nope: card, chart-card, countdown, habit, heatmap, metric, note, recent, static, stats, today, todos, weather, gallery-soft\/countdown, gallery-soft\/habit, gallery-soft\/heatmap, gallery-soft\/note, gallery-soft\/recent, gallery-soft\/static, gallery-soft\/stats, gallery-soft\/today, gallery-soft\/todos, gallery-soft\/weather\./],
     [["new", "gallery/mine"], /^The scope gallery\/ is kept for Gallery's own blocks: give yours another \(local\/<name>, or a <name> alone\)\./],
     [["new", "gallery/card"], /^The scope gallery\/ is kept for Gallery's own blocks: .*; gallery block add card puts Gallery's in, and gallery block new <id> --recipe card starts one of yours from it\./],
     [["show", "a", "--script"], /^--script goes with new, not show\./],
@@ -335,7 +335,7 @@ try {
     const again = await gallery("add", "gallery/metric");
     assert.deepEqual([again.code, again.stdout.trim()], [0, `gallery/metric 1.3.0 is in already, as Gallery ships it: ${folderOf("gallery/metric")}`], "by its id too");
     const listedNow = (await gallery("list")).stdout;
-    assert.ok(listedNow.includes("gallery/metric  指标 / Metric\n  版本：1.3.0（available）\n") && !listedNow.includes("gallery block add metric") && listedNow.includes("gallery block add chart-view"), listedNow);
+    assert.ok(listedNow.includes("gallery/metric  指标 / Metric\n  版本：1.3.0（available）\n") && !listedNow.includes("gallery block add metric") && listedNow.includes("gallery block add countdown"), listedNow);
     assert.equal((await run(process.execPath, [bin, "--workspace", workspace, "block", "show", "gallery/metric"], { env: { ...process.env, GALLERY_DEFAULT_WORKSPACE: workspace, GALLERY_NO_BROWSER: "1" } })).stdout, (await gallery("show", "gallery/metric")).stdout, "gallery block and gallery component say the same");
     // As an older Gallery added it: updated, a file the new one has not taken out.
     const older = JSON.stringify({ ...record, "gallery/metric": { version: "0.9.0", fingerprint: "" } });

@@ -365,7 +365,8 @@ document in the trash.`,
 
   set: `Usage: gallery set <document> [--title "<title>"] [--icon <icon>|none] [--description "<text>"]
                          [--font sans|serif|mixed] [--size small|default|large] [--spacing compact|default|loose]
-                         [--width narrow|default|wide] [--full on|off] [--wide-tables on|off] [--all]
+                         [--width narrow|default|wide] [--full on|off] [--wide-tables on|off]
+                         [--wide-databases on|off] [--all]
 Changes a document's title, page icon, description or look as the workbench's 重命名, the page's icon
 picker and its 字体与布局 menu do: the title in doc.html (the h1 of its header, and <title> where that holds the h1's words,
 else the whole of it) and in doc.json; the icon in the header (div.doc-icon before the h1: made,
@@ -380,8 +381,11 @@ A title that starts with "-" and a letter is written --title="-Q3 回顾".
 --font (等线体 sans, 衬线体 serif, 混合体 mixed: the title and headings serif), --size (字体大小), --spacing (正文间距),
 --width (正文宽度), --full on|off (全宽: the page at the full width of its area) and --wide-tables on|off (宽表格:
 a table wider than the text, standing in the body itself, centred and past the text on both sides, as far as the
-page's edges, scrolling only past those) set the look the document shows, in the look of its doc.json, as the 字体与布局 menu does, and the page open in the browser changes at
-once (the command goes through the shared Gallery server while one runs). Only the choices named are written: the
+page's edges, scrolling only past those) and --wide-databases on|off (宽多维表格: a 多维表格 wider than the text,
+standing in the body itself, centred and past the text in the same way) set the look the document shows, in the look of its doc.json, as the 字体与布局 menu does, and the page open in the browser changes at
+once (the command goes through the shared Gallery server while one runs). --wide-tables and --wide-databases are the
+page's switches: they set every table (多维表格), each one's own data-doc-wide="on|off" in doc.html (one block's
+宽表格 or 宽多维表格, the block menu's) taken away. Only the choices named are written: the
 document's other choices of its own stay, and a choice that is the default (--font sans) is a choice all the same,
 kept in doc.json against the user's default look. --all (应用到全部文档) makes the look the document shows (these
 choices included; alone it applies the look it has now) the default look of every document, kept with the
@@ -601,7 +605,8 @@ the export or the reader's first edit rewrites as the kit's), "unsaved": null | 
 "tag", "text", "markdown", "html", "attributes", "data" (a list's kind, a table's cells, a chart's
 type and data, a picture's file…), "children" (their n) } ], "missing": [ { "n", "line", "why" } ] }.
 --outline: the headings in order (as the page's 目录 lists them), indented by level, with their line,
-id and how many blocks their section holds; --map: every block on a line, indented by depth.
+id and how many blocks their section holds, then its databases (多维表格), each with its line, id, the
+heading it follows and its columns, records and views; --map: every block on a line, indented by depth.
 --block <id> reads one block with what it holds; --section <id|"heading words"> a heading's section (the
 heading and what follows it up to the next heading of its level or higher, as the page folds it), or the
 section the block named stands in; either in any format.

@@ -5,7 +5,7 @@
 // and to-dos the cards that read the workspace show. A maintainer's, as the script is: nothing of Gallery
 // reads it. Change it with the example it stands for.
 
-// A sales table, as the views of a table read it (gallery/chart-view's and gallery/metric's examples).
+// A sales table, as the views of a table read it (gallery/metric's example).
 const sales = (rows) => `<table data-doc-chart-source="sales">
   <thead><tr><th>Customer</th><th>Region</th><th>Amount</th><th>Status</th></tr></thead>
   <tbody>
@@ -47,33 +47,9 @@ const EXAMPLES = {
   </div>
 </div>
 `,
-  "chart-view": (id) => `${sales([
-    ["Eastline Logistics", "East", "12,800", "Won"],
-    ["Northfield Foods", "North", "8,600", "In talks"],
-    ["Southbay Home", "South", "15,200", "Won"],
-    ["Harbor Electronics", "East", "9,300", "In talks"],
-    ["Westridge Energy", "West", "6,400", "Won"],
-  ])}
-<div data-doc-component="${id}" data-doc-from="sales">
-  <script type="application/json">${JSON.stringify({ by: "Region", op: "sum", value: "Amount", title: "Amount by region (USD)" })}</script>
-</div>
-`,
   countdown: (id) => json(id, { title: "Holiday", date: "2027-02-06" }),
   habit: (id) => json(id, { name: "Read for half an hour", days: ["2026-10-30", "2026-10-31", "2026-11-02", "2026-11-03", "2026-11-04", "2026-11-05", "2026-11-06"] }),
   heatmap: (id) => json(id, { words: false }),
-  kanban: (id) => `<table data-doc-chart-source="tasks">
-  <thead><tr><th>Task</th><th>Status</th><th>Owner</th><th>Due</th></tr></thead>
-  <tbody>
-    <tr><td>Write the release notes</td><td>To do</td><td>Maya</td><td>Nov 12</td></tr>
-    <tr><td>Update the install guide</td><td>To do</td><td>Leo</td><td>Nov 13</td></tr>
-    <tr><td>Regression tests</td><td>In progress</td><td>Sam</td><td>Nov 10</td></tr>
-    <tr><td>Pick the version number</td><td>Done</td><td>Leo</td><td>Nov 6</td></tr>
-  </tbody>
-</table>
-<div data-doc-component="${id}" data-doc-from="tasks">
-  <script type="application/json">${JSON.stringify({ group: "Status", order: "To do,In progress,Done" })}</script>
-</div>
-`,
   metric: (id) => `${sales([
     ["Eastline Logistics", "East", "12,800", "Won"],
     ["Northfield Foods", "North", "8,600", "In talks"],

@@ -249,7 +249,25 @@ function outlineLines(nodes, model, reading, view, slug) {
     const under = view.allOf(view.sectionOf(node, model.roots)).filter((one) => one.type === "unit").length - 1;
     rows.push({ text: `${"  ".repeat(level - top)}${reading.tools.words(node.el) || "（空标题）"}（h${level}${under ? `，下面 ${under} 块` : ""}）`, line: node.line, id: node.id, node });
   }
-  return [`标题 ${headings.length} 个（读一节：gallery read ${slug} --section <id>）：`, ...view.gutterLines(rows)];
+  return [`标题 ${headings.length} 个（读一节：gallery read ${slug} --section <id>）：`, ...view.gutterLines(rows), ...outlinedLines(all, reading, view, slug)];
+}
+
+// The blocks of a kind its definition lists in the outline (`read.outline`: a database, 多维表格), each on a line
+// under the heading it follows: what it holds (its kind's `title`) and its id, so that one is read alone (--block)
+// without the rest of the document.
+function outlinedLines(all, reading, view, slug) {
+  const rows = [];
+  let heading = null;
+  for (const node of all) {
+    if (view.listedHeading(node)) heading = reading.tools.words(node.el);
+    if (node.type !== "unit" || !view.VIEWS[node.kind]?.outline) continue;
+    const title = view.VIEWS[node.kind]?.title?.(node, reading);
+    rows.push({ text: `${heading ? `「${heading}」下：` : ""}${title ?? view.nameOf(node)}`, line: node.line, id: node.id, node });
+  }
+  if (rows.length === 0) return [];
+  const unnamed = rows.some((row) => !row.id);
+  const names = [...new Set(rows.map((row) => view.nameOf(row.node)))].join("、");
+  return ["", `${names} ${rows.length} 个（只读一个：gallery read ${slug} --block <id>${unnamed ? "；左栏没有 id 的，读它所在的一节" : ""}）：`, ...view.gutterLines(rows)];
 }
 
 // Every block on a line, indented by depth: what it is called, then what names it (a tab's name) or, for a

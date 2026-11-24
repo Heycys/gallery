@@ -106,7 +106,7 @@ assert.deepEqual([...unknown], [], `names of the kit no component describes (src
 
 // Four kinds of block (CATEGORIES): every editor component edits the description of its name (or the
 // one it names: the flowchart's is the list's) and is of its category, every unit kind with it; a card is copied as itself, and so is what is marked
-// so (a table, which the page cannot make whole yet; a row of columns), not a formula block, a text block of its own; images, files, bookmarks and embeds are cards. A row of columns
+// so (a table, which the page cannot make whole yet; a row of columns; a database), not a formula block, a text block of its own; images, files, bookmarks and embeds are cards. A row of columns
 // holds its columns only, a column every block a flow takes but another row.
 {
   const { COMPONENTS: EDITOR, COPIED_AS_ITSELF, UNIT_CATEGORY, accepts, descriptionOf } = await import("../../src/editor/components/registry.mjs");
@@ -117,7 +117,7 @@ assert.deepEqual([...unknown], [], `names of the kit no component describes (src
   }
   for (const [kind, category] of Object.entries(UNIT_CATEGORY)) assert.ok(category in CATEGORIES, `the unit kind ${kind} is of a category`);
   assert.deepEqual(Object.keys(CATEGORIES), ["block", "container", "card", "whole"]);
-  assert.deepEqual([...COPIED_AS_ITSELF].sort(), ["bookmark", "columns", "embed", "figure", "file", "image", "installed", "table"]);
+  assert.deepEqual([...COPIED_AS_ITSELF].sort(), ["bookmark", "columns", "database", "embed", "figure", "file", "image", "installed", "table"]);
   assert.equal(UNIT_CATEGORY.columns, "container");
   for (const kind of ["paragraph", "heading", "list", "figure", "table", "code", "highlight", "details", "block"]) assert.ok(accepts("column", kind), `a column takes a ${kind}`);
   for (const kind of ["columns", "column", "section", "sheets", "item", "tab"]) assert.ok(!accepts("column", kind), `a column takes no ${kind}`);
@@ -194,7 +194,7 @@ assert.deepEqual([...unknown], [], `names of the kit no component describes (src
     const grouping = new Set(GROUPING_FLOWS.filter((flow) => /^\.[\w-]+$/.test(flow)).map((flow) => flow.slice(1)));
     for (const [className, kind] of BOX_CLASSES) assert.equal(GROUPING.has(kind), grouping.has(className), `.${className} (a ${kind} box): a plain div groups blocks in it exactly when the descriptions' flows say so`);
     assert.ok(GROUPING.has("section") && grouping.has("doc-section"), "the section groups blocks (by its tag)");
-    assert.deepEqual([...GROUPING].sort(), ["callout", "column", "details", "dialog", "highlight", "section", "slot"]);
+    assert.deepEqual([...GROUPING].sort(), ["callout", "column", "details", "dialog", "highlight", "record", "section", "slot"]);
   }
   const styles = path.join(projectRoot, "src", "render", "kit", "styles");
   const list = `:where(${FLOW_BLOCKS})`;
@@ -341,16 +341,16 @@ assert.deepEqual([...unknown], [], `names of the kit no component describes (src
 
 // The families of colors each unit takes (COLOR_FAMILIES, from their descriptions): text blocks a
 // text color and a background (a flowchart's node too: its card's background, its words, number and
-// border), a highlight block, callout, disclosure and code block a background, every other one none; each family's nine classes in its switches (after its own), none in the others'.
+// border; a file too: the user's of 2026-11-24), a highlight block, callout, disclosure and code block a background, every other one none; each family's nine classes in its switches (after its own), none in the others'.
 {
   const both = ["text", "background"];
-  assert.deepEqual(COLOR_FAMILIES, { paragraph: both, heading: both, item: both, step: both, callout: ["background"], highlight: ["background"], details: ["background"], code: ["background"] });
+  assert.deepEqual(COLOR_FAMILIES, { paragraph: both, heading: both, item: both, step: both, file: both, callout: ["background"], highlight: ["background"], details: ["background"], code: ["background"] });
   for (const [kind, families] of Object.entries(COLOR_FAMILIES)) {
     const classes = families.flatMap((family) => COLOR_CLASSES[family]);
     assert.deepEqual((TOGGLES[kind] ?? []).slice(-classes.length), classes, kind);
     assert.ok(!(TOGGLES[kind] ?? []).some((name) => BLOCK_COLORS.includes(name) && !classes.includes(name)), `${kind}: no other color`);
   }
-  for (const kind of ["quote", "rule", "table", "image", "embed", "file", "bookmark", "math", "sheets", "tab", "columns", "column", "section", "list", "figure", "dialog", "icon", "block"]) {
+  for (const kind of ["quote", "rule", "table", "image", "embed", "bookmark", "math", "sheets", "tab", "columns", "column", "section", "list", "figure", "dialog", "icon", "block"]) {
     assert.ok(!COLOR_FAMILIES[kind] && !(TOGGLES[kind] ?? []).some((name) => BLOCK_COLORS.includes(name)), `${kind} takes no color`);
   }
   assert.equal(TOGGLES.figure[0], "doc-figure--compact", "a unit's own switches come first");
@@ -508,7 +508,7 @@ assert.deepEqual([...unknown], [], `names of the kit no component describes (src
 // with a block is what the definitions say too (beside.mjs, resize/, select-all/, type-grid.mjs and hints/ read
 // it, naming no component).
 {
-  const boxed = ["block", "bookmark", "callout", "code", "details", "dialog", "embed", "figure", "file", "highlight", "image", "installed", "math", "rule", "table"];
+  const boxed = ["block", "bookmark", "callout", "code", "database", "details", "dialog", "embed", "figure", "file", "highlight", "image", "installed", "math", "rule", "table"];
   assert.deepEqual([...BOXED].sort(), boxed);
   assert.deepEqual([...BESIDE].sort(), [...boxed, "columns"].sort(), "a click to its right selects a boxed block and a row of columns");
   assert.deepEqual([...ENTERS_AFTER].sort(), [...boxed, "columns", "sheets"].sort(), "Enter puts a paragraph after those and a Sheet area");
@@ -525,7 +525,7 @@ assert.deepEqual([...unknown], [], `names of the kit no component describes (src
   const made = (name) => /^export (?:function make\(|const make = )/m.test(fs.readFileSync(path.join(projectRoot, `src/editor/components/${name}/page.mjs`), "utf8"));
   const defined = Object.keys(BLOCK_TYPES).filter((type) => BLOCK_TYPES[type].create);
   assert.deepEqual(defined.sort(), ["bookmark", "divider", "embed", "file", "image"], "the types made of the DOM alone, by their definitions");
-  const needPage = ["code", "math", "sheets", "table"];
+  const needPage = ["code", "database", "math", "sheets", "table"];
   for (const type of needPage) assert.ok(made(TYPE_COMPONENT[type]) && onPage.includes(`${type}/page.mjs`), `${type} is made by its page object`);
   assert.deepEqual(FRESH.filter((type) => !BLOCK_TYPES[type].create && !needPage.includes(type)), [], "a type made as an empty block is made by a `create`");
   assert.deepEqual(TURN_INTO.filter((type) => !BLOCK_TYPES[type].create && !needPage.includes(type) && !BLOCK_TYPES[type].leaf && !BLOCK_TYPES[type].takesAsIs && BLOCK_TYPES[type].box !== "flowchart"), [], "every other type is a text block, or a block goes into it");

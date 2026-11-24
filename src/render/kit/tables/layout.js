@@ -1,10 +1,10 @@
-import { PIECE_BREAKS, WORD_BREAKS, allocateColumnWidths, columnKind, createTextMeasurer } from "./auto-column-widths.ts";
+import { PIECE_BREAKS, WORD_BREAKS, allocateColumnWidths, columnKind, createTextMeasurer, leastWidths } from "./auto-column-widths.ts";
 import { columnCells, columnWidths, slotsOf } from "../../../shared/table-slots.mjs";
 import { LOOK_ATTRIBUTES } from "../../../shared/document-look.mjs";
 import { CODE_RUN, cellText, codeRuns, footRows, tableRows, wrapperOf } from "./cells.js";
 import { drawScrollbars, placeScrollbars, setStyle } from "./scrollbars.js";
 import { WHOLE_ROWS, shownWhole } from "./whole.js";
-import { ACROSS, acrossLook, acrossRoom, clearAcross, placeAcross } from "./across.js";
+import { ACROSS, acrossRoom, clearAcross, placeAcross, wideTable } from "./across.js";
 
 // Column widths (docs/render.md, "Table layout internals"): each cell's text measured in its own
 // font, the widths allocated over the frame's inner width (auto-column-widths.ts), written as one
@@ -37,6 +37,11 @@ const CODE_RUN_MAX = 320;
 // nothing there.
 const WIDE = '\u2014\u3000-\u30ff\u3400-\u9fff\uac00-\ud7af\uf900-\ufaff\uff00-\uffef';
 const NATIVE_BREAKS = new RegExp(`(?<=-)|(?<=[${WIDE}])|(?=[${WIDE}])`, 'u');
+// Where Chrome breaks a cell's text once its long runs are no longer broken anywhere (a column of
+// identifiers wide enough for them, data-column-wrap="words"): at a space, after a hyphen before a letter
+// or a question mark, before and after each Chinese, Japanese or Korean character; a slash, a dot or an
+// underscore breaks nothing (src/shared/long-runs.mjs).
+const HELD_BREAKS = new RegExp(String.raw`\s+|(?<=-)(?=[^\d\s-])|(?<=\?)(?=\S)|(?<=[${WIDE}])|(?=[${WIDE}])`, 'u');
 
 // Widths are compared as a ResizeObserver reads them, px of a content box to the sub-pixel: a
 // difference under this is none (a layout unit, 1/64 px, or a rounding, is not a change of room).
@@ -166,8 +171,10 @@ function contextOf(table) {
 // measure.run(cell) that run whole, however wide (a column narrower lets it break: data-run-wrap);
 // measure.word(cell) its longest word with its padding, where a cell keeps its words whole
 // (WORD_BREAKS); measure.piece(cell) its widest piece no line breaks in, where it breaks its
-// words as Chinese text does (PIECE_BREAKS); and measure.prose(cell) that of its words outside inline
-// code (whose runs break where they break: cells.js), a Latin word whole. Each cell is measured once a layout: its content does
+// words as Chinese text does (PIECE_BREAKS); measure.held(cell) its widest stretch the browser keeps
+// on a line where its long runs are not broken anywhere (HELD_BREAKS; a run of inline code each); and
+// measure.prose(cell) that of its words outside inline code (whose runs break where they break:
+// cells.js), a Latin word whole. Each cell is measured once a layout: its content does
 // not change within one; and not again in the next while its key (cellKey) stays the same
 // (cellMeasures). Each element's style is read once a layout (styleOf), not for each word of its
 // text. measure.done() keeps what this layout measured for the next one.
@@ -175,7 +182,7 @@ function createCellMeasurer(table) {
   sameZoom();
   const styles = new Map(); // element -> { computed, font, family, spacing, tabular }
   const kept = cellMeasures.get(table);
-  const measured = new Map(); // cell -> { key, result: { width, least, run, word, piece, prose }, families }
+  const measured = new Map(); // cell -> { key, result: { width, least, run, word, piece, held, prose }, families }
   const families = new Set();
   const context = contextOf(table);
   let using = null; // the families of the cell being measured
@@ -224,6 +231,7 @@ function createCellMeasurer(table) {
   measure.run = cell => measureCell(cell).run;
   measure.word = cell => measureCell(cell).word;
   measure.piece = cell => measureCell(cell).piece;
+  measure.held = cell => measureCell(cell).held;
   measure.prose = cell => measureCell(cell).prose;
   // A layout that measured no cell (the browser's, or one of a frame with no room: nothing shown)
   // leaves what the last one measured, and a table whose fonts are not known.
@@ -238,7 +246,7 @@ function createCellMeasurer(table) {
     let line = 0, widest = 0, lastSpace = true, run = 0;
     // The word and the piece the text has reached (carried on from one node to the next), and the widest of each.
     // `prose`: the pieces of its words outside inline code alone.
-    const word = {now: 0, widest: 0}, piece = {now: 0, widest: 0}, prose = {now: 0, widest: 0};
+    const word = {now: 0, widest: 0}, piece = {now: 0, widest: 0}, held = {now: 0, widest: 0}, prose = {now: 0, widest: 0};
     const along = (part, width, restart) => {
       part.now = (restart ? 0 : part.now) + width;
       part.widest = Math.max(part.widest, part.now);
@@ -258,8 +266,10 @@ function createCellMeasurer(table) {
           run = Math.max(run, width);
           along(word, width, false);
           along(piece, width, false);
+          along(held, width, false);
           return;
         }
+        text.split(HELD_BREAKS).forEach((part, index) => along(held, widthOf(part, parent), index > 0));
         text.split(WORD_BREAKS).forEach((part, index) => along(word, widthOf(part, parent), index > 0));
         text.split(PIECE_BREAKS).forEach((part, index) => along(piece, widthOf(part, parent), index > 0));
         if (parent.closest('code')) prose.now = 0;
@@ -267,7 +277,7 @@ function createCellMeasurer(table) {
         return;
       }
       if (node.nodeType !== Node.ELEMENT_NODE) return;
-      if (node.tagName === 'BR') { widest = Math.max(widest, line); line = 0; lastSpace = true; word.now = piece.now = prose.now = 0; return; }
+      if (node.tagName === 'BR') { widest = Math.max(widest, line); line = 0; lastSpace = true; word.now = piece.now = held.now = prose.now = 0; return; }
       // A formula (KaTeX's) as wide as it is drawn, on one line: its words are its TeX and MathML,
       // not what shows.
       if (node.classList.contains('katex')) {
@@ -275,6 +285,7 @@ function createCellMeasurer(table) {
         line += drawn;
         along(word, drawn, false);
         along(piece, drawn, false);
+        along(held, drawn, false);
         lastSpace = false;
         return;
       }
@@ -285,6 +296,7 @@ function createCellMeasurer(table) {
         line += drawn;
         along(word, drawn, false);
         along(piece, drawn, false);
+        along(held, drawn, false);
         lastSpace = false;
         return;
       }
@@ -293,12 +305,12 @@ function createCellMeasurer(table) {
         widest = Math.max(widest, line);
         const indent = parseFloat(styleOf(node).computed.paddingInlineStart) || 0;
         for (const item of node.children) {
-          line = word.now = piece.now = prose.now = indent;
+          line = word.now = piece.now = held.now = prose.now = indent;
           lastSpace = true;
           item.childNodes.forEach(walk);
           widest = Math.max(widest, line);
         }
-        line = word.now = piece.now = prose.now = 0;
+        line = word.now = piece.now = held.now = prose.now = 0;
         lastSpace = true;
         return;
       }
@@ -309,6 +321,9 @@ function createCellMeasurer(table) {
         const runs = node.querySelector(`.${CODE_RUN}`) ? codeRuns(node.textContent) : node.textContent.split(/\s+/).flatMap(part => part.split(NATIVE_BREAKS));
         for (const part of runs) if (part.trim()) run = Math.max(run, widthOf(part, node) + edges);
       }
+      // A run of inline code (cells.js) starts a word and a piece: a line breaks between runs (after a
+      // slash), so a path's longest word is its longest run, not the whole path.
+      if (node.classList.contains(CODE_RUN)) word.now = piece.now = held.now = 0;
       if (node !== content) {
         const style = styleOf(node).computed;
         // Inline code has its own font and padding; both consume column space.
@@ -326,6 +341,7 @@ function createCellMeasurer(table) {
       run: run > 0 ? Math.ceil(run + padding) : 0,
       word: Math.ceil(word.widest + padding),
       piece: Math.ceil(piece.widest + padding),
+      held: Math.ceil(held.widest + padding),
       prose: Math.ceil(prose.widest + padding),
     };
   }
@@ -691,7 +707,7 @@ function nativeLayout(table, frame) {
 // read, the frame as it was put back at once, then the frame placed by it.
 function nativeAcross(table, wrapper) {
   if (!wrapper) return;
-  if (!acrossLook()) return void clearAcross(wrapper); // nothing measured where the look keeps tables in the text
+  if (!wideTable(wrapper)) return void clearAcross(wrapper); // nothing measured where the look (or its own word) keeps it in the text
   const available = roomOf(wrapper, '100%');
   const edges = frameEdges(wrapper);
   const room = acrossRoom(wrapper, available, edges);
@@ -707,6 +723,16 @@ function nativeAcross(table, wrapper) {
     wrapper.style.maxWidth = before.maxWidth;
   }
   placeFrame(wrapper, natural, available);
+}
+
+// Whether a cell that wraps keeps its words whole (data-column-wrap="words", styles/table.css: keep-all,
+// a long run in it no longer broken anywhere): a header or a short field where its column holds its
+// longest word (WORD_BREAKS); a cell of a column of identifiers (token-heavy) where its column holds the
+// longest stretch the browser then keeps on a line (measure.held: a dataset's or a hash's name), so that
+// each such name starts a line of its own whole, never broken where the line before it ends.
+function keepsWords(cell, kind, width, measureCell) {
+  if (cell.tagName === 'TH' || kind === 'compact') return measureCell.word(cell) <= width + 0.5;
+  return kind === 'token-heavy' && measureCell.held(cell) <= width + 0.5;
 }
 
 // The columns' widths allocated from the cells' text (auto-column-widths.ts). Returns the room it
@@ -774,8 +800,14 @@ function allocatedLayout(table, frame, headers, rows, count, measureCell) {
   let sum = result.reduce((value, column) => value + column.width, 0);
   // Wider than the text (its columns at their readable floors still past it), in the body, where the look lets
   // it (宽表格, across.js): the columns allocated again over the room past the text, the page's area at
-  // full width, so that they wrap as little as that room lets them; the frame placed on it below.
-  const across = !sized && wrapper && sum > available + 0.5 ? acrossRoom(wrapper, available, border + padding) : null;
+  // full width, so that they wrap as little as that room lets them; the frame placed on it below. Whether it
+  // is wider is read with its long identifiers whole (keepLongWords): a table that fits the text only by
+  // breaking a dataset's or a hash's name goes past the text, where the name may stay whole.
+  const mayCross = !sized && wrapper && wideTable(wrapper);
+  const crossing = mayCross && sum <= available + 0.5
+    ? allocateColumnWidths(columns, {totalWidth:target, ...options, keepLongWords:true}).reduce((value, column) => value + column.width, 0)
+    : sum;
+  const across = mayCross && crossing > available + 0.5 ? acrossRoom(wrapper, available, border + padding) : null;
   if (across !== null) {
     result = allocateColumnWidths(columns, {totalWidth:across, ...options});
     sum = result.reduce((value, column) => value + column.width, 0);
@@ -797,9 +829,9 @@ function allocatedLayout(table, frame, headers, rows, count, measureCell) {
   // it right at the columns' floors: a table that fills it, or would overhang it by a few pixels,
   // takes 100% (its columns give up those pixels) rather than scrolling by a hair.
   table.style.width = sized && tableWidth <= available + 4 ? '100%' : `${tableWidth}px`;
-  // The narrowest the wrapper may get before the table scrolls (the columns' readable floors),
-  // for the preview's resize handle.
-  if (wrapper) setAttribute(wrapper, 'data-doc-min-width', String(Math.ceil(result.reduce((value, column) => value + column.softMinWidth, 0) + border + padding)));
+  // The narrowest the wrapper may get before the table scrolls (the columns' readable floors, with what
+  // it gives up to fit given: leastWidths), for the preview's resize handle.
+  if (wrapper) setAttribute(wrapper, 'data-doc-min-width', String(Math.ceil(result.reduce((value, column) => value + (leastWidths.get(column) ?? column.softMinWidth), 0) + border + padding)));
   if (across !== null) placeAcross(wrapper, Math.min(tableWidth, across) + border + padding);
   else if (wrapper && sized) placeFrame(wrapper, tableWidth, available);
   else if (wrapper) {
@@ -816,7 +848,7 @@ function allocatedLayout(table, frame, headers, rows, count, measureCell) {
       // header or a short field that wraps keeps its words whole where its column holds its longest
       // one ("words", styles/table.css), else breaks between characters (never before a closing mark).
       const width = column.ratio * tableWidth;
-      if (measuredCells.get(cell) > width + 0.5) setAttribute(cell, 'data-column-wrap', (cell.tagName === 'TH' || column.kind === 'compact') && measureCell.word(cell) <= width + 0.5 ? 'words' : '');
+      if (measuredCells.get(cell) > width + 0.5) setAttribute(cell, 'data-column-wrap', keepsWords(cell, column.kind, width, measureCell) ? 'words' : '');
       else cell.removeAttribute('data-column-wrap');
       markRunWrap(cell, width, measureCell);
     }

@@ -1,4 +1,4 @@
-import { ACROSS, acrossLook, areaOf, contentBox, inBody } from "../../../shared/table-across.mjs";
+import { ACROSS, WIDE, acrossLook, areaOf, contentBox, inBody, wideTable } from "../../../shared/table-across.mjs";
 import { setStyle } from "./scrollbars.js";
 
 // 宽表格 (the document's look `tables: "wide"`, data-doc-tables="wide" on <html>: src/shared/document-look.mjs;
@@ -15,9 +15,10 @@ import { setStyle } from "./scrollbars.js";
 // frame's own width, its left margin and its max-width are written on it then (inline, as the layout's widths
 // are: never in the file, a copy of the view takes them off), with data-doc-across, which says it is placed so.
 // The table's tools (its scrollbars, its sticky header row, the page editor's tools over it) all go by the frame
-// as it stands.
+// as it stands. A frame's own word (data-doc-wide="on" or "off" on it, in the file: the block menu's 宽表格) is over
+// the page's look for that table (wideTable); the table is laid out again as it changes (index.js).
 
-export { ACROSS, acrossLook };
+export { ACROSS, WIDE, acrossLook, wideTable };
 
 // The kit's narrow layout (styles/: the page's 760px breakpoint), where no table goes past the text.
 const NARROW_PAGE = "(max-width: 760px)";
@@ -28,7 +29,7 @@ const NARROW_PAGE = "(max-width: 760px)";
  * stands in a container or on a narrow screen, or the area gives it no more than the text's `available`.
  */
 export function acrossRoom(wrapper, available, edges) {
-  if (!wrapper || !acrossLook() || globalThis.matchMedia?.(NARROW_PAGE).matches || !inBody(wrapper)) return null;
+  if (!wrapper || !wideTable(wrapper) || globalThis.matchMedia?.(NARROW_PAGE).matches || !inBody(wrapper)) return null;
   const area = areaOf();
   if (!area) return null;
   const room = area.right - area.left - edges;

@@ -282,6 +282,8 @@ body.dragging .row:hover .row-new { display: block; }
 
 /* 拖拽 */
 body.dragging, body.dragging * { cursor: grabbing !important; user-select: none !important; }
+/* 拖到文档上、松开会插入页面块的地方（useTreeDnd.ts overFrame）：箭头带加号，箭头尖就是插入线的位置，不被抓手盖住 */
+body.dragging.drag-into, body.dragging.drag-into * { cursor: copy !important; }
 body.dragging .row:not(.selected):hover { background: transparent; }
 body.dragging .row-actions { display: none !important; }
 body.dragging .row-chevron:hover { color: var(--sidIco); }

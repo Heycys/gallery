@@ -829,14 +829,12 @@ ${Array.from({ length: 20 }, (_, at) => `<div class="doc-table-wrap" data-block-
     "changed/{1024,736,360}-ab.png", "changed/1024-ab-top.png", "flagged/1024x768-03-table-rows.png",
   ]);
   assert.deepEqual(picturesSaid([path.join(path.dirname(folder), "elsewhere.png")], folder), [path.join(path.dirname(folder), "elsewhere.png").split(path.sep).join("/")]);
-  // What the summary counts as a chart: a declared one, and a chart-view (Gallery's own block, which draws
-  // bars with markup of its own); none inside a developer's frame (an Agent testing the skill, 2026-11-09, read
-  // "0 charts, 1 table" over a page with one chart-view).
+  // What the summary counts as a chart: a declared one; none inside a developer's frame.
   {
     const had = globalThis.document;
-    globalThis.document = new JSDOM('<main><div data-doc-chart="x"></div><div data-doc-component="gallery/chart-view"></div><div data-doc-component="gallery/kanban"></div><div data-doc-dev><div data-doc-component="gallery/chart-view"></div></div><div class="doc-table-wrap"></div></main>').window.document;
+    globalThis.document = new JSDOM('<main><div data-doc-chart="x"></div><div data-doc-dev><div data-doc-chart="y"></div></div><div class="doc-table-wrap"></div></main>').window.document;
     try {
-      assert.deepEqual([inventory().charts, inventory().tables], [2, 1]);
+      assert.deepEqual([inventory().charts, inventory().tables], [1, 1]);
     } finally {
       if (had === undefined) delete globalThis.document;
       else globalThis.document = had;

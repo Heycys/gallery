@@ -48,6 +48,17 @@ export interface ColumnWidthOptions {
   maxReadableFloor?: number;
   tokenHeavyMinWidth?: number;
   compactMaxProtectedWidth?: number;
+  /**
+   * The widest a long identifier (a token-heavy column's longest words, P90 of its cells': a dataset's
+   * or a hash's name) is kept whole on its line, its column at least that wide; a wider one breaks where
+   * its column ends. Default 640 (about eighty characters).
+   */
+  longWordMaxWidth?: number;
+  /**
+   * Keep long identifiers whole even where breaking them would bring the table inside totalWidth (the
+   * kit's question whether a table is wider than the text). Default false: they break only then.
+   */
+  keepLongWords?: boolean;
   cellPadding?: number;
   columnOverhead?: number;
   font?: string;

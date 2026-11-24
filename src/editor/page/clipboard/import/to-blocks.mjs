@@ -8,6 +8,7 @@ import { MAX_TABLE_CELLS, validLook, validTable } from "../../../components/tabl
 import { imageSource, kindOfBlock, webPage } from "../own/rules.mjs";
 import { NOTION_COLOR_NAMES } from "./colors.mjs";
 import { plainOf } from "./rich.mjs";
+import { parseInlineMarkdown } from "./inline.mjs";
 import { t } from "../../../../shared/i18n/index.mjs";
 
 // Block specs (rich.mjs) as the page's blocks, described as the clipboard's own (own/blocks.mjs
@@ -82,6 +83,35 @@ export function richHtml(title, { pictures = false } = {}) {
     return html;
   }).join("");
 }
+
+/**
+ * Another program's plain text as a table cell's text (its inline HTML, for a paste into a cell:
+ * page/clipboard/, page/table/cells.mjs), its lines as they are: each line break one, an empty line
+ * kept; a run of lines each begun with "- " (or "* ", "+ ", "•"…) a bulleted list's items and one of
+ * lines numbered 1., 2., 3.… in order a numbered list's, as typing "- " or "1. " makes one in a cell
+ * (page/table/lists.mjs; a cell's list starts at 1, so a line of another number stays as written);
+ * each line's inline Markdown read as a line pasted anywhere is (parseInlineMarkdown: bold, code,
+ * links, formulas).
+ */
+export function cellText(text) {
+  const pieces = [];
+  for (const line of text.replace(/\r\n?/g, "\n").replace(/\n+$/, "").split("\n")) {
+    const last = pieces.at(-1);
+    const bullet = CELL_BULLET.exec(line);
+    const number = CELL_NUMBER.exec(line);
+    const numbered = !bullet && Boolean(number) && Number(number?.[1]) === (last?.numbered ? last.items.length + 1 : 1);
+    const html = richHtml(parseInlineMarkdown(bullet ? bullet[2] : numbered ? number[2] : line));
+    if ((bullet || numbered) && last?.items && last.numbered === numbered) last.items.push(html);
+    else if (bullet || numbered) pieces.push({ numbered, items: [html] });
+    else if (last?.lines) last.lines.push(html);
+    else pieces.push({ lines: [html] });
+  }
+  // An empty line right above a list: a line break of its own (the one ending the line above it shows none before a block).
+  return pieces.map((piece, index) => (piece.lines ? piece.lines.join("<br>") + (index < pieces.length - 1 && piece.lines.at(-1) === "" ? "<br>" : "")
+    : `<${piece.numbered ? "ol" : "ul"}>${piece.items.map((item) => `<li>${item}</li>`).join("")}</${piece.numbered ? "ol" : "ul"}>`)).join("");
+}
+const CELL_BULLET = /^[ \t]*([-*+\uff0d\u2022\u00b7])[ \t\u00a0\u3000]+(.*)$/;
+const CELL_NUMBER = /^[ \t]*(\d{1,9})[.\uff0e\u3002)\uff09][ \t\u00a0\u3000]+(.*)$/;
 
 // A language's display name (languages.mjs) as the kit names it (src/shared/code-languages.mjs: "Shell" is bash,
 // "TypeScript" typescript); one the kit does not know: none, 自动识别 (the kit's guess).
@@ -313,7 +343,7 @@ function blockOf(s, options) {
     }
     case "tab": {
       const tabs = (s.children ?? []).slice(0, MAX_TABS).map((tab, index) => ({
-        title: plainOf(tab.title).replace(/[<>\r\n]/g, " ").trim().slice(0, 200) || t("选项卡 {0}", index + 1),
+        title: plainOf(tab.title).replace(/[<>\r\n]/g, " ").trim().slice(0, 200) || t("选项 {0}", index + 1),
         ...(iconKind(tab.props?.icon) === "emoji" ? { icon: tab.props.icon } : {}),
         blocks: toBlocks(tab.children ?? [], PANEL, options),
       }));

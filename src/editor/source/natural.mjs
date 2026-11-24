@@ -13,6 +13,8 @@ import { COLUMN_GAP, READING_WIDTH, SPAN, SPAN_SIZE } from "../../shared/media.m
 import { kitNamespace } from "../../shared/old-names.mjs";
 import { newNames } from "../../shared/new-names.mjs";
 import { CHART_DATA, CHART_SOURCE, TABLE_READERS, nextChartKey } from "../../shared/table-chart.mjs";
+import { WIDE } from "../../shared/table-across.mjs";
+import { DATABASE_CLASS, databasePages } from "../../shared/database.mjs";
 import { ALIGNS } from "../components/align.mjs";
 import { BLOCK_COLORS } from "../components/colors.mjs";
 import { DETAILS, DIALOG, PAGE, SECTION, SHEETS } from "../components/kit.mjs";
@@ -55,7 +57,8 @@ import { isComponent } from "./units.mjs";
 //                                    what else the pre and its code carry kept on them
 //   <table> outside a table wrapper → div.doc-table-wrap › table.doc-table (its block id on
 //                                    the wrapper, the block, and so is a chart's key written on
-//                                    it, data-doc-chart-source, and the frame's sizes written in its
+//                                    it, data-doc-chart-source, its own 宽表格 (data-doc-wide="on" or
+//                                    "off"), and the frame's sizes written in its
 //                                    style, --doc-table-height and --doc-span), and only then (a table wrapped already
 //                                    is never touched again): each th of it but a row's header
 //                                    (scope="row", the header column's: it only sticks) the
@@ -164,8 +167,12 @@ import { isComponent } from "./units.mjs";
 
 const SKIPPED = new Set(["script", "style", "template", "textarea", "noscript", "code", "svg", "math", "select", "option", "button", "iframe", "video", "audio", "canvas", "object", "picture"]);
 // The kit's parts whose inside is theirs.
-const KIT_OWN = ["doc-figure", "doc-code", "doc-diff", "doc-math-inline", "doc-math-block", "doc-link-mention", "doc-sheet-tabs",
+const KIT_OWN = ["doc-figure", "doc-code", "doc-diff", "doc-database", "doc-math-inline", "doc-math-block", "doc-link-mention", "doc-sheet-tabs",
   "doc-state-fields", "doc-filter-row", "doc-image", "doc-file", "doc-bookmark", "doc-embed", "doc-icon", "doc-title", "doc-table-meta"];
+// A database's records' bodies (src/shared/database.mjs databasePages: a slot each, the first of a record's name),
+// the document's blocks as an instance's slots are; null for an element that is no database. The rest of it is
+// its drawing's, which every walk passes by (KIT_OWN).
+const databaseBodies = (node) => (node.tagName === "div" && classesOf(node).includes(DATABASE_CLASS) ? databasePages(node).slots.filter((slot) => slot.first && slot.record).map((slot) => slot.node) : null);
 const TEXT_BLOCKS = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6", "li", "td", "th", "dt", "dd", "blockquote", "figcaption", "caption", "summary"]);
 const FLOW_PARENTS = new Set(["main", "section", "div", "article", "aside", "blockquote", "li", "details", "dialog"]);
 const KIT_COLORS = new Set(COLORS.map(({ name }) => name));
@@ -1378,6 +1385,8 @@ export function naturalize(written) {
       const charted = attr(node, "data-doc-chart") !== undefined;
       const written = attr(node, CHART_SOURCE)?.trim() || null;
       const key = written ?? (charted ? newKey() : null);
+      // Its own 宽表格 (on or off) is its frame's, where the kit and the page editor read it.
+      const wide = ["on", "off"].includes(attr(node, WIDE)?.trim()) ? attr(node, WIDE).trim() : null;
       // The frame's sizes written in the table's style (style="--doc-table-height: none": every row;
       // --doc-span) are the frame's, where the kit reads them (table.css, sizes.css): they go on the
       // wrapper, the rest of the style stays on the table.
@@ -1385,8 +1394,8 @@ export function naturalize(written) {
       const sizes = style === undefined ? [] : declarationsOf(style).filter((declaration) => FRAME_SIZES.test(declaration));
       const rest = sizes.length ? declarationsOf(style).filter((declaration) => !FRAME_SIZES.test(declaration)) : [];
       const sized = (declarations) => ` style="${escapeAttribute(declarations.map((declaration) => declaration.trim()).join("; "))}"`;
-      const wrap = `<div class="doc-table-wrap"${id ? ` ${source.slice(id.startOffset, id.endOffset)}` : ""}${key ? ` ${CHART_SOURCE}="${escapeAttribute(key)}"` : ""}${sizes.length ? sized(sizes) : ""}>`;
-      const opening = retag(node, "table", { classes: ["doc-table"], drop: ["data-block-id", ...(attr(node, CHART_SOURCE) !== undefined ? [CHART_SOURCE] : []), ...(charted ? ["data-doc-chart"] : []), ...(sizes.length ? ["style"] : [])] });
+      const wrap = `<div class="doc-table-wrap"${id ? ` ${source.slice(id.startOffset, id.endOffset)}` : ""}${key ? ` ${CHART_SOURCE}="${escapeAttribute(key)}"` : ""}${wide ? ` ${WIDE}="${wide}"` : ""}${sizes.length ? sized(sizes) : ""}>`;
+      const opening = retag(node, "table", { classes: ["doc-table"], drop: ["data-block-id", ...(attr(node, CHART_SOURCE) !== undefined ? [CHART_SOURCE] : []), ...(wide ? [WIDE] : []), ...(charted ? ["data-doc-chart"] : []), ...(sizes.length ? ["style"] : [])] });
       const opened = rest.length ? `${opening.slice(0, -1)}${sized(rest)}>` : opening;
       const caption = charted ? null : captionOf(node); // a chart's caption is its card's title
       let closed = false; // the frame's end tag written with a card after it
@@ -1527,6 +1536,15 @@ export function naturalize(written) {
       if (isInstance(child)) {
         // Its slots: flows of the document's, their loose words paragraphs whether they hold blocks or not.
         for (const slot of instanceSlots(child)) {
+          panels.add(slot);
+          walk(slot, slot);
+        }
+        continue;
+      }
+      // A database: its records' bodies are flows of the document's, as an instance's slots; the rest of it its own.
+      const bodies = databaseBodies(child);
+      if (bodies) {
+        for (const slot of bodies) {
           panels.add(slot);
           walk(slot, slot);
         }
@@ -1868,6 +1886,10 @@ export function readOnlyTexts(source) {
         instanceSlots(child).forEach(visit); // and in its slots what it locks anywhere
         continue;
       }
+      if (databaseBodies(child)) {
+        databaseBodies(child).forEach(visit); // its records' bodies lock what they lock anywhere
+        continue;
+      }
       if (attr(child, "data-doc-chart") !== undefined || classesOf(child).some((name) => KIT_OWN.includes(name))) continue;
       if (wholeBlock(child)) continue;
       const at = child.sourceCodeLocation?.startTag;
@@ -1947,6 +1969,10 @@ export function writingNotes(source) {
       if (!child.tagName || SKIPPED.has(child.tagName)) continue;
       if (isInstance(child)) {
         instanceSlots(child).forEach(visit);
+        continue;
+      }
+      if (databaseBodies(child)) {
+        databaseBodies(child).forEach(visit);
         continue;
       }
       if (attr(child, "data-doc-chart") !== undefined || classesOf(child).some((name) => KIT_OWN.includes(name))) continue;

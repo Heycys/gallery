@@ -15,19 +15,8 @@ export const colorName = (family, value) => t("{0}{1}", value ? NAMES[value] : t
 /** What the reader calls an underline: "下划线" (red, 2px), "蓝色粗下划线", "文字色细下划线". */
 export const lineName = ({ color, weight }) => t("{0}{1}下划线", color === "default" ? "" : color === "plain" ? t("文字色") : NAMES[color], { thin: t("细"), thick: t("粗") }[weight] ?? "").replace(/\s+/g, " ").trim();
 
-/** Each swatch's ring and, when it is the selection's, its strong ring (light, dark). */
-export const RINGS = {
-  default: ["rgb(28 19 1 / 11%)", "rgb(255 255 235 / 10%)", "#2c2c2b", "#5f5e59"],
-  gray: ["rgb(28 19 1 / 11%)", "rgb(255 255 235 / 10%)", "#d4d3cf", "#5f5e59"],
-  brown: ["rgb(127 51 0 / 15.7%)", "rgb(255 177 129 / 19.2%)", "#e0cdc0", "#6d5340"],
-  orange: ["rgb(196 88 0 / 20.4%)", "rgb(255 147 75 / 28%)", "#eaccb2", "#88522f"],
-  yellow: ["rgb(209 156 0 / 28.2%)", "rgb(255 205 75 / 24%)", "#e8d497", "#836426"],
-  green: ["rgb(0 96 38 / 15.7%)", "rgb(108 255 172 / 15.7%)", "#bed9c9", "#37674c"],
-  blue: ["rgb(0 118 217 / 20.4%)", "rgb(67 155 255 / 24%)", "#b6d4f3", "#355f8b"],
-  purple: ["rgb(92 0 163 / 14%)", "rgb(200 125 255 / 20%)", "#dbc8e8", "#674d7b"],
-  pink: ["rgb(183 0 78 / 15.3%)", "rgb(255 103 177 / 23%)", "#eac4d5", "#7b4760"],
-  red: ["rgb(206 24 0 / 16.5%)", "rgb(255 104 92 / 24%)", "#f0c5be", "#924943"],
-};
+/** Each swatch's ring and, when it is the selection's, its strong ring (src/shared/colors.mjs, a database's swatches too). */
+export { RINGS } from "../../../shared/colors.mjs";
 
 const RECENT = "gallery-edit:recent-colors";
 const known = ({ family, value } = {}) => (family === "text" || family === "highlight") && (value === null || (family === "text" ? TEXT_COLORS : HIGHLIGHTS).includes(value));

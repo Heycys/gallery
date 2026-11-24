@@ -69,11 +69,11 @@ export function createBlocks({ slug = "", units, boxes, active, struct, look, sa
   const folds = createFolds({ slug, selection, active, schedule, menu, shift: shiftHeadings });
   const drag = createDrag({ info, selection, struct, say, closeMenu, schedule, folds });
   const blockMenu = createBlockMenu({ info, menu, selection, remove: (targets) => remove(targets), takenWith: folds.takenWith, turnInto, convert, turnIntoAll, convertAll, below, belowTypes, add, look, copyLink, linkAhead });
-  const handle = createHandle({ info, active, selection, drag, menu, openMenu: blockMenu.open, drawing: () => marquee.drawing, schedule, keeps: (node) => keepsHandle(node) || folds.holds(node), aside: folds.holds, add: (target, where) => { selection.clear(); addNear(target, where); }, notes });
+  const handle = createHandle({ info, active, selection, drag, menu, openMenu: blockMenu.open, drawing: () => marquee.drawing || parts.some((part) => part.busy), schedule, keeps: (node) => keepsHandle(node) || folds.holds(node), aside: folds.holds, add: (target, where) => { selection.clear(); addNear(target, where); }, notes });
   const remove = createDelete({ info, selection, struct, say, closeMenu, forget: () => handle.forget(), folds });
   // What a component makes with these tools (`blockTools`): a Sheet's tabs as pills, a click, a drag, their menu, + (components/sheets/pills.mjs);
   // an image's grips and bar while it is the one block selected (components/image/page.mjs), placed in this task's frames (`follow`).
-  const parts = pageObjects().flatMap((page) => page.blockTools?.({ active, drag, menu, openMenu: blockMenu.open, struct, say }) ?? []);
+  const parts = pageObjects().flatMap((page) => page.blockTools?.({ active, drag, menu, openMenu: blockMenu.open, struct, say, clearSelection: selection.clear }) ?? []);
   // A press on empty space: a box selection, or a click there (marquee.mjs clears the selection).
   const marquee = createMarquee({
     active: () => active() && !drag.active,

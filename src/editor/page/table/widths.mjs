@@ -34,6 +34,8 @@ import { t } from "../../../shared/i18n/index.mjs";
 
 const STYLE = `
   .ge-tcol { pointer-events: auto; cursor: col-resize; }
+  /* A turn of the wheel over a strip went to the table under it (passWheel): the strips let the wheel through until the pointer moves. */
+  :root[data-ge-wheel] :is(.ge-tcol, .ge-trows) { pointer-events: none; }
   .ge-tcol > i { position: absolute; top: 0; bottom: 0; left: 2.5px; width: 3px; border-radius: 1.5px; transition: background 150ms; }
   .ge-tcol:hover > i, .ge-tcol[data-on] > i { background: var(--ge-accent); }
   .ge-tcol[data-mode="table"] { cursor: ew-resize; }
@@ -284,6 +286,24 @@ export function createColumnWidths(tools) {
     return runs.map(({ start, end }) => [g.rows[start].top, g.rows[end].bottom]);
   }
 
+  // A strip comes under a pointer at rest as the table scrolls under it (its column's edge brought there), and then
+  // took the wheel's next turns from the table, which stopped scrolling: a turn of the wheel over a strip scrolls the
+  // table it stands on, and the strips let the wheel through (data-ge-wheel) until the pointer moves, so that the
+  // turns after it go to the table itself, as the browser scrolls it. A motionless move the browser makes after a
+  // scroll (to say again what is under the pointer) is no move.
+  function passWheel(event, unit) {
+    const frame = tableParts(unit).table?.closest(".doc-table-wrap");
+    if (!frame || event.ctrlKey) return;
+    event.preventDefault();
+    const step = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? frame.clientHeight : 1;
+    const sideways = event.deltaX || (event.shiftKey ? event.deltaY : 0);
+    frame.scrollBy({ left: sideways * step, top: event.shiftKey ? 0 : event.deltaY * step, behavior: "instant" });
+    document.documentElement.setAttribute("data-ge-wheel", "");
+  }
+  document.addEventListener("pointermove", (event) => {
+    if ((event.movementX || event.movementY) && document.documentElement.hasAttribute("data-ge-wheel")) document.documentElement.removeAttribute("data-ge-wheel");
+  }, true);
+
   /** The strips of the table's columns whose right edge is in sight and of its bottom edge, in the tools' layer (index.mjs draw). */
   function draw(layer, unit, g, drawn) {
     const { slots } = tableState(unit);
@@ -299,6 +319,7 @@ export function createColumnWidths(tools) {
         drawBox(node, layer, { left: column.right - GRAB, top: Math.max(top, g.view.top), right: column.right + (last ? EDGE : GRAB), bottom: Math.min(bottom, g.view.bottom) });
         if (last && isArmed(unit, "x")) shownArmed(node);
         tooltip(node, () => (node.getAttribute("data-mode") === "table" ? t("拖动调整整个表格的宽度") : last ? t("拖动调整列宽 · 点击后可拖动调整整个表格的宽度") : t("拖动调整列宽，双击按内容调整")));
+        node.addEventListener("wheel", (event) => passWheel(event, unit), { passive: false });
         node.addEventListener("pointerdown", (event) => {
           if (event.button !== 0) return;
           event.stopImmediatePropagation();
@@ -323,6 +344,7 @@ export function createColumnWidths(tools) {
     if (isArmed(unit, "y")) shownArmed(node);
     drawBox(node, layer, { left: g.view.left, top: g.view.bottom - 1.5, right: g.view.right, bottom: g.view.bottom + GRAB_BELOW });
     tooltip(node, () => (isArmed(unit, "y") ? t("拖动调整表格的高度，超出的行上下滚动") : t("点击后可拖动调整表格的高度")));
+    node.addEventListener("wheel", (event) => passWheel(event, unit), { passive: false });
     node.addEventListener("pointerdown", (event) => {
       if (event.button !== 0) return;
       event.stopImmediatePropagation();

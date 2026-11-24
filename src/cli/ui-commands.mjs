@@ -81,7 +81,11 @@ export const UI_COMMANDS = [
   { labels: ["紧凑", "宽松"], command: "set", holds: ["--spacing", "compact", "loose"] },
   { labels: ["默认"], command: "set", holds: ["default"] },
   { labels: ["全宽"], command: "set", holds: ["--full"] },
+  // The page's switches, which set every table (database), each one's own word in doc.html taken away; one block's own,
+  // the page editor's block menu's row of the same name (no menu of this table's files), is data-doc-wide="on|off" on
+  // it, which the Agent writes in doc.html (skills/gallery/references/writing-html.md, databases.md).
   { labels: ["宽表格"], command: "set", holds: ["--wide-tables"] },
+  { labels: ["宽多维表格"], command: "set", holds: ["--wide-databases"] },
   { labels: ["目录"], none: "每篇的目录开关是读者在浏览器里的阅读偏好" },
   // 批注 (AnnotateButton.tsx).
   { labels: ["复制批注"], command: "notes", holds: ["gallery notes"] },

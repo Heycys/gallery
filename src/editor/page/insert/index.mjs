@@ -6,7 +6,8 @@ import { caretAt, nearestOnLine, placeCaret, selectAt } from "../caret.mjs";
 import { sectionOps } from "../page-objects.mjs";
 import { endOf, hoverAt, innerBox, measure } from "../geometry.mjs";
 import { BOXED, HOLDS_ONE, accepts } from "../../components/registry.mjs";
-import { DIALOG } from "../../components/kit.mjs";
+import { DIALOG, SURFACE, SURFACE_BODY } from "../../components/kit.mjs";
+import { PROVISIONAL } from "../../../shared/provisional.mjs";
 
 // Where new blocks come from (docs/editor.md, "New blocks and conversions" and "Selecting
 // blocks"): a click on the empty space below the last block of a box (not one whose end is its
@@ -65,9 +66,11 @@ export function createInsert({ struct, blocks, after }) {
   // its nearest line (somewhere in the box clicked or around it, when any is text). The page stays where it
   // is, that text out of sight too (caretNear: a click on empty space never scrolls the page).
   function clickBlank(x, y, target) {
-    // In an open detail card, its content is the page: never a block behind it (marquee.mjs topOf).
+    // In an open detail card, its content is the page: never a block behind it (marquee.mjs topOf); so is the body
+    // a database's record details show, a surface of the document over the page (SURFACE).
     const card = target?.closest?.(DIALOG.open);
-    const main = card ? card.querySelector(DIALOG.openContent) : document.querySelector("main");
+    const surface = card ? null : target?.closest?.(SURFACE);
+    const main = card ? card.querySelector(DIALOG.openContent) : surface ? surface.querySelector(SURFACE_BODY) : document.querySelector("main");
     if (!main) return;
     if (doubleBlank(main, x, y, target)) return;
     // A box that always holds a block (holdsOne) that the file has empty, clicked (a disclosure's
@@ -79,6 +82,12 @@ export function createInsert({ struct, blocks, after }) {
     const box = boxAt(main, target);
     const end = endOf(measure(box), y + scrollY);
     if (end?.focus) return caretAt(end.focus, "end");
+    // A box the file has not got yet (PROVISIONAL: a record's body before its first word) takes no block a click
+    // makes, which would be written: the caret at the end of its words.
+    if (end && end.box.hasAttribute(PROVISIONAL)) {
+      const text = end.after ? textEdge(end.after, true) : null;
+      return text ? caretAt(text, "end") : undefined;
+    }
     if (end) return newParagraph(end.box, end.after);
     const top = y + scrollY;
     const beside = boxedBeside(main, x, y, target);

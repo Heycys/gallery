@@ -1,5 +1,5 @@
 {
-  "shared": "fe38596704e51af7",
+  "shared": "6f150ab8107d8c48",
   "blocks": {
     "gallery-soft/countdown": "f82282bae43f8db2",
     "gallery-soft/habit": "ee926b2a1dde7792",
@@ -12,12 +12,10 @@
     "gallery-soft/todos": "55e5a3753f50bb83",
     "gallery-soft/weather": "b791817135eb0706",
     "gallery/card": "a5d8a4c07484f704",
-    "gallery/chart-card": "e13990c255a7a404",
-    "gallery/chart-view": "e1c504fda63499c2",
+    "gallery/chart-card": "5a92f5c87c60506a",
     "gallery/countdown": "1ddbaf1516ba83d0",
     "gallery/habit": "46f4341b2ffdd67f",
     "gallery/heatmap": "8c886f0cde70c29d",
-    "gallery/kanban": "89b68feb09720765",
     "gallery/metric": "09145cbfd8e9d4b5",
     "gallery/note": "3ee17d4cab913636",
     "gallery/recent": "05366eee408aaa7d",

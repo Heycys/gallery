@@ -22,9 +22,11 @@ import { OUTLINE_OPEN_KEY, onOutlineOpen, outlineOpen, setOutlineOpen } from "..
 import { lookOfElement } from "../../shared/document-look.mjs";
 import { belowTargets, convertBlock, convertGroup, groupParents, groupTargets, headingShifts, noTextToCarry, shiftHeadings, targetsOf, touchedBy, turnInto, turnParents, turnUnit, typeOf } from "./convert.mjs";
 import { joinCode, rangeAt, rangeOffsets } from "./marks.mjs";
-import { addStyle, copyAddress, element, layer, textButton } from "./ui.mjs";
+import { SURFACE_MARK, addStyle, copyAddress, element, layer, textButton } from "./ui.mjs";
+import { PROVISIONAL } from "../../shared/provisional.mjs";
 import { createClipboard } from "./clipboard/index.mjs";
 import { createDropIn } from "./drop-in/index.mjs";
+import { createPageDrop } from "./page-drop/index.mjs";
 import { serveFiles } from "./served.mjs";
 import { followFiles, stampedUrl } from "./assets-live.mjs";
 import { createFormatting } from "./format-bar/index.mjs";
@@ -87,6 +89,7 @@ import { language, t } from "../../shared/i18n/index.mjs";
 //   links/        the link box (Ctrl+K), following links; hints/: why something is read-only
 //   formula/      the formula box: selected text made an inline formula (Ctrl+Shift+E)
 //   slash-menu/   the "/" menu; at-menu/: the "@" menu; markdown/: Markdown shortcuts as the reader types
+//   page-drop/    a page of the workbench's sidebar dragged into the text: a page block where it is let go (the "@" menu's)
 //   clipboard/    copying, cutting and pasting blocks and text
 //   resize/       dragging the edges of cards, tables and code blocks
 //   columns/      the gaps between columns (分栏) and between a flowchart's nodes in a row: resizing the two beside one, a column added at its pin
@@ -117,6 +120,7 @@ let tables = null; // a table's rows and columns (table/)
 let formatting = null; // the bar over selected text (format-bar/)
 let slash = null; // the "/" menu (slash-menu/)
 let atMenu = null; // the "@" menu (at-menu/)
+let pageDrop = null; // a page of the workbench's sidebar dropped into the text (page-drop/)
 let markdown = null; // Markdown shortcuts as the reader types (markdown/)
 let selectAll = null; // Ctrl+A widening step by step (select-all/)
 let outline = null; // the page's headings at its right (outline/), not on a page opened on its own (?solo)
@@ -212,7 +216,7 @@ const IDLE_STATE = { waiting: 0, syncing: false, offline: false, stopped: null, 
 const view = () => {
   const state = autosave?.state ?? IDLE_STATE;
   return {
-    editing, ...state, waiting: state.waiting + (checkPending ? 1 : 0), ...unsaveable,
+    editing, ...state, waiting: state.waiting + (checkPending ? 1 : 0) + (heldBack() ? 1 : 0), ...unsaveable,
   };
 };
 
@@ -264,11 +268,20 @@ const saveState = ({ waiting, syncing, offline, stopped, reloading, held, strays
 
 // ---------- undo, the components, typing ----------
 
+// What a block's drawing holds back unwritten (a database's: database/page.mjs), which the page counts as
+// unsaved (`view`'s waiting), keeps from being shown again (autosave's holding) and has written first
+// (flushHeld) before undo and redo, before it closes (prepare-close) and as it is hidden (pagehide).
+const heldBack = () => pageObjects().some((page) => page.holding?.());
+const flushHeld = () => { for (const page of pageObjects()) page.flush?.(); };
+
 const history = createHistory({
-  changed: markChanged, beforeUndo: () => closeTyped(), blocks: () => blocks, show: showLanded, tidy: () => [...pageObjects().flatMap((page) => page.tidy ?? []), tidyEmptied],
+  changed: markChanged, beforeUndo: () => { closeTyped(); flushHeld(); }, blocks: () => blocks, show: showLanded, tidy: () => [...pageObjects().flatMap((page) => page.tidy ?? []), tidyEmptied],
   afterText: (element) => pageOf(element)?.afterText?.(element), // what follows a text step undone or redone
   refuse: (why) => say(why === "pulled" ? t("Agent 拿走或改动了这一步改过的块：没有撤销，可以直接改。") : t("这里合并进了 Agent 同时写的字，撤销会把它们一起撤掉：没有撤销，可以直接改。"), "error"),
   mergedOff: (hosts) => commits?.unseen(hosts), // what undo took off the page with someone else's words in it: the file asks first
+  // A change about to be recorded in a box the file has not got yet (a record's body before its first word): the
+  // page object whose box it is makes it the file's first, its own step (database/page.mjs).
+  realize: (node) => { if (node?.closest?.(`[${PROVISIONAL}]`)) for (const page of pageObjects()) page.realize?.(node); },
 });
 const { lastKnown, recordText, recordStep, sourceStep, closeTyping, struct, finish: finishStep, lookStep, undo, redo } = history;
 
@@ -323,8 +336,10 @@ async function readPage(url, parts = "all") {
 connectPages(createPages({
   // the page's file and undo: the edit map, the baselines, the last recorded content of each block, an undo step of each kind
   map: MAP, baselines, lastKnown, recordText, closeTyping, struct, finishStep, look: lookStep, sourceStep,
+  // a box made on the page that the file holds once a block goes in (a record's body: commit.mjs madeBox)
+  madeBox: (node, kind, key) => commits?.madeBox(node, kind, key) ?? null,
   // the editor's state, and what it does for a component
-  say, isEditing: () => editing, isComposing: () => composing, active, closeTools,
+  say, isEditing: () => editing, isComposing: () => composing, active, closeTools, refreshState: () => refresh(),
   hideFormatBar: () => formatting.hide(),
   // text blocks and their types
   limitText, caretAtOffset, selectionContext, typeOf, targetsOf, convertHost, newParagraph,
@@ -475,7 +490,7 @@ function enter() {
   // (annotate/) or 仍然调整 has just written over someone else's change, its undo the reader's to take
   // (keepsOverwrite), unless the page asked to be shown again itself.
   autosave = createAutosave({
-    map: MAP, commits, blocked: () => composing || formulaBoxNode() !== null || panelOpen() !== null || linkPending() || Boolean(gaps?.dragging || slash?.host || atMenu?.host), changedAt: () => lastChange, holding: (asked) => pressing || Boolean(annotate?.writing()) || keepsOverwrite(asked), refresh, applied: committed, failed: refused, storage: local, tab: () => TAB,
+    map: MAP, commits, blocked: () => composing || formulaBoxNode() !== null || panelOpen() !== null || linkPending() || Boolean(gaps?.dragging || slash?.host || atMenu?.host), changedAt: () => lastChange, holding: (asked) => pressing || Boolean(annotate?.writing()) || keepsOverwrite(asked) || heldBack(), refresh, applied: committed, failed: refused, storage: local, tab: () => TAB,
     before: () => annotate?.sync() ?? null, // where the words of 批注 went with the edit, told before it is written (annotate/)
     warn: () => say(t("浏览器存储写不进去（空间满了，或被禁用）：没保存的修改只在这个页面上，先不要关掉它。"), "error"),
     notice: () => notice && Date.now() - notice.time < 10000 ? notice.text : null,
@@ -1393,6 +1408,7 @@ const COMMANDS = {
     return { ok: true };
   },
   async "prepare-close"() {
+    flushHeld();
     checkAll();
     annotate?.flush();
     await Promise.race([autosave?.flush(), new Promise((resolve) => setTimeout(resolve, 1000))]);
@@ -1434,6 +1450,10 @@ const COMMANDS = {
   // The way back or forth to a place a link to a block of the page left (jump).
   async "show-place"({ place }) {
     return showPlace(place);
+  },
+  // A page of the workbench's sidebar dragged over the page and let go there: a page block where the pointer is (page-drop/).
+  async "drop-page"(message) {
+    return pageDrop ? pageDrop.command(message) : { ok: false, reason: "editing" };
   },
   // 批注 (annotate/): what there is read and drawn ({ refresh }), and the workbench's list, 复制批注, 全部删除 and 撤销.
   async annotate(message) {
@@ -1563,7 +1583,7 @@ async function showPlace(place) {
   cards.reopen(kept.filter((card) => !open.has(card.id)));
   blocks.clear();
   const unit = typeof place.unit === "string" ? document.querySelector(`[data-block-id="${CSS.escape(place.unit)}"]`) : null;
-  const host = unit && (place.self ? unit : [...unit.querySelectorAll("[contenteditable='true']")].find(isHost));
+  const host = caretHost(unit, place);
   if (host && isHost(host) && Number.isInteger(place.offset)) {
     host.focus({ preventScroll: true });
     caretAtOffset(host, place.offset);
@@ -1806,7 +1826,18 @@ onReaderMove(window, () => {
 // (pagehide), rather than where it stands while it is not back yet.
 let given = null;
 
-function restoreView({ x, y, top = null, unit, self, offset, modals = [] }) {
+// The editable text a kept view's caret was in (autosave.mjs viewNow), in its block `unit`: the block itself,
+// else the how-manieth of its editable texts it was (a table's cell: not the first), else its first (a view
+// kept before it said which).
+function caretHost(unit, { self, nth }) {
+  if (!unit) return null;
+  if (self) return unit;
+  const hosts = [...unit.querySelectorAll("[contenteditable='true']")];
+  const there = Number.isInteger(nth) ? hosts[nth] : null;
+  return there && isHost(there) ? there : hosts.find(isHost) ?? null;
+}
+
+function restoreView({ x, y, top = null, unit, self, nth = null, offset, modals = [] }) {
   restoring = readerMoved ? null : { x, y, top }; // the way back from another document: by the place the workbench kept (reading-place.mjs)
   const put = putBack;
   put();
@@ -1816,7 +1847,7 @@ function restoreView({ x, y, top = null, unit, self, offset, modals = [] }) {
   modalOps().reopen(modals);
   outside?.focus();
   const block = unit ? document.querySelector(`[data-block-id="${CSS.escape(unit)}"]`) : null;
-  const host = block && (self ? block : [...block.querySelectorAll("[contenteditable='true']")].find(isHost));
+  const host = caretHost(block, { self, nth });
   if (host && isHost(host) && offset !== null) {
     const caretBack = () => {
       host.focus({ preventScroll: true });
@@ -1887,6 +1918,7 @@ function boot() {
   });
   atMenu = createAtMenu({ composing: () => composing, page: thisPage, recordText, recordStep, over: () => setTimeout(settleMenu) });
   markdown = createMarkdown({ slash, at: atMenu, convert: convertHost, recordStep });
+  pageDrop = createPageDrop({ editing: () => editing, page: thisPage, recordStep, closeTyped, typed: (host) => typing.updatePlaceholder(host) });
   blocks = createBlocks({
     slug: MAP.slug, units, boxes, active, struct, look: lookStep, say, edit: editBlock, turnInto, convert: convertUnit, turnIntoAll: groupTargets, convertAll, add: insert.addAfter, after: insert.paragraphAfter,
     below: insertBelow, belowTypes: belowTargets,
@@ -2046,7 +2078,7 @@ function boot() {
   new MutationObserver(() => {
     const target = layer();
     for (const node of [noticeNode(), formatting.node, panelNode(), ...linkNodes(), formulaBoxNode(), panelOpen()?.panel, conflicts?.node(), ...slash.nodes, ...atMenu.nodes, ...blocks.nodes, ...resize.nodes, ...gaps.nodes, ...tables.nodes, ...pageObjects().flatMap((page) => page.nodes ?? [])]) if (node && node.parentNode !== target) target.append(node);
-  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open"] });
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["open", SURFACE_MARK] }); // a dialog opened, a surface of the document's shown (ui.mjs layer)
   window.addEventListener("doc-source-changed", (event) => autosave?.heard(event.detail?.version ?? null));
   window.addEventListener("doc-assets-changed", () => say(t("页面的样式或编辑器已更新，刷新页面即可看到。"), "note", 6000));
   // A component package the page holds an instance of changed: what it runs of it is another page's.
@@ -2056,12 +2088,13 @@ function boot() {
   // Only while something waits: it is in the crash buffer too, so this is a courtesy.
   window.addEventListener("beforeunload", (event) => {
     const state = autosave?.state;
-    if (state && (state.waiting > 0 || state.syncing) && !state.reloading && !released) event.preventDefault();
+    if (((state && (state.waiting > 0 || state.syncing) && !state.reloading) || heldBack()) && !released) event.preventDefault();
   });
   // Closing the page: keep what waits and try a last commit. Hiding it: commit now.
   window.addEventListener("pagehide", () => {
     // Where the reader is, for the page the workbench shows again when it loads anew (shared/kept-view.mjs).
     if (!SOLO) leaveView(MAP.slug, given ?? viewNow());
+    flushHeld();
     checkAll();
     autosave?.leave();
     annotate?.leave();

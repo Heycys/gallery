@@ -3,9 +3,10 @@
 // stands at the top of the window, with how far down the window its top is. A jump opens what hides
 // its block (a disclosure, a tab, a detail card), and what opens above the place moves the rest, so
 // the way back goes by that element where it can, by the scroll position where it cannot. The element
-// is named by where it stands in the page's main (the child indices down to it: an Agent's blocks
-// carry no id until a commit or an export gives them one), checked by the id of the block it is in; on a
-// page with no block ids (a custom page), by the board's card it is in (data-card-id) and its own id.
+// is named by where it stands in the page's main (the steps down to it, each a tag and its number among
+// its siblings of that tag: an Agent's blocks carry no id until a commit or an export gives them one),
+// checked by the id of the block it is in; on a page with no block ids (a custom page), by the board's
+// card it is in (data-card-id) and its own id.
 
 const rootOf = (doc) => doc.querySelector("main") ?? doc.body;
 
@@ -13,15 +14,33 @@ const rootOf = (doc) => doc.querySelector("main") ?? doc.body;
 export const cssString = (win, value) => (win?.CSS?.escape ? win.CSS.escape(value) : String(value).replace(/["\\]/g, "\\$&").replace(/\n/g, "\\a "));
 
 const blockOf = (element) => element.closest("[data-block-id]")?.getAttribute("data-block-id") ?? null;
-// The child indices from `from` down to `element` (in it).
+// The steps from `from` down to `element` (in it), each "<tag>:<n>": the element's tag and how many of its
+// parent's children before it have that tag. What a page adds as it lays itself out stands among elements of
+// other tags (the kit's scrollbars layer, a div put first in a table's frame; a table's colgroup before its
+// rows), so a place read on a page laid out names the same element on the page before it is: a page shown
+// again is put there as it is first shown, not at the top of the table the element was in.
 const pathFrom = (from, element) => {
   const path = [];
-  for (let node = element; node !== from; node = node.parentElement) path.unshift([...node.parentElement.children].indexOf(node));
+  for (let node = element; node !== from; node = node.parentElement) {
+    let nth = 0;
+    for (let other = node.previousElementSibling; other; other = other.previousElementSibling) if (other.localName === node.localName) nth += 1;
+    path.unshift(`${node.localName}:${nth}`);
+  }
   return path;
+};
+// The child of `parent` a step names; a step that is a number (a place kept before steps named their tag) by
+// its index among all the children.
+const childAt = (parent, step) => {
+  if (Number.isInteger(step)) return parent.children[step] ?? null;
+  const [, tag, nth] = /^([^:]+):(\d+)$/.exec(typeof step === "string" ? step : "") ?? [];
+  if (!tag) return null;
+  let left = Number(nth);
+  for (const child of parent.children) if (child.localName === tag && left-- === 0) return child;
+  return null;
 };
 const down = (from, path) => {
   let element = from;
-  for (const index of Array.isArray(path) ? path : [null]) element = Number.isInteger(index) ? element?.children[index] ?? null : null;
+  for (const step of Array.isArray(path) ? path : [null]) element = element ? childAt(element, step) : null;
   return element;
 };
 const cardOf = (element) => element.closest("[data-card-id]")?.getAttribute("data-card-id") ?? null;
@@ -40,7 +59,7 @@ const tabsIn = (win) => {
  * `win`'s place: { x, y, top, tabs }, `top` { path, id, at } the first element of the page's main, in
  * its order, whose top is in the window or below it (none in a detail card, none that sticks or is
  * fixed, none that takes no room), or null where none is; `tabs` the tab each Sheet area shows. In a
- * block, `top` has `inner` too: the child indices from that block down to it (an element in a block that
+ * block, `top` has `inner` too: the steps from that block down to it (an element in a block that
  * began above the window: a table's row, a list's item); in none (`id` null), `card` and `name`: the card
  * it is in and its own id, or null.
  */

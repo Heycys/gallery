@@ -59,6 +59,10 @@ export const ASSETS = [
   { id: "d3", vendor: { path: "/vendor/d3.v7.9.0.min.js", source: d3SourcePath }, api: "d3", umd: true },
   { id: "charts", file: "charts.js", build: { bundle: "charts/index.js", options: { minify: false } }, api: "DocCharts", after: ["runtime", "tokens"] },
   { id: "tables", file: "tables.js", build: { bundle: "tables/index.js", options: { minify: false } }, api: "DocTables", after: ["runtime"] },
+  // A database (多维表格: src/shared/database.mjs): its styles, and its drawing (the kit's own modules, no framework),
+  // loaded only where a document holds one.
+  { id: "database-styles", file: "database.css", build: { styles: "database/styles/index.css" } },
+  { id: "database", file: "database.js", build: { bundle: "database/index.js", options: { minify: true } }, after: ["runtime", "state", "tokens", "database-styles"] },
   { id: "board-styles", file: "board.css", build: { styles: "board/index.css" }, page: true },
   { id: "board", file: "board.js", build: { bundle: "board/index.js", options: { minify: false } }, page: true },
 ];

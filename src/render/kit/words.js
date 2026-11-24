@@ -83,6 +83,7 @@ const DISPLAY = {
   "theme-dark": { zh: "深色", en: "Dark" },
   "full-width": { zh: "全宽显示", en: "Full width" },
   "wide-tables": { zh: "宽表格", en: "Wide tables" },
+  "wide-databases": { zh: "宽多维表格", en: "Wide databases" },
   "export-view": { zh: "导出当前视图副本", en: "Export a copy of this view" },
   "export-failed": { zh: "导出失败，点击重试", en: "Export failed: click to retry" },
   "html-file": { zh: "HTML 文件", en: "HTML file" },

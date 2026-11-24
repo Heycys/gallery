@@ -4,7 +4,7 @@ import { pageBuild } from "../../../components/builders.mjs";
 import { BLOCK_TYPES, COPIED_AS_ITSELF, HOLDS_ONE, TEXT_TYPES, TOGGLES, UNSAID, accepts, clipboardHooks, clipboardOf, isLead, sizeValue } from "../../../components/registry.mjs";
 import { MAX_CELL_HTML } from "../../../components/table/index.mjs";
 import { BLOCK_LOOKS, copied, copyOf, projectName } from "./describe.mjs";
-import { imageSource, kindOfBlock, webPage } from "./rules.mjs";
+import { groupItems, imageSource, kindOfBlock, webPage } from "./rules.mjs";
 
 // Described blocks (describe.mjs and selection.mjs, and import/to-blocks.mjs for other programs' content) made (build),
 // and the clipboard's own data, which is not trusted, checked first (parse, checkBlocks): the
@@ -175,6 +175,8 @@ export function build(doc, block, options = {}) {
     host: (type = block.type) => newHost(doc, type),
     box: (type = block.type) => newContainer(doc, type),
     inline: (html, { pictures = false } = {}) => inline(doc, html, pictures ? options : { ...options, picture: null }),
+    // Its lines apart, each line break one and an empty line kept (a table cell's text: components/table/index.mjs cellNodes).
+    lines: (html, { pictures = false } = {}) => pastedLines(doc, html, { formula: options.formula ?? null, mention: options.mention ?? null, picture: pictures ? options.picture ?? null : null, lineBreaks: true }),
     inner: (blocks) => blocks.map((each) => build(doc, each, options)),
     one: (each) => build(doc, each, options),
     colored: (element) => colored(element, block),
@@ -217,15 +219,30 @@ function wordsOf({ html }) {
  * The text of described blocks as inline HTML of the format bar's marks, one `<p>` for each line of
  * it (a block's text, an item's, a table's cell, a line of code, a tab's name, what a block copied
  * as itself says), for a place that cannot split (a table's cell, a title): pastedLines() reads it
- * as it reads any inline HTML.
+ * as it reads any inline HTML. `lists` (a table's cell, whose lists are its text): a list whose type
+ * says how it goes into a cell (its clipboard's `cell`; items copied on their own too, as their list)
+ * a list of the cell's, `<ul>` or `<ol>`, each item one of its lines, what an item holds after its text
+ * the item's next lines and the items of a list it holds the list's next items (a cell's list holds no
+ * list); one whose `cell` says a first number (`from`) its lines, each with its number.
  */
-export function joinedHtml(blocks) {
-  const lines = (list) => list.flatMap((block) => {
-    if (block.type === "copy") return block.data ? lines([block.data]) : wordsOf(block);
+export function joinedHtml(blocks, { lists = false } = {}) {
+  // Its lines, each a line's inline HTML or, where `cell`, a list ({ list: its tag, items }).
+  const lines = (list, cell = lists) => (cell ? groupItems(list) : list).flatMap((block) => {
+    if (block.type === "copy") return block.data ? lines([block.data], cell) : wordsOf(block);
+    const into = cell ? clipboardOf(block.type).cell?.(block) : null;
+    if (into) return listOf(block, into);
     const text = clipboardOf(block.type).text;
-    return text ? text(block, lines) : block.blocks ? lines(block.blocks) : [block.html];
+    const inner = (held) => lines(held, cell);
+    return text ? text(block, inner) : block.blocks ? inner(block.blocks) : [block.html];
   });
-  return lines(blocks).map((line) => `<p>${line}</p>`).join("");
+  // A list's items: each its own text and the lines of what it holds that is no list, then the items of a list it holds.
+  const itemsOf = (list) => list.blocks.flatMap((item) => {
+    const held = item.lists ?? [];
+    const own = [item.html, ...lines(held.filter((each) => !clipboardOf(each.type).cell), false)].join("<br>");
+    return [own, ...held.filter((each) => clipboardOf(each.type).cell).flatMap(itemsOf)];
+  });
+  const listOf = (list, { tag, from }) => (from ? itemsOf(list).map((item, index) => `${from + index}. ${item}`) : [{ list: tag, items: itemsOf(list) }]);
+  return lines(blocks).map((line) => (typeof line === "string" ? `<p>${line}</p>` : `<${line.list}>${line.items.map((item) => `<li>${item}</li>`).join("")}</${line.list}>`)).join("");
 }
 
 /** Whether described blocks hold formulas (inline ones, or a block that wants what `preload` brings), which want KaTeX on the page. */

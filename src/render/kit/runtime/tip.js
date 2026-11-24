@@ -5,7 +5,9 @@
 // than its box, or its lines past a line clamp). Shown 150ms after the pointer rests on it, 6px under it (over it
 // where the window has no room below), kept 12px inside the window's sides; the pointer's alone (no focus
 // from the keys shows it); gone at once when the pointer leaves or presses, the page or anything in it scrolls,
-// the wheel turns, the window loses the focus or the page is hidden, or the element is taken out, hidden
+// the wheel turns, the window loses the focus or the page is hidden, none while a button is held (a drag) nor after a
+// press until the pointer moves (what is drawn anew under a resting pointer, a bar redrawn as its menu opens, shows
+// none, as the browser's own tooltips), or the element is taken out, hidden
 // (display, visibility) or moved: the browser says no pointerout for those. One at a time. It is a popover (the top layer, over a modal detail card and any z-index of
 // the page), a generated node (.doc-tip, data-doc-dev: an export of the view leaves it out), never printed.
 
@@ -88,19 +90,33 @@ export function startTips(doc) {
     frame = view.requestAnimationFrame?.(tick) ?? 0;
   }
 
-  doc.addEventListener("pointerover", (event) => {
+  // Where a press left the pointer (null: it has moved since): what comes under it there shows nothing.
+  let pressedAt = null;
+  function rest(event) {
     if (event.pointerType && event.pointerType !== "mouse" && event.pointerType !== "pen") return;
-    const node = event.target instanceof view.Element ? event.target.closest(TIP) : null;
+    // None while a button is held (something dragged across the page).
+    const node = event.target instanceof view.Element && !event.buttons ? event.target.closest(TIP) : null;
     if (node === owner) return;
     hide();
     if (!node) return;
     owner = node;
     timer = view.setTimeout(() => show(node), DELAY);
+  }
+  doc.addEventListener("pointerover", (event) => {
+    if (!pressedAt) rest(event);
+  });
+  doc.addEventListener("pointermove", (event) => {
+    if (!pressedAt || (Math.abs(event.clientX - pressedAt.x) < 1 && Math.abs(event.clientY - pressedAt.y) < 1)) return;
+    pressedAt = null;
+    rest(event);
   });
   doc.addEventListener("pointerout", (event) => {
     if (owner && !(event.relatedTarget instanceof view.Node && owner.contains(event.relatedTarget))) hide();
   });
-  doc.addEventListener("pointerdown", hide, true);
+  doc.addEventListener("pointerdown", (event) => {
+    pressedAt = { x: event.clientX, y: event.clientY };
+    hide();
+  }, true);
   view.addEventListener("scroll", hide, true);
   view.addEventListener("wheel", hide, { capture: true, passive: true });
   view.addEventListener("blur", hide);

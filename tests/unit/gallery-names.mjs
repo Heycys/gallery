@@ -43,6 +43,7 @@ const ALLOWED = new Map([
   ["tests/unit/skill-install.mjs", /\.cache", "report-edit"/],
   ["tests/unit/cli.mjs", /\.cache", "report-edit"/],
   ["tests/unit/references.mjs", /data-rs-/],
+  ["tests/unit/data-parts.mjs", /data-rs-/], // the old marks, refused in a table's rows like the editor's own
   ["tests/browser/scenarios.mjs", /report-edit:|data-rs-/], // renamedStorage: an old page's buffer
   ["docs/workbench.md", /^Until 2026-10-28 the editor's keys/],
   ["docs/editor.md", /their name before 2026-10-28/],

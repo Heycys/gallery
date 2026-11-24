@@ -37,8 +37,10 @@
      (tables/scrollbars.js): any other hands it to the page as the browser does. */
   overscroll-behavior-inline: none;
   isolation: isolate;
-  /* No scrollbar of the system's takes room from the columns: the kit draws its own over the frame. */
+  /* No scrollbar of the system's takes room from the columns: the kit draws its own over the frame,
+     their thumbs moved along these timelines of its scroll (scrollbar.css). */
   scrollbar-width: none;
+  scroll-timeline: --doc-scrollbar-x x, --doc-scrollbar-y y;
 }
 .doc-table-wrap::-webkit-scrollbar { display: none; } /* WebKit without scrollbar-width */
 /* A table narrower than the text is placed on the page as a paragraph's words are (对齐 in the page
@@ -53,13 +55,14 @@
 .doc-table-wrap[data-doc-whole] { max-height: var(--doc-table-height, none); }
 .doc-table-wrap:has(> .doc-scrollbars[data-y]) { overscroll-behavior-block: none; }
 
-/* The frame's scrollbars (tables.js): a layer stuck at the frame's top-left that takes no room (no
-   height; as wide as the frame's inside, which it never makes wider, so that the frame's line is
-   as wide as the frame in the same layout as the frame: below), with a rail along the right edge
-   and one along the bottom for each axis that overflows (data-y, data-x), each thumb 3px in from
-   the frame's edge. tables.js sets each rail's place (the part of the edge that scrolls: below the
-   header, between the rounded corners) and its track, thumb size and thumb offset
-   (--doc-scrollbar-*). They show while the pointer is over the frame or it scrolls. */
+/* The frame's scrollbars (tables/scrollbars.js, drawn as every scrollbar of the kit: scrollbar.css): a
+   layer stuck at the frame's top-left that takes no room (no height; as wide as the frame's inside,
+   which it never makes wider, so that the frame's line is as wide as the frame in the same layout as
+   the frame: below), with a rail along the right edge and one along the bottom for each axis that
+   overflows (data-y, data-x), each thumb 3px in from the frame's edge. tables/scrollbars.js sets each
+   rail's place (the part of the edge that scrolls: below the header, between the rounded corners) and
+   its track and thumb size. Both show while the pointer is over the frame or it scrolls (data-active on
+   the layer). */
 .doc-scrollbars {
   position: sticky;
   top: 0;
@@ -68,40 +71,11 @@
   width: 100%;
   height: 0;
 }
-.doc-scrollbar {
-  position: absolute;
-  display: none;
-  opacity: 0;
-  transition: opacity 160ms ease;
-}
+.doc-scrollbars > .doc-scrollbar { display: none; }
 .doc-scrollbars[data-y] > .doc-scrollbar--y,
 .doc-scrollbars[data-x] > .doc-scrollbar--x { display: block; }
 .doc-table-wrap:hover > .doc-scrollbars > .doc-scrollbar,
-.doc-scrollbars[data-active] > .doc-scrollbar,
-.doc-scrollbar[data-drag] { opacity: 1; }
-.doc-scrollbar--y { width: 12px; height: var(--doc-scrollbar-track); }
-.doc-scrollbar--x { width: var(--doc-scrollbar-track); height: 12px; }
-.doc-scrollbar-thumb {
-  position: absolute;
-  border-radius: 999px;
-  background: var(--doc-scrollbar-thumb);
-  transition: background-color 120ms ease;
-}
-.doc-scrollbar--y > .doc-scrollbar-thumb {
-  top: 0;
-  right: 3px; /* clear of the edge, where the page editor's handles of the frame's edges are */
-  width: 6px;
-  height: var(--doc-scrollbar-thumb-size);
-  transform: translateY(var(--doc-scrollbar-thumb-at));
-}
-.doc-scrollbar--x > .doc-scrollbar-thumb {
-  bottom: 3px;
-  left: 0;
-  width: var(--doc-scrollbar-thumb-size);
-  height: 6px;
-  transform: translateX(var(--doc-scrollbar-thumb-at));
-}
-.doc-scrollbar:is(:hover, [data-drag]) > .doc-scrollbar-thumb { background: var(--doc-scrollbar-thumb-active); }
+.doc-scrollbars[data-active] > .doc-scrollbar { opacity: 1; }
 /* The frame's line above everything in the frame (a header row or column that sticks over the
    outline too): as big as the frame, on the layer stuck at its top-left; as wide as the layer, so
    as the frame whenever the frame is laid out (a width read and written later by a script could
@@ -123,7 +97,8 @@
    color; any block of the palette's background colors) the frame's line is opaque (above). */
 :is(:is(.doc-summary, .doc-panel):not(@text-colors), @highlight-colors) .doc-table-wrap { --doc-table-frame: var(--doc-table-frame-filled); --doc-table-frame-solid: var(--doc-table-frame-filled); }
 /* A frame that scrolls sideways and is not at its end fades out at its right edge (data-more,
-   tables.js): the columns go on past it, which its rails, shown only under the pointer, do not say.
+   tables.js): the columns go on past it, which its rails, shown only under the pointer, do not say. Narrow, 16px,
+   to the whole fill at the very edge, so that no line shows there (the user's 2026-11-24).
    Drawn over the cells by the frame's line layer, taking no room. */
 .doc-scrollbars-frame::after {
   content: "";
@@ -131,7 +106,7 @@
   top: 0;
   right: 0;
   bottom: 0;
-  width: 28px;
+  width: 16px;
   border-radius: 0 calc(var(--doc-table-radius) - 1px) calc(var(--doc-table-radius) - 1px) 0;
   background: linear-gradient(to right, transparent, var(--doc-table-fill));
   opacity: 0;

@@ -102,10 +102,14 @@ export function connectWorkbench({ slug, snapshot, commands, modals }) {
       return { ok: true };
     },
     // The document's look shown at once (the kit's ui.js puts it on <html> and lays out again), never
-    // stored here: the workbench writes doc.json. Answers with the look the page shows then.
-    async look({ look = null }) {
+    // stored here: the workbench writes doc.json. Answers with the look the page shows then. `follow`: the
+    // kinds of block ("tables", "databases") the reader's flip of the page's 宽表格 or 宽多维表格 sets every one of,
+    // their own words taken away in the file (doc-wide-follow: the editor's, one undo step).
+    async look({ look = null, follow = null }) {
       if (look !== null && (typeof look !== "object" || Array.isArray(look))) return { ok: false, reason: "look" };
       dispatchEvent(new CustomEvent("doc-look-request", { detail: { look: lookOf(look) } }));
+      const kinds = Array.isArray(follow) ? follow.filter((kind) => kind === "tables" || kind === "databases") : [];
+      if (kinds.length > 0) dispatchEvent(new CustomEvent("doc-wide-follow", { detail: { kinds } }));
       return { ok: true, look: lookOfElement(document.documentElement) };
     },
     async keys({ keys: list }) {
@@ -188,8 +192,14 @@ function fadeStart(cards, then) {
 // the frame lets it stay clear of its sides, and makes it 80% as high as --doc-dialog-window-height.
 // They are read from the frame's place in the workbench's window (of this origin, as every message
 // of the session is), and said in a sheet the document adopts, which is in no markup (a copy of the
-// view, the file); again as the frame changes size (the window resized, the sidebar opened, closed or
-// dragged wider) and as a card opens or closes.
+// view, the file); again as a card opens or closes, and as the frame changes size (the window resized)
+// while a card is open. A new rule on the root is a style recalculation of the whole page (every element
+// inherits its custom properties: some 40ms on a page of 8,000 elements), so while no card is open the
+// frame changing size writes nothing: the sidebar dragged wider or sliding changes the frame's place every
+// frame, and the page would be recalculated on each (the user's 2026-11-23: dragging the sidebar's width
+// lagged behind the pointer and went on after the release). The card's opening is heard before it is
+// drawn (its `open` attribute, a mutation), and the rule written then is in its first frame; a card
+// closing keeps the rule it had as it fades.
 function centreCards(modals) {
   let sheet;
   try {
@@ -217,6 +227,8 @@ function centreCards(modals) {
     sheet.replaceSync(rule);
   };
   place();
-  addEventListener("resize", place);
+  addEventListener("resize", () => {
+    if (modals.open().length > 0) place();
+  });
   modals.listen(place);
 }

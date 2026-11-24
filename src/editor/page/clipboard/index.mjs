@@ -5,7 +5,7 @@ import { formulaMaker } from "../formula/index.mjs";
 import { inlineItems, sideOf, spaceAround } from "../../../shared/inline-spacing.mjs";
 import { caretAt, editable, hostOf, select } from "../caret.mjs";
 import { formatRange, joinMarks, outOfMarks, rangeAt, rangeOffsets } from "../marks.mjs";
-import { BASIC_UNITS, HOSTS, KIND_NAMES, accepts, clipboardOf, replacedByFile, takesFormula, texOnly, unitClipboard } from "../../components/registry.mjs";
+import { BASIC_UNITS, HOSTS, KIND_NAMES, accepts, clipboardOf, linedBlocks, refusedWithin, replacedByFile, takesFormula, texOnly, unitClipboard } from "../../components/registry.mjs";
 import { listType } from "../../components/list/index.mjs";
 import { nodeAround } from "../../components/flowchart/index.mjs";
 import { cellsData } from "../../components/table/index.mjs";
@@ -15,9 +15,11 @@ import { createPictures } from "./picture.mjs";
 import { bareAddress, externalContent, readExternal } from "./import/read.mjs";
 import { parseClipboardHTML, tableRows } from "./import/html.mjs";
 import { fromMarkdown } from "./import/markdown.mjs";
+import { readYuque } from "./import/yuque.mjs";
 import { addressOf } from "../links/address.mjs";
-import { pageObjects, pageOf, typedAsIs } from "../page-objects.mjs";
-import { richHtml, toBlocks } from "./import/to-blocks.mjs";
+import { pageObjects, pageOf, pageOfUnit, typedAsIs } from "../page-objects.mjs";
+import { cellText, richHtml, toBlocks } from "./import/to-blocks.mjs";
+import { listsIn, placeInCell } from "../table/lists.mjs";
 import { t } from "../../../shared/i18n/index.mjs";
 
 // Copying, cutting and pasting (docs/editor.md, "Copying blocks", "Copying text" and "Pasting").
@@ -44,9 +46,9 @@ import { t } from "../../../shared/i18n/index.mjs";
 //     paragraph of its own); where they go out of a box that stays whole with blocks left in it after
 //     the caret, the text stays before those, a block of its own; an empty block gives them its place.
 //     In code, plain text with its lines; in a field of plain text (the page's title, a code block's
-//     title) the words of what is pasted on one line, whatever it is; in a block that cannot split (a
-//     cell, a caption), the lines joined. An address alone (read.mjs bareAddress) is a link in any
-//     block that takes links.
+//     title) the words of what is pasted on one line, whatever it is; in a table's cell, the cell's own
+//     text, its lines and lists (pasteIntoCell); in another block that cannot split (a caption), the
+//     lines joined. An address alone (read.mjs bareAddress) is a link in any block that takes links.
 //   With blocks selected: the blocks go after them, in the first box out from there that takes them all;
 //     and so with the caret on a formula block, which has no text to paste into.
 //   Into a table's cells (table/cells.mjs, what the clipboard holds as cells: cellsOf), cells go from
@@ -161,7 +163,8 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
 
   // Why a block the page cannot make (describe gives none) is not copied: one not saved yet, or a
   // block of the report's own (a whole block, a widget), the Agent's to copy.
-  const refusalOf = (node) => (node.hasAttribute("data-ge-new") ? t("选中的块还没保存，保存之后再复制。")
+  // A block's own word for why it is no copy (`copyRefusal` of its page object: a database whose bodies together are more than a commit writes) comes first.
+  const refusalOf = (node) => pageOfUnit(node)?.copyRefusal?.(node) ?? (node.hasAttribute("data-ge-new") ? t("选中的块还没保存，保存之后再复制。")
     : t("选中的块里有{0}：文档自己的组件不能在页面上复制，可以让 Agent 复制。", KIND_NAMES[node.getAttribute("data-ge-unit-kind")] ?? t("组件")));
 
   // Why blocks described for a cut are not cut (null: they are). A cut takes them off the page, and only
@@ -383,6 +386,8 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
   // list item holding blocks is such a box too: blocks pasted by one of the blocks it holds stay in
   // the item.
   function placeFor(anchor, kinds) {
+    // What a box around it refuses however far in (`except`: no database in a record's body) has no place from there.
+    if (kinds.some((kind) => refusedWithin(anchor, kind))) return null;
     const takes = (box) => box?.hasAttribute("data-ge-box") && kinds.every((kind) => accepts(box.getAttribute("data-ge-box-kind"), kind));
     const parents = [];
     let splits = [];
@@ -722,14 +727,48 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
   }
 
   // One formatted line at the caret: the format bar's marks the block takes. Text copied in a block
-  // of the page keeps its line breaks (`breaks`: its lines joined by <br>, else by a space); `edges`, the
-  // spaces at its ends (read).
+  // of the page keeps its line breaks (`breaks`: its lines joined by <br>, each line break one, one in a
+  // mark too, and an empty line between two kept: pastedLines `lineBreaks`; else by a space); `edges`,
+  // the spaces at its ends (read).
   function pasteRich(host, range, html, breaks = false, bold = false, edges = null) {
-    const lines = pastedLines(document, html, { links: can(host, "links"), formula, mention, edges });
+    const lines = pastedLines(document, html, { links: can(host, "links"), formula, mention, edges, lineBreaks: breaks });
+    while (lines[0]?.length === 0) lines.shift();
+    while (lines.at(-1)?.length === 0) lines.pop();
     insertNodes(host, range, lines.flatMap((line, index) => (index > 0 ? [breaks ? document.createElement("br") : document.createTextNode(" "), ...line] : line)), { own: true, bold });
   }
 
-  // Into a block that cannot split (a cell, a title): the lines of what is pasted, joined, with the
+  // Into a table's cell, a text block of lines and lists that cannot split: what is pasted as the cell's
+  // own text, every line of it a line (a line break between two, an empty one kept) and a list a list
+  // of the cell's, with the marks, formulas and chips the cell takes (components/table/index.mjs cellNodes): text
+  // the page copied (a cell's with its lists), a cell copied alone, the lines of blocks (joinedHtml
+  // `lists`: a list's items the cell's list's), another program's formatted text read as its blocks,
+  // its plain text as its lines (import/to-blocks.mjs cellText), one line of plain text taking the
+  // caret's marks as typing does. At a line of the cell a list stands on lines of its own, in an item
+  // its items are the list's (table/lists.mjs placeInCell). Nothing is said: nothing was left out.
+  function pasteIntoCell(host, range, content, data) {
+    const plain = (data.getData("text/plain") || "").replace(/\r\n?/g, "\n");
+    const lines = plainLines(content, data, plain);
+    if (content.kind === "plain" && !lines) {
+      if (content.text) insertNodes(host, range, [document.createTextNode(content.text)]);
+      return;
+    }
+    const html = lines ? cellText(plain) : content.kind === "rich" ? content.html : content.kind === "blocks" ? joinedHtml(content.blocks, { lists: true }) : "";
+    const made = HOSTS[host.getAttribute("data-ge-kind")].lines.nodes(document, html, (each, ends) => pastedLines(document, each, {
+      links: can(host, "links"), formula, formulas: takesFormula(host), mention, lineBreaks: true,
+      edges: content.edges ? { start: content.edges.start && ends.start, end: content.edges.end && ends.end } : null,
+    }));
+    if (made.length === 0) return;
+    if (!listsIn(made)) return insertNodes(host, range, made, { own: true });
+    range.deleteContents();
+    const caret = placeInCell(host, outOfMarks(host, range), made);
+    spaceItems(host);
+    if (caret) select(caret);
+    spaced(host);
+    recordText(host);
+    showCaret();
+  }
+
+  // Into a block that cannot split (a caption, a card's title): the lines of what is pasted, joined, with the
   // marks the block takes: what read() made of it (a formatted line, or its blocks' text: no list's
   // marker, no Markdown), of the page's own blocks as of another program's.
   function pasteJoined(host, range, content, data) {
@@ -814,6 +853,10 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
       carriedFiles = await carryFiles(carried, { from: content.from, project: content.project, upload, say });
       if (!carriedFiles) return;
     }
+    // Text a table's cell copied with its lists, pasted where blocks go (not into a cell, whose text
+    // they are): its lines and its lists as blocks, so no list is lost (linedBlocks).
+    const listed = content.kind === "rich" && content.own && !(host && HOSTS[host.getAttribute("data-ge-kind")]?.lines) ? linedBlocks(document, content.html) : null;
+    if (listed) content = { ...content, kind: "blocks", blocks: listed };
     try {
       if (!host) {
         // With blocks selected: blocks after them (text as paragraphs, Markdown read).
@@ -834,6 +877,7 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
         linkPasted(link, page); // 选择视图: the views offered for the link pasted
         return;
       }
+      if (HOSTS[host.getAttribute("data-ge-kind")]?.lines) return pasteIntoCell(host, range, content, data);
       if (!can(host, "split")) return pasteJoined(host, range, content, data);
       // A flowchart node's title made by paste looks as one made by typing: what lands in it bold
       // where bold is armed (its empty title: format-bar/), and plain text bold in a title bold
@@ -868,7 +912,7 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
    * table (its text alone: Yuque's Markdown, a .md file's), read as a paste's Markdown with its cells'
    * pictures; tab-separated lines (Excel's and Google Sheets' text), two lines or more of as many cells,
    * two or more, a cell in quotes holding tabs, line breaks and "" a quote; else its text, one cell
-   * holding its lines.
+   * holding its lines (plain text alone read as the caret's paste reads it: import/to-blocks.mjs cellText).
    */
   function cellsOf(data) {
     const copied = cellsData(data);
@@ -887,14 +931,14 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
     const lines = tabbed(text);
     const html = (words) => escapeText(words).replace(/\n/g, "<br>");
     if (lines) return { rows: lines.map((row) => row.map(html)), from: null };
-    return text.trim() ? { rows: [[html(text)]], from: null } : null;
+    return text.trim() ? { rows: [[external.html ? html(text) : cellText(text)]], from: null } : null; // plain text alone as the caret's paste reads it
   }
 
   /**
    * The page's own text or blocks on the clipboard as rows of cells' inline HTML (table/, cells
    * selected): text copied in a block one cell of it; a table copied alone its cells as they are (one
-   * with merged cells left to its HTML); other blocks one cell of their lines (joinedHtml: no list's
-   * marker, no Markdown); null for anything else (the HTML table of blocks holding one is read).
+   * with merged cells left to its HTML); other blocks one cell of their lines and lists (joinedHtml
+   * `lists`, no Markdown); null for anything else (the HTML table of blocks holding one is read).
    */
   function ownCells(data) {
     const own = ownData(data);
@@ -905,7 +949,7 @@ export function createClipboard({ editing, blocks, struct, recordText, say, load
     const table = list.length === 1 ? (list[0].type === "copy" ? list[0].data : list[0]) : null;
     if (table?.type === "table") return table.spans ? null : table.rows;
     if (/"(type|kind)":"table"/.test(JSON.stringify(list))) return null;
-    const html = joinedHtml(list);
+    const html = joinedHtml(list, { lists: true });
     return html ? [[html]] : null;
   }
 
@@ -971,6 +1015,16 @@ function plainOf(content, data) {
     return [...template.content.children].map((line) => plainText(line.innerHTML).replace(/\s+/g, " ").trim()).filter(Boolean).join(" ");
   }
   return (data.getData("text/plain") || "").replace(/\r?\n/g, " ");
+}
+
+// Whether what is pasted into a table's cell is another program's plain text of several lines, which
+// goes in as its lines (import/to-blocks.mjs cellText): no HTML read (none, or none with rich
+// formatting), no code of a code editor (VS Code's, its code block's lines), no copy of Yuque's (its
+// blocks) and no whole $$ formula $$ (a formula, one block holding one).
+function plainLines(content, data, plain) {
+  if (content.own || !/\n[^\n]/.test(plain.trimEnd()) || [...(data.types ?? [])].includes("vscode-editor-data")) return false;
+  if (content.kind === "blocks" && content.blocks.length === 1 && holdsFormulas(content.blocks)) return false;
+  return (!data.getData("text/html") || !externalContent(data).html) && !readYuque(data);
 }
 
 // The spaces at the ends of a line of text pasted (pastedLines `edges`): all of the page's own text

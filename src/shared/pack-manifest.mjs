@@ -30,15 +30,15 @@ export const PACK_ID = /^[a-z0-9][a-z0-9-]*$/;
 // own is in (gallery block new local/<name>, or a <name> alone), which no pack installed takes: the default
 // pack (默认块包, DEFAULT_PACK), where an Agent's block goes when it names no pack, so that a single block
 // needs no pack of its own, and where Gallery's own blocks for documents count (packOf: gallery/card, the
-// chart card, the board, the metric and the chart, their ids as ever). It has no pack.json (none may name
+// chart card and the metric, their ids as ever). It has no pack.json (none may name
 // it): its name and words are these, and 设置 › 组件列表 lists it first, its blocks or none (shared/block-packs.mjs).
 
 /** What the default pack (OWN_SCOPE's) is called and says of itself, in both languages. */
 export const DEFAULT_PACK = Object.freeze({
   name: Object.freeze({ zh: "默认块包", en: "Default pack" }),
   description: Object.freeze({
-    zh: "文档里常用的图表、看板和指标，以及 Agent 写自定义块时没有指定块包的块。只写一个块，不用另建块包。",
-    en: "The chart, board and metric documents use, and an Agent's custom block when it names no pack: a single block needs no pack of its own.",
+    zh: "文档里常用的卡片和指标，以及 Agent 写自定义块时没有指定块包的块。只写一个块，不用另建块包。",
+    en: "The card and metric documents use, and an Agent's custom block when it names no pack: a single block needs no pack of its own.",
   }),
 });
 
