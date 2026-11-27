@@ -93,7 +93,7 @@ default one, the document also joins the default workspace's sidebar (when there
 workspace's column: a line says where, 默认工作区（…）的侧边栏：已加进…; it is a display only, the file stays in
 its own workspace. --no-preview (or
 GALLERY_NO_PREVIEW=1) leaves the server alone; --no-browser is still taken and changes nothing.
-Editing needs Chrome or Edge.
+Editing supports desktop Chrome, Edge and Safari on macOS.
 A title or a description that starts with "-" and a letter would be read as an option: put "--"
 before the arguments (gallery new q3-review -- "-Q3 回顾").
 Exits 1 when the document exists, or the slug is the workspace's own (exports, the 写作偏好 page's) or
@@ -132,7 +132,7 @@ Prints the workspace, a line on the server only when there is news (it started n
 was replaced, or it is on another port than the last command found it on: an address given before
 no longer works), the document's page alone (the Agent's own, with a slug) and last
 the address to give the user. With a slug in a workspace other than the default one, a line before
-them says the document joined the default workspace's sidebar (as gallery new's does). Editing needs Chrome or Edge: open the address there.
+them says the document joined the default workspace's sidebar (as gallery new's does). Editing supports desktop Chrome, Edge and Safari on macOS: open the address there.
 With a slug and no qa baseline yet, it first keeps one of the document as it is now, so that the
 first gallery qa after the changes pictures what changed.
 Exits 1 when there is no such document, no server answers, or the shared Gallery server takes the
@@ -846,4 +846,4 @@ gallery --version prints the version first, then a line for each installed Galle
 gallery (技能：…, with the gallery skill install that updates it) and one when npm has a newer Gallery
 (新版本：…), which a cache knows: checked in the background once a day, never waited for;
 GALLERY_NO_UPDATE_CHECK=1 (or CI, NO_UPDATE_NOTIFIER) turns that check off. No other command says them.
-Editing in the browser and gallery qa need Chrome or Edge. Node 22.13 or newer.`;
+Edit in desktop Chrome, Edge or Safari on macOS. gallery qa needs Chrome or Edge. Node 22.13 or newer.`;

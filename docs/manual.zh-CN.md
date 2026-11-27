@@ -9,7 +9,7 @@ Agent 只负责内容和组件选择：排版、配色、深浅色主题、响�
 ## 要求
 
 - Node.js 22.13 或更高版本（https://nodejs.org 的 LTS 版），macOS、Linux 或 Windows。
-- 在浏览器里编辑和 `gallery qa` 需要 Chrome 或 Microsoft Edge（编辑器只支持 Chromium 内核的浏览器；默认浏览器是 Safari 或 Firefox 时，把地址复制到 Chrome 或 Edge 里打开）。`gallery qa` 和 PDF 导出用电脑上装好的 Chrome 或 Edge，不另外下载浏览器；`GALLERY_BROWSER=<程序路径>` 可以指定一个。
+- 可以用桌面版 Chrome、Microsoft Edge 或 macOS 上的 Safari 编辑。`gallery qa` 和 PDF 导出用电脑上装好的 Chrome 或 Edge，不另外下载浏览器；`GALLERY_BROWSER=<程序路径>` 可以指定一个。
 
 ## 安装
 
@@ -117,7 +117,7 @@ Gallery 自己写进文件的字（新文档的起始页和说明、首页的标
 gallery sandbox --name my-test --demo --extension ./my-extension
 ```
 
-命令在前台运行，自动选一个本机端口并打印地址和工作区。用 Chrome 或 Edge 打开该地址，或启动时加 `--open`。工作台顶部显示「沙盒」。`--demo` 放入两篇示例文档。`--from <workspace>` 把文档、资源、页面、扩展和内容设置复制到新工作区。副本跳过符号链接、其他工作区的目录引用、Gallery 的网络密钥和运行状态。原有扩展的启用状态需要在副本中重新设置。
+命令在前台运行，自动选一个本机端口并打印地址和工作区。用桌面版 Chrome、Edge 或 Safari 打开该地址，或启动时加 `--open`。工作台顶部显示「沙盒」。`--demo` 放入两篇示例文档。`--from <workspace>` 把文档、资源、页面、扩展和内容设置复制到新工作区。副本跳过符号链接、其他工作区的目录引用、Gallery 的网络密钥和运行状态。原有扩展的启用状态需要在副本中重新设置。
 
 `--extension <dir>` 可以重复使用。每个目录须有 `extension.json`。Gallery 安装并启用副本，源文件变化时重新安装，保留沙盒里当前的启用开关，工作台脚本随即重新 `activate(api)`（脚本必须导出它，不再有全局的 `window.gallery`）。扩展后台以当前用户的操作系统权限运行，请使用你信任的代码。
 
@@ -175,7 +175,7 @@ Ctrl+C 或另一个终端中的 `gallery sandbox stop my-test` 停止服务。�
 
 **语言。** 侧栏底部“设置”里的“语言”可以把工作台和编辑器的界面换成中文或 English，选择记在浏览器里（没选过时跟随浏览器的语言）；文档内容本身不会被翻译。工作台和文档页之间的会话协议、工作区接口的规格见 [`docs/workbench.md`](workbench.md)。
 
-编辑器只存在于本地服务的页面上，导出的离线文件里没有它。页面编辑支持桌面版 Chrome 和 Edge；Firefox、Safari 和触屏设备还没有验证过。页面会运行文档自己的脚本，而编辑器和保存接口也在同一个页面里，所以它是为你自己的文档（例如 Agent 为你写的）准备的，不要用它打开来路不明的文档。
+编辑器只存在于本地服务的页面上，导出的离线文件里没有它。页面编辑支持桌面版 Chrome、Edge 和 macOS 上的 Safari；Firefox 和触屏设备还没有验证过。页面会运行文档自己的脚本，而编辑器和保存接口也在同一个页面里，所以它是为你自己的文档（例如 Agent 为你写的）准备的，不要用它打开来路不明的文档。
 
 ## 二次开发
 

@@ -294,8 +294,8 @@ Gallery skill, which the command installs.
 
 ## Requirements
 
-Node.js 22.13 or newer (https://nodejs.org, the LTS) on macOS, Linux or Windows. Editing in the browser and
-\`gallery qa\` need Chrome or Microsoft Edge.
+Node.js 22.13 or newer (https://nodejs.org, the LTS) on macOS, Linux or Windows. Edit in desktop Chrome, Edge or Safari on macOS.
+\`gallery qa\` needs Chrome or Microsoft Edge.
 
 ## Install
 

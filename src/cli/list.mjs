@@ -99,7 +99,7 @@ async function textMatches(all, listed, words) {
 
 // The label of the address gallery list gives: the list is a revision's first command, and the address
 // goes to the user with the handoff (SKILL.md "Revising a document"), not now as gallery new's and open's.
-const LATER_LINE = "交给用户（交稿时给；用 Chrome 或 Edge 打开）：";
+const LATER_LINE = "交给用户（交稿时给；用 Chrome、Edge 或桌面版 Safari 打开）：";
 
 /**
  * The last line of a list of one document found by name (a revision's first command): the address to

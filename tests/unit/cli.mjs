@@ -1444,7 +1444,7 @@ try {
     // sentence to forward "as it is" went to the handoff: found testing the skill with Agents, 2026-10-28).
     const opened = (slug, title) => [
       ...(slug ? [`Agent 自用（只有文档页，不交给用户）：http://127.0.0.1:${ours.port}/generated/${slug}.html?agent`] : []),
-      `交给用户（现在就把这个地址给用户；用 Chrome 或 Edge 打开）：http://127.0.0.1:${ours.port}/${slug ? `#${pageLink({ slug, title })}` : ""}`,
+      `交给用户（现在就把这个地址给用户；用 Chrome、Edge 或桌面版 Safari 打开）：http://127.0.0.1:${ours.port}/${slug ? `#${pageLink({ slug, title })}` : ""}`,
     ];
     // (natural's baseline, which its exports above wrote, taken away: gallery open writes it again, below.)
     await fs.rm(path.join(reports, ".gallery", "qa", "natural", "blocks.json"), { force: true });

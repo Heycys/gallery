@@ -228,7 +228,7 @@ export default {
   "请求地址不对": "Request to the wrong address",
   "请求格式不对": "Malformed request",
   "服务器没有给出结果（HTTP {0}）": "The server gave no answer (HTTP {0})",
-  "编辑只支持 Chrome 和 Edge：这个浏览器里可以阅读，要编辑请用 Chrome 或 Edge 打开这个地址": "Editing works in Chrome and Edge only: you can read here; to edit, open this address in Chrome or Edge",
+  "这个浏览器里可以阅读。要编辑，请用桌面版 Chrome、Edge 或 macOS 上的 Safari 打开这个地址。": "You can read here. To edit, open this address in desktop Chrome, Edge or Safari on macOS.",
   "这是 npm run dev 的服务器：在运行它的地方停止它": "This is npm run dev's server: stop it where it runs",
   "没有连上 Gallery 的本地服务：运行 gallery open 启动它。": "Not connected to Gallery's local service: run gallery open to start it.",
   "读取失败（{0}）": "Could not read ({0})",

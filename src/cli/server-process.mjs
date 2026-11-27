@@ -19,10 +19,10 @@ import { defaultWorkspace, documentDirectory, documentFiles } from "../shared/wo
 // Logs live at <data>/logs/server.log. Older CLI versions are replaced; a live dev service is reused.
 // new/import/duplicate print the user's workbench address immediately after creating a document
 // (and open no browser unless --open asks: arguments.mjs openAsked).
-// --no-preview or GALLERY_NO_PREVIEW=1 leaves the service alone. Editing needs Chrome or Edge.
+// --no-preview or GALLERY_NO_PREVIEW=1 leaves the service alone.
 
 /** The line the address to give the user is on, said as what to do now; and the Agent's own, the page alone. */
-export const USER_LINE = "交给用户（现在就把这个地址给用户；用 Chrome 或 Edge 打开）：";
+export const USER_LINE = "交给用户（现在就把这个地址给用户；用 Chrome、Edge 或桌面版 Safari 打开）：";
 export const AGENT_LINE = "Agent 自用（只有文档页，不交给用户）：";
 /**
  * What gallery new's and gallery import's 下一步 line says first when their last line gives the address
