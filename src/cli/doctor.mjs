@@ -94,7 +94,7 @@ export async function examine({ version = versionOf(), workspace, how = null, en
     fine({ id: "workspace", path: workspace, exists: true, writable: true, text: `工作区 ${workspace} 可以写${where}` });
   }
 
-  // A Chrome or Edge: gallery qa looks at pages with it, and the user edits in it.
+  // A Chrome or Edge: gallery qa looks at pages with it.
   const found = browser === null ? await findBrowserHere(env) : browser;
   if (found.path) {
     fine({ id: "browser", path: found.path, text: `浏览器 ${found.path}` });
@@ -110,7 +110,7 @@ export async function examine({ version = versionOf(), workspace, how = null, en
 async function findBrowserHere(env) {
   const { findBrowser } = await import("../transfer/browser.mjs");
   const found = findBrowser();
-  if (!found) return { path: null, why: "找不到 Chrome 或 Edge（gallery qa 和在浏览器里编辑要用）" };
+  if (!found) return { path: null, why: "找不到 Chrome 或 Edge（gallery qa 要用）" };
   if (env.GALLERY_BROWSER && !existsSync(found)) return { path: null, why: `GALLERY_BROWSER 指的 ${found} 不存在` };
   return { path: found };
 }

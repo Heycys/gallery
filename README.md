@@ -70,7 +70,7 @@ The second command installs the companion skill into Claude Code (`~/.claude/ski
 - **Look around the workbench first.** Run `gallery open`, or bring in a document you already have with `gallery import ./notes.md` (Markdown, Word, PDF, HTML, CSV, EPUB and Notion export ZIPs).
 - **Things to say next:** *"Revise it by my notes, update the chart's data, and keep the conclusions I edited."* · *"Make me a home page with my to-dos, recent documents and a launch countdown."*
 
-**Requirements:** Node.js `22.13` or newer. Editing in the browser and `gallery qa` need desktop **Chrome** or **Microsoft Edge** (other browsers are untested; verified so far on Windows 11 and macOS 27).
+**Requirements:** Node.js `22.13` or newer. Edit in desktop **Chrome**, **Microsoft Edge** or **Safari on macOS**. `gallery qa` requires Chrome or Edge.
 
 ## How it works
 
@@ -173,7 +173,7 @@ For every option, run `gallery help` or see the [user manual](docs/manual.zh-CN.
 - **It runs only on your computer.** The server listens on 127.0.0.1, so only this computer can reach it. There is no account and no cloud; the only thing that calls a language model is your own agent. Bookmarks, embeds and online cards such as the weather go online, and cards ask first. Once a day, in the background, `gallery` also asks the npm registry (the one your npm uses) whether there is a newer version; `GALLERY_NO_UPDATE_CHECK=1` turns that off. Installed with `npm i -g` on Windows or macOS, Gallery starts its server when you log in; turn that off with **Start at login** in **Settings**, or with `gallery startup disable`.
 - **"Together" means you and your agent.** Gallery has no cloud sync and no multi-user editing. Let one agent write a document at a time.
 - **Documents run their own scripts.** Open documents that you or your own agent wrote.
-- **Tested so far:** Windows 11 with Chrome and Edge, and macOS 27 with Chrome. Linux, Safari, Firefox and touch devices are untested, and Chinese input methods have been tested by simulation only.
+- **Tested so far:** Windows 11 with Chrome and Edge, and macOS with Chrome and Safari (basic editing and saving). Linux, Firefox and touch devices are untested, and Chinese input methods have been tested by simulation only.
 - **The pictures on this page** show the product's real pages: every picture at rest is a state the product was really in, and the motion between them is replayed frame by frame. The arrangement was made afterwards: where the windows sit, the enlarged pieces laid over them, the request box at the start of the first picture, the terminal windows (their commands and output are real), the browser's address bar and the pointer. The documents and the home page in them hold sample data.
 
 ## How it's tested

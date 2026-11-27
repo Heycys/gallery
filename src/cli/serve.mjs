@@ -54,7 +54,7 @@ export async function run(argv) {
     const { startProductionServer } = await import("../server/production.mjs");
     await startProductionServer({ reportsDirectory, port, kind: "cli" });
     await fs.writeFile(serviceLocation().lastPortFile, `${port}\n`).catch(() => {});
-    console.log(`Gallery serves ${reportsDirectory} at ${addressOf(port)} (Chrome or Edge). Ctrl+C stops it.`);
+    console.log(`Gallery serves ${reportsDirectory} at ${addressOf(port)}. Ctrl+C stops it.`);
     return; // it runs until Ctrl+C, gallery stop, or its package replaced
   }
   const { writeSharedAssets } = await import("../render/pipeline.mjs");
@@ -76,6 +76,6 @@ export async function run(argv) {
     if (running?.pid === child.pid) break;
   }
   await fs.writeFile(serviceLocation().lastPortFile, `${port}\n`).catch(() => {});
-  console.log(`Gallery serves ${reportsDirectory} at ${addressOf(port)} (Chrome or Edge). Ctrl+C stops it.`);
+  console.log(`Gallery serves ${reportsDirectory} at ${addressOf(port)}. Ctrl+C stops it.`);
   process.exit(await ended);
 }

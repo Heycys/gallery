@@ -70,7 +70,7 @@ El segundo comando instala la skill complementaria en Claude Code (`~/.claude/sk
 - **Echa primero un vistazo al entorno de trabajo.** Ejecuta `gallery open`, o trae un documento que ya tengas con `gallery import ./notes.md` (Markdown, Word, PDF, HTML, CSV, EPUB y archivos ZIP exportados de Notion).
 - **Lo siguiente que puedes pedirle:** *«Revísalo según mis notas, actualiza los datos del gráfico y conserva las conclusiones que edité.»* · *«Hazme una página de inicio con mis tareas, los documentos recientes y una cuenta regresiva para el lanzamiento.»*
 
-**Requisitos:** Node.js `22.13` o posterior. Para editar en el navegador y para `gallery qa` hace falta **Chrome** o **Microsoft Edge** de escritorio (otros navegadores no se han probado; hasta ahora se ha verificado en Windows 11 y macOS 27).
+**Requisitos:** Node.js `22.13` o posterior. Se puede editar en **Chrome** o **Microsoft Edge** de escritorio y en **Safari para macOS**. `gallery qa` requiere Chrome o Edge.
 
 ## Cómo funciona
 
@@ -173,7 +173,7 @@ Para ver todas las opciones, ejecuta `gallery help` o consulta el [manual de usu
 - **Se ejecuta solo en tu equipo.** El servidor escucha en 127.0.0.1, así que solo este equipo puede acceder a él. No hay cuenta ni nube; lo único que llama a un modelo de lenguaje es tu propio agente. Los marcadores web, los contenidos incrustados y las tarjetas en línea, como la del clima, se conectan a internet, y las tarjetas preguntan antes. Además, una vez al día y en segundo plano, `gallery` pregunta al registro de npm (el que usa tu npm) si hay una versión nueva; `GALLERY_NO_UPDATE_CHECK=1` lo desactiva. Si lo instalas con `npm i -g` en Windows o macOS, Gallery arranca su servidor cuando inicias sesión; puedes desactivarlo con **Start at login** (arrancar al iniciar sesión) en **Settings** (ajustes), o con `gallery startup disable`.
 - **«Juntos» significa tú y tu agente.** Gallery no tiene sincronización en la nube ni edición multiusuario. Deja que un solo agente escriba un documento a la vez.
 - **Los documentos ejecutan sus propios scripts.** Abre documentos escritos por ti o por tu propio agente.
-- **Probado hasta ahora:** Windows 11 con Chrome y Edge, y macOS 27 con Chrome. Linux, Safari, Firefox y los dispositivos táctiles no se han probado, y la escritura con un método de entrada (IME) se ha probado solo mediante simulación.
+- **Probado hasta ahora:** Windows 11 con Chrome y Edge, y macOS con Chrome y Safari (edición básica y guardado). Linux, Firefox y los dispositivos táctiles no se han probado, y la escritura con un método de entrada (IME) se ha probado solo mediante simulación.
 - **Las imágenes de esta página** muestran páginas reales del producto: cada imagen en reposo es un estado en el que el producto estuvo de verdad, y el movimiento entre esos estados se reproduce fotograma a fotograma. La composición se hizo después: dónde se colocan las ventanas, las partes ampliadas superpuestas, el cuadro de la petición al comienzo de la primera imagen, las ventanas de terminal (sus comandos y su salida son reales), la barra de direcciones del navegador y el puntero. Los documentos y la página de inicio que aparecen en ellas contienen datos de ejemplo.
 
 ## Cómo se prueba

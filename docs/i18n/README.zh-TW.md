@@ -70,7 +70,7 @@ gallery skill install
 - **先自己開啟工作台看看**：執行 `gallery open`，或用 `gallery import ./notes.md` 匯入現有的文件（支援 Markdown、Word、PDF、HTML、CSV、EPUB 及 Notion 匯出的 ZIP）。
 - **接著交給 Agent 的話**：*「照我的批註改一下，更新圖表數據，保留我改過的結論」* · *「幫我做一個首頁，放待辦、最近的文件和上線倒數計時」*。
 
-**需求：** Node.js `22.13` 或更高版本。在瀏覽器中編輯與執行 `gallery qa` 需要桌面版 **Chrome** 或 **Microsoft Edge**（其他瀏覽器未測試；目前已在 Windows 11 和 macOS 27 上完成驗證）。
+**需求：** Node.js `22.13` 或更高版本。編輯器支援桌面版 **Chrome**、**Microsoft Edge** 和 **macOS 上的 Safari**。`gallery qa` 需要 Chrome 或 Edge。
 
 ## 運作原理
 
@@ -173,7 +173,7 @@ Agent 新增的內容用綠色標出，刪除的內容帶著刪除線用紅色�
 - **只在你的電腦上執行**：服務監聽 127.0.0.1，只有這台電腦能連線。沒有帳號，沒有雲端；呼叫大型語言模型的只有你自己的 Agent。網頁書籤、嵌入和天氣這類連網的卡片需要連上網路，卡片會先問你。`gallery` 每天會在背景向 npm 的套件來源（你的 npm 用的那個）詢問一次有沒有新版本，設定 `GALLERY_NO_UPDATE_CHECK=1` 就不會詢問。在 Windows、macOS 上用 `npm i -g` 安裝的 Gallery，登入系統後會在背景啟動服務，在「設定」裡關掉「開機自啟動」或執行 `gallery startup disable` 就不會啟動。
 - **「一起寫」指的是你和 Agent**：Gallery 沒有雲端同步，也沒有多人協作。同一時間只讓一個 Agent 寫一份文件。
 - **文件會執行自己的指令碼**：只開啟你自己或你的 Agent 寫的文件。
-- **目前測試過的：** Windows 11 上的 Chrome 和 Edge，macOS 27 上的 Chrome。Linux、Safari、Firefox 和觸控裝置都沒測試過；中文輸入法只做過模擬測試。
+- **目前測試過的：** Windows 11 上的 Chrome 和 Edge，macOS 上的 Chrome 和 Safari（基本編輯與儲存）。Linux、Firefox 和觸控裝置都沒測試過；中文輸入法只做過模擬測試。
 - **這一頁上的圖**裡，產品的畫面取自真實的頁面：每個停下來的畫面都是產品裡真實出現過的狀態，中間的動作逐格重播。視窗怎麼擺、疊在上面的放大部分、主圖開頭的輸入框、終端機視窗（裡面的指令和輸出是真的）、瀏覽器的網址列和滑鼠指標，是後來加上的。圖裡的文件和首頁用的是範例資料。
 
 ## 怎麼測試的

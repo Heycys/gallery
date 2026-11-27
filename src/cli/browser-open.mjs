@@ -37,7 +37,7 @@ export function browserCommand(address, { platform = process.platform, env = pro
 }
 
 /** What a command says once it opened the default browser at its address. */
-export const OPENED_LINE = "Opened it in the default browser (if that is not Chrome or Edge, open the address there to edit).";
+export const OPENED_LINE = "Opened it in the default browser.";
 /** What a command says of opening the default browser: OPENED_LINE, or why it opened none. */
 export const browserSaid = (opened) => (opened.opened ? OPENED_LINE : `Not opened in a browser: ${opened.why}.`);
 

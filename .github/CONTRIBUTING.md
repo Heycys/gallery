@@ -4,14 +4,14 @@ Gallery is maintained by one person, so replies to issues and pull requests can 
 
 ## What helps most now
 
-- **Reports from setups that are not tested yet:** macOS, Linux, Safari, Firefox, a real Chinese input method. [Open an issue](https://github.com/heycys/gallery/issues/new/choose) with what you did and what you saw; the form asks for your OS, browser, Node.js and Gallery versions, how Gallery is installed, and the output of `gallery doctor`.
+- **Reports from setups that are not tested yet:** Linux, Firefox, a real Chinese input method. [Open an issue](https://github.com/heycys/gallery/issues/new/choose) with what you did and what you saw; the form asks for your OS, browser, Node.js and Gallery versions, how Gallery is installed, and the output of `gallery doctor`.
 - **Small, focused fixes**, with a test that fails without them. For anything larger, open an issue first, so the approach is agreed before you spend time on it.
 
 Please report security problems privately, as [SECURITY.md](SECURITY.md) describes, not in an issue.
 
 ## Running from source
 
-You need Node.js 22.13 or newer and desktop Chrome or Edge: editing is supported in those two browsers, and `gallery qa` and the tests drive the installed one (`GALLERY_BROWSER=<its executable>` picks which).
+You need Node.js 22.13 or newer. Edit in desktop Chrome, Edge or Safari on macOS. `gallery qa` and the Puppeteer tests drive an installed Chrome or Edge (`GALLERY_BROWSER=<its executable>` picks which).
 
 The dev server works in the default workspace, `~/Documents/Gallery`, unless you tell it otherwise: on every start it prepares that workspace with this checkout's code (it creates it if missing, installs or updates Gallery's two built-in block packs and the home page, and records it in your user data folder), even when it then stops because the port is taken. So give it a workspace and a data folder of its own before the first start, and set the same two variables for `node src/cli/bin.mjs` in another terminal:
 

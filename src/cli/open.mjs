@@ -11,8 +11,7 @@ import { joinDefaultTree, joinedLine } from "../shared/drafts.mjs";
 // document's page with its title, when one is named), then prints the workspace, a line on the
 // server only when it is news (started now, an older one replaced, another port than the last
 // command found: this command is done and the server runs on, nothing to wait for), the document's page
-// alone, marked as the Agent's own, the address to give the user (the editor is Chromium's: Chrome
-// or Edge), and last whether the browser was opened. Exits 1 when there is no such document, when no
+// alone, marked as the Agent's own, the address to give the user, and last whether the browser was opened. Exits 1 when there is no such document, when no
 // server answers, or when the workspace's announced server takes the request and gives no answer
 // (it is never started twice). Before that, with a slug and no gallery qa baseline, it writes one of
 // the document before the round of changes an Agent opens the page for (serverFor's `baseline`:

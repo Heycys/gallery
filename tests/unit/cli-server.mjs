@@ -62,7 +62,7 @@ try {
   assert.deepEqual(linesOf(made.stdout).slice(-3), [
     `提示：Gallery's shared server is on port ${port} (pid ${server.pid}, started now; its log: ${layout.log}). This command is done; the server runs on in the background (nothing to wait for or keep running).`,
     `Agent 自用（只有文档页，不交给用户）：http://127.0.0.1:${port}/generated/live.html?agent`,
-    `交给用户（现在就把这个地址给用户；用 Chrome 或 Edge 打开）：http://127.0.0.1:${port}/#${pageLink({ slug: "live", title: "实时文档" })}`,
+    `交给用户（现在就把这个地址给用户；用 Chrome、Edge 或桌面版 Safari 打开）：http://127.0.0.1:${port}/#${pageLink({ slug: "live", title: "实时文档" })}`,
   ]);
   assert.equal((await fs.readFile(layout.lastPort, "utf8")).trim(), String(port), "its port kept for the next start");
   const info = await (await fetch(`http://127.0.0.1:${port}/__gallery/workspace/info`)).json();
@@ -71,13 +71,13 @@ try {
   const opened = await gallery(["open", "--no-browser"]);
   // The server is not mentioned again: it ran already, on the port the last command found it on.
   assert.deepEqual(linesOf(opened.stdout).slice(1), [
-    `交给用户（现在就把这个地址给用户；用 Chrome 或 Edge 打开）：http://127.0.0.1:${port}/`,
+    `交给用户（现在就把这个地址给用户；用 Chrome、Edge 或桌面版 Safari 打开）：http://127.0.0.1:${port}/`,
     "Not opened in a browser (--no-browser).",
   ]);
   // gallery list of one document: the address to give the user ends it, the whole one while the server runs, labelled
   // to give with the handoff (a revision starts with the list; the address goes with the handoff, not now).
   const listedOne = await gallery(["list", "live"]);
-  assert.equal(linesOf(listedOne.stdout).at(-1), `交给用户（交稿时给；用 Chrome 或 Edge 打开）：http://127.0.0.1:${port}/#${pageLink({ slug: "live", title: "实时文档" })}`, listedOne.stdout);
+  assert.equal(linesOf(listedOne.stdout).at(-1), `交给用户（交稿时给；用 Chrome、Edge 或桌面版 Safari 打开）：http://127.0.0.1:${port}/#${pageLink({ slug: "live", title: "实时文档" })}`, listedOne.stdout);
   // The server on another port than the last command found it on: said, with what that does to the addresses given before; then not again.
   await fs.writeFile(layout.lastPort, `${port + 1}
 `);
@@ -92,7 +92,7 @@ try {
     const made = await gallery(["page", "new", "reading", "读书"], env);
     assert.equal(made.code, 0, made.stderr);
     const address = `http://127.0.0.1:${port}/#@reading`;
-    assert.equal(linesOf(made.stdout).at(-1), `交给用户（现在就把这个地址给用户；用 Chrome 或 Edge 打开）：${address}`);
+    assert.equal(linesOf(made.stdout).at(-1), `交给用户（现在就把这个地址给用户；用 Chrome、Edge 或桌面版 Safari 打开）：${address}`);
     assert.match(linesOf(made.stdout).at(-2), /^下一步：send the user the address on the last line now, in a message of its own \(the page is theirs to watch as its cards arrive\); write page\.html: a board of cards .*; at the end tell them where it is in the sidebar \(under 新建 and 搜索, its title\)\.$/);
     const listed = await gallery(["page", "list"], env);
     assert.ok(linesOf(listed.stdout).some((line) => line.startsWith(`  地址：${address}   `)), listed.stdout);
@@ -245,7 +245,7 @@ try {
   serving.stderr.on("data", (chunk) => (said += chunk));
   const exited = new Promise((resolve) => serving.once("exit", (code) => resolve(code)));
   for (const until = Date.now() + 60_000; !said.includes("Ctrl+C stops it.") && Date.now() < until;) await sleep(200);
-  assert.ok(said.includes(`Gallery serves ${workspace} at http://127.0.0.1:${servePort}/ (Chrome or Edge). Ctrl+C stops it.`), said);
+  assert.ok(said.includes(`Gallery serves ${workspace} at http://127.0.0.1:${servePort}/. Ctrl+C stops it.`), said);
   const twice = await gallery(["serve"]);
   assert.equal(twice.code, 1);
   assert.match(twice.stderr, new RegExp(`^The shared Gallery server runs already: http://127\\.0\\.0\\.1:${servePort}/ \\(pid \\d+\\)\\. gallery stop stops it; one server serves a Gallery data directory\\.`), "one server per data directory");

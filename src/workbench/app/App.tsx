@@ -25,14 +25,13 @@ import { followWorkspace } from './workspace/live';
 import { refreshWorkspace, workspaceStore } from './workspace/store';
 import { t } from '../../shared/i18n/index.mjs';
 
-/**
- * 是不是 Chromium 内核的浏览器（Chrome、Edge……）：编辑器只为它们做（contenteditable 的行为各家不同）。
- * gallery open 打开的是系统默认浏览器，可能是 Safari 或 Firefox。
- */
-function chromium() {
+function supportsEditing() {
   const brands = (navigator as Navigator & { userAgentData?: { brands?: { brand: string }[] } }).userAgentData?.brands;
   if (brands?.length) return brands.some(b => b.brand === 'Chromium');
-  return /\b(Chrome|Chromium|Edg)\//.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  if (/\b(Chrome|Chromium|Edg)\//.test(ua)) return true;
+  // iPadOS can request a desktop site and identify itself as a Mac.
+  return /Macintosh.*Version\/[\d.]+ Safari\//.test(ua) && navigator.maxTouchPoints < 2;
 }
 
 /**
@@ -49,8 +48,7 @@ export function App() {
     void refreshWorkspace();
     void refreshStartup().catch(error => toast(error.message, { tone: 'error' }));
     void startExtensions().catch(error => toast(error.message, { tone: 'error' }));
-    // 不是 Chrome 或 Edge：说一次（可以读，编辑请换浏览器）
-    if (!chromium()) toast(t('编辑只支持 Chrome 和 Edge：这个浏览器里可以阅读，要编辑请用 Chrome 或 Edge 打开这个地址'), { duration: 15000 });
+    if (!supportsEditing()) toast(t('这个浏览器里可以阅读。要编辑，请用桌面版 Chrome、Edge 或 macOS 上的 Safari 打开这个地址。'), { duration: 15000 });
     // 回到这个标签页时重新读取报告列表（Agent 可能新建或修改了报告）
     let last = 0;
     const onVisible = () => {

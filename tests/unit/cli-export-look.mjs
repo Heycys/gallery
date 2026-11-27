@@ -307,7 +307,7 @@ try {
   const present = await gallery(["open", "weekly", "--present", "--no-browser"]);
   assert.equal(present.code, 0, present.stdout + present.stderr);
   const address = linesOf(present.stdout).find((line) => line.startsWith("交给用户"));
-  assert.match(address, new RegExp(`^交给用户（现在就把这个地址给用户；用 Chrome 或 Edge 打开）：http://127\\.0\\.0\\.1:${service.port}/\\?present#`), address);
+  assert.match(address, new RegExp(`^交给用户（现在就把这个地址给用户；用 Chrome、Edge 或桌面版 Safari 打开）：http://127\\.0\\.0\\.1:${service.port}/\\?present#`), address);
   const plain = await gallery(["open", "weekly", "--no-browser"]);
   assert.equal(linesOf(plain.stdout).find((line) => line.startsWith("交给用户")), address.replace("/?present#", "/#"), "the same address without ?present");
   for (const args of [["--present"], ["weekly", "--present", "--settings", "extensions"]]) {
